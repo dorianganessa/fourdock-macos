@@ -1,5 +1,9 @@
 (() => {
   if (window.top !== window || document.getElementById('fourdock-sidebar')) return;
+  document.documentElement.dataset.fourdockService = {
+    'web.whatsapp.com': 'whatsapp', 'web.telegram.org': 'telegram',
+    'app.fastmail.com': 'fastmail', 'mail.google.com': 'gmail',
+  }[location.hostname];
   const host = document.createElement('aside');
   host.id = 'fourdock-sidebar';
   host.style.cssText = 'position:fixed!important;inset:0 auto 0 0!important;width:68px!important;z-index:2147483647!important;display:block!important;transform:none!important;';

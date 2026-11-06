@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Fourdock",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "A dedicated four-service workspace using the full browser authentication stack.",
   "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAtQ9Raf7xZ6eqpXDnhp2mHCBY/frPPY/H8sE3K3cFdVtjeq3Je8STwqKfvrk+0Fmpnfjl++HGa01TeLbtr66liA2Uzp74QTz5W6fdChZRTqWC3QgzjHlDtTUjlCKVt2pIswIGZPgYlMhJnnrp374GoICMJRN4sGgWmkYiVJ4VjkfCTcyKeJSh/mXoqgl9NwwMIEwS269MLtWy4Qv99aci7nHROiekaAsPG+YAK9Ic6xdxY03ym5Bpnqoj3yLVDLXA9/VkE+X4iiYxw119zOUz7vSUOX9FE9q4wXYhjJ2F2WfiS/xnyMks2voF8JQ17yc0lKELwAr5qXxeNkjxYzVBVQIDAQAB",
   "permissions": [

@@ -53,6 +53,13 @@ try {
     await page.locator('#fourdock-sidebar button').first().waitFor();
     pages.push(page);
   }
+  const layout = await pages[0].evaluate(() => {
+    const rail = document.querySelector('#fourdock-sidebar').getBoundingClientRect();
+    const app = document.querySelector('#app').getBoundingClientRect();
+    return { railRight: rail.right, appLeft: app.left, appRight: app.right, viewport: innerWidth };
+  });
+  assert(layout.appLeft >= layout.railRight && layout.appRight <= layout.viewport + 1);
+  results.push({ test: 'WhatsApp absolute application root stays beside sidebar without clipping or overlap', status: 'PASS AUTOMATICO' });
   const ids = await Promise.all(pages.map(p => p.evaluate(() => window.loadIdentity)));
   const latencies = [];
   const names = ['whatsapp','telegram','fastmail','gmail'];

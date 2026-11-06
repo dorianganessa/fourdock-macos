@@ -1,2 +1,5 @@
 /* Browser tabs remain top-level documents: no iframe or origin changes. */
 html:has(> #fourdock-sidebar) { box-sizing: border-box !important; padding-left: 68px !important; }
+/* WhatsApp's absolute viewport root ignores HTML padding. Keep the service pane
+   beside the rail without moving/replacing any of its application DOM. */
+html[data-fourdock-service="whatsapp"] #app { left: 68px !important; width: calc(100% - 68px) !important; }
