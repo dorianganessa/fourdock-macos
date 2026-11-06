@@ -85,6 +85,10 @@ try {
   const q = model.content;
   await pages[0].mouse.click((q[0] + q[2]) / 2, (q[1] + q[5]) / 2);
   await accessibility.detach();
+  for (let attempt = 0; attempt < 40; attempt++) {
+    if ((await control.evaluate(() => chrome.tabs.query({ active: true }))).some(t => t.id === stored.mapping.gmail)) break;
+    await new Promise(resolve => setTimeout(resolve, 50));
+  }
   const active = await control.evaluate(() => chrome.tabs.query({ active: true }));
   assert(active.some(t => t.id === stored.mapping.gmail));
   results.push({ test: 'T05 sidebar selects mapped service', status: 'PASS AUTOMATICO' });
