@@ -1,0 +1,46 @@
+name: macOS checks and ad-hoc builds
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: macos-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  macos:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: macos-15
+            arch: arm64
+          - runner: macos-15-intel
+            arch: x86_64
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: npm run check && npm test
+      - run: npm run build
+        env:
+          FOURDOCK_ARCH: ${{ matrix.arch }}
+      - run: npx playwright install chromium
+      - run: npm run test:ui
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: Fourdock-macOS-${{ matrix.arch }}-ad-hoc
+          path: |
+            dist/Fourdock-macOS-*.zip
+            dist/Fourdock-macOS-*.sha256
+            dist/ui-results.json
+            dist/synthetic-workspace.png
+          if-no-files-found: error
+          retention-days: 14

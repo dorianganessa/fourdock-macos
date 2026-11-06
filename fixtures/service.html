@@ -1,0 +1,10 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="color-scheme" content="light dark"><title>Fixture service</title>
+<style>body{font:16px -apple-system,sans-serif;margin:0;padding:40px;background:#f7f7fc;color:#24243a}textarea{display:block;width:70%;height:160px;margin:20px 0}button,a,input{margin:10px}h1{font-size:32px}</style>
+<body><h1>Synthetic service</h1><p>No real accounts or messages are used.</p><label>Draft<textarea id="draft" placeholder="Draft preserved when switching"></textarea></label>
+<input id="upload" type="file"><p id="selected"></p><button id="popup">Authentication popup fixture</button><a href="https://example.org/ordinary">External link</a><a download="fourdock-synthetic.txt" href="data:text/plain,Synthetic%20attachment">Download fixture</a><button id="notify">Request synthetic notification</button>
+<script>
+window.loadIdentity=crypto.randomUUID();document.querySelector('h1').textContent='Synthetic '+location.hostname;document.title='(3) Fixture service';localStorage.setItem('fixture-session','synthetic-only');
+document.querySelector('#upload').onchange=e=>document.querySelector('#selected').textContent=e.target.files[0]?.name||'';
+document.querySelector('#popup').onclick=()=>window.open('/auth-fixture','auth','width=500,height=500');
+document.querySelector('#notify').onclick=async()=>{if(await Notification.requestPermission()==='granted')new Notification('Fourdock synthetic test',{body:'No account data'})};
+</script></body></html>

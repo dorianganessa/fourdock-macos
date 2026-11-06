@@ -1,0 +1,16 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="color-scheme" content="light dark"><title>Fourdock Preferences</title>
+<link rel="stylesheet" href="options.css"><body><main>
+<p class="eyebrow">FOURDOCK · PROTOTYPE</p><h1>Your workspace</h1>
+<p>Four services. A separate browser profile. Your browser handles authentication and notifications.</p>
+<button id="openWorkspace">Open workspace</button>
+<form id="prefs">
+<label>Sidebar appearance <select id="theme"><option value="system">System</option><option value="light">Light</option><option value="dark">Dark</option></select></label>
+<label>Page zoom <select id="zoom"><option value="0.8">80%</option><option value="0.9">90%</option><option value="1">100%</option><option value="1.1">110%</option><option value="1.25">125%</option><option value="1.5">150%</option></select></label>
+<label><input id="badges" type="checkbox"> Show explicit unread counts from service titles</label>
+<label><input id="externalLinks" type="checkbox"> Open ordinary external links in the default browser</label>
+<button>Save preferences</button><span role="status" id="status"></span></form>
+<h2>Keep services running</h2><p>Use the sidebar's down arrow or Fourdock → Hide Workspace. Closing the Chrome window closes its tabs and can discard unsaved drafts. Cmd+Q in Fourdock quits the dedicated browser. Browser menu commands belong to Chrome.</p>
+<h2>Notifications</h2><p>Enable notifications inside each service, allow its browser prompt, then allow Google Chrome in macOS System Settings → Notifications. Fourdock never requests microphone or camera access. Calls are outside this prototype's scope.</p>
+<h2>Service diagnostics</h2><p>This snapshot contains service identifiers, counts and preferences. No page titles, URLs, account names, messages, cookies or credentials.</p><button id="diagnose">Refresh diagnostics</button><pre id="diagnostics"></pre>
+<h2>Authentication checks</h2><p>WhatsApp QR plus the actual passkey and corporate Gmail SSO/MFA still require your verification. No login is marked passed automatically. Use only the official service interfaces for credentials.</p>
+</main><script type="module" src="options.js"></script></body></html>

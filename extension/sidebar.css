@@ -1,0 +1,2 @@
+/* Browser tabs remain top-level documents: no iframe or origin changes. */
+html:has(> #fourdock-sidebar) { box-sizing: border-box !important; padding-left: 68px !important; }

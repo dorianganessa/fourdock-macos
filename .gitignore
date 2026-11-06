@@ -1,0 +1,17 @@
+.DS_Store
+node_modules/
+build/
+dist/
+.cache/
+*.log
+.env*
+!.env.example
+*.pem
+*.p12
+*.key
+*.mobileprovision
+playwright-report/
+test-results/
+private/
+profiles/
+User Data/

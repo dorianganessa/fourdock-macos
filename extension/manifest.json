@@ -1,0 +1,78 @@
+{
+  "manifest_version": 3,
+  "name": "Fourdock",
+  "version": "0.1.0",
+  "description": "A dedicated four-service workspace using the full browser authentication stack.",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAtQ9Raf7xZ6eqpXDnhp2mHCBY/frPPY/H8sE3K3cFdVtjeq3Je8STwqKfvrk+0Fmpnfjl++HGa01TeLbtr66liA2Uzp74QTz5W6fdChZRTqWC3QgzjHlDtTUjlCKVt2pIswIGZPgYlMhJnnrp374GoICMJRN4sGgWmkYiVJ4VjkfCTcyKeJSh/mXoqgl9NwwMIEwS269MLtWy4Qv99aci7nHROiekaAsPG+YAK9Ic6xdxY03ym5Bpnqoj3yLVDLXA9/VkE+X4iiYxw119zOUz7vSUOX9FE9q4wXYhjJ2F2WfiS/xnyMks2voF8JQ17yc0lKELwAr5qXxeNkjxYzVBVQIDAQAB",
+  "permissions": [
+    "tabs",
+    "storage",
+    "nativeMessaging",
+    "alarms",
+    "contextMenus"
+  ],
+  "host_permissions": [
+    "https://web.whatsapp.com/*",
+    "https://web.telegram.org/*",
+    "https://app.fastmail.com/*",
+    "https://mail.google.com/*"
+  ],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "action": {
+    "default_title": "Open Fourdock"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://web.whatsapp.com/*",
+        "https://web.telegram.org/*",
+        "https://app.fastmail.com/*",
+        "https://mail.google.com/*"
+      ],
+      "js": [
+        "sidebar.js"
+      ],
+      "css": [
+        "sidebar.css"
+      ],
+      "run_at": "document_start"
+    }
+  ],
+  "options_page": "options.html",
+  "commands": {
+    "service-1": {
+      "suggested_key": {
+        "default": "Alt+1",
+        "mac": "Command+1"
+      },
+      "description": "Select service 1"
+    },
+    "service-2": {
+      "suggested_key": {
+        "default": "Alt+2",
+        "mac": "Command+2"
+      },
+      "description": "Select service 2"
+    },
+    "service-3": {
+      "suggested_key": {
+        "default": "Alt+3",
+        "mac": "Command+3"
+      },
+      "description": "Select service 3"
+    },
+    "service-4": {
+      "suggested_key": {
+        "default": "Alt+4",
+        "mac": "Command+4"
+      },
+      "description": "Select service 4"
+    }
+  },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'none'; base-uri 'none'"
+  }
+}

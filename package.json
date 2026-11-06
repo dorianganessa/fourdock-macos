@@ -1,0 +1,26 @@
+{
+  "name": "fourdock-macos",
+  "version": "0.1.0",
+  "description": "macOS four-service workspace with full-browser authentication",
+  "directories": {
+    "doc": "docs",
+    "test": "tests"
+  },
+  "scripts": {
+    "start": "bash scripts/start.sh",
+    "build": "bash scripts/build.sh",
+    "test": "node --test tests/*.test.mjs",
+    "test:ui": "node scripts/test-ui.mjs",
+    "check": "node scripts/check.mjs",
+    "benchmark": "node scripts/benchmark.mjs",
+    "audit": "node scripts/audit.mjs"
+  },
+  "keywords": [],
+  "author": "Adriano Sanges",
+  "license": "MIT",
+  "type": "module",
+  "devDependencies": {
+    "playwright": "1.56.1"
+  },
+  "private": true
+}
