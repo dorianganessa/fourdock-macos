@@ -1,95 +1,118 @@
 # Plan and handoff
 
-Updated: 2026-11-06. Status: tested browser-backed prototype; NOT ready for daily use.
+Updated: 2026-11-06. **Prototype; not ready for daily use.**
 
-## Environment
+## Environment and ownership
 
-Target Mac: macOS 27.0.1 (26A434), arm64. Node 26.4.0 / npm 11.17.0.
-Swift 6.4; Xcode 27.2 available using DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer.
-Ferdium and Google Chrome 157.0.8103.39 installed; existing profiles are out of scope.
-GitHub authenticated as personal account dorianganessa; suggested repository absent.
+Target: company-managed macOS 27.0.1 (26A434), arm64. Node 26.4.0 / npm 11.17.0,
+Swift 6.4, Xcode 27.2 via DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer.
+Installed official Chrome 157.0.8103.39 has the browser passkey entitlement; its
+minimum OS is 13.0. Fourdock targets 13.5 for the documented iCloud passkey support.
+Older OS versions remain untested. Existing regular Chrome and Ferdium profiles
+have not been modified. GitHub personal User account dorianganessa verified.
+Public MIT repository: https://github.com/dorianganessa/fourdock-macos.
+Commits use the owner's verified GitHub noreply identity.
 
-## Phases and exit criteria
+## Phase status and exit criteria
 
-- [x] 0: Inspect environment and identity; establish scoped repository and plan.
-- [ ] 1: Browser capability inspection complete; isolated authentication probe ready;
-  confirm actual WhatsApp QR + passkey and work Gmail, or record precise blocker
-  plus concrete full-browser alternative. Real logins require user participation.
-- [ ] 2: Four persistent tabs, sidebar, shortcuts, preferences, diagnostics and
-  browser attachment behavior implemented. Native component compiles but local
-  execution is blocked by company policy; close-to-hide is not implemented.
-- [ ] 3: Four logic tests and eleven browser fixture assertions pass. Matrix updated;
-  account logins, OS notifications and real attachments remain unverified.
-- [ ] 4: Three fixture startups, 50 switches and 300.31 seconds idle collected.
-  Distinguish synthetic,
-  unauthenticated and authenticated measurements. No unmeasured performance claims.
-- [ ] 5: Clean privacy audit, MIT repository, macOS CI/artifacts and delivery.
+- [x] 0: Environment, toolchain, ownership, scoped repository and plan established.
+- [ ] 1: Official capability investigation complete. QR linking failed in the signed
+  Chrome probe before passkey. Owner subsequently reported phone-number linking
+  "worked"; exact chat loading/passkey participation and restart persistence are
+  awaiting clarification. Work Gmail unverified. No QR/passkey acceptance pass.
+- [ ] 2: Four-service browser workspace, sidebar, Cmd+1–4, live-tab adoption,
+  non-discardable tabs, title-only badges, preferences, diagnostics, scoped reload,
+  browser attachments and optional Swift bridge implemented. Native execution on
+  target blocked by signing policy; window-close behavior remains a functional gap.
+- [ ] 3: Four logic tests and twelve fixture checks pass on both macOS CI
+  architectures. Real four-account logins, OS notifications, attachments,
+  sleep/wake and target packaged-app behavior remain unverified.
+- [ ] 4: Three fixture startups, 50 switches and 300.31 seconds idle measured.
+  Real authenticated performance and prolonged usage remain unmeasured; no
+  lightweight claim or Ferdium comparison.
+- [ ] 5: Personal repository, MIT/license notices, English README, CI, inspected
+  native ZIPs, checksums and prototype delivery prepared. Daily-use acceptance
+  remains blocked by the real functional gates above.
 
-## Current evidence / blockers
+## Architecture and known limits
 
-macOS passkeys for arbitrary relying parties require an Apple browser entitlement,
-or a website association that we cannot configure on WhatsApp/Google domains.
-Installed Chrome has the browser entitlement (codesign inspection); Ferdium is
-Developer ID signed and notarized but lacks that entitlement. Chrome for Testing
-is ad-hoc signed with no browser entitlement and is used only for synthetic tests.
-The exact cause of the WhatsApp incident is not yet established: user was asked
-whether the prompt is on Mac/phone and its wording. No real login is passed.
+Official Google Chrome runs the sites as top-level tabs in a dedicated profile.
+The extension creates one normal window and adopts already-open service tabs
+without reloading or copying authentication data. Chrome's toolbar/tab strip,
+notifications identity and Dock icon remain. The optional Swift launcher supplies
+a separate Dock/menu bridge and ordinary links to the default browser.
 
-Current implementation uses official Chrome plus a dedicated profile and extension.
-One normal browser window is needed for four tabs; toolbar/tab strip and Chrome's
-identity remain visible. This is a prototype compromise. Hide minimizes without
-unloading; closing Chrome's window closes tabs and may lose unsaved drafts.
+Hide minimizes and preserves loaded services. Chrome window close closes tabs and
+can discard drafts. Chrome Cmd+Q closes the browser but does not itself terminate
+the separate launcher. Those original lifecycle requirements are not waived.
+Site themes are site preferences; Fourdock's theme preference controls its sidebar.
 
-Native Swift compilation succeeded, then first execution was rejected (AMFI -423:
-ad-hoc/unknown certificate chain) and the executable was subsequently absent.
-The user confirmed company management. Zero signing identities are available.
-Do not bypass policy or retry execution to evade it; approved signing/IT permission
-is required. Native Dock/menu/external-browser bridge checks are blocked locally.
+Native compilation/signing succeeded locally, but the first executable was killed
+and subsequently absent. AMFI logged -423 (ad-hoc/unknown certificate chain); no
+signing identities exist. The user confirmed device management. No further native
+execution was attempted to bypass policy. Approved signing and/or IT authorization
+is required. See SIGNING.md. CI ad-hoc execution does not authorize this Mac.
 
-Browser fixtures now pass: 50 switches preserve four document identities/drafts,
-sidebar and Cmd+3, minimize/show, preferences/zoom, offline/online, synthetic file
-selection/download, popup/opener/close, external-tab fallback, isolated reload and
-full browser restart storage. Evidence: docs/evidence/ui-results.json.
+## Authentication evidence
 
-## Next three actions
+See AUTHENTICATION.md. Original Ferdium: passkey confirmation fails before a phone
+prompt. Signed Chrome probe: QR hangs; retry cannot link on phone before passkey.
+Capacity excluded. Existing regular-browser session works and remains untouched.
+The official phone-number method was reported successful by the owner.
+The owner was asked whether chats opened and a passkey was required.
 
-1. Verify the running macOS CI and download/inspect native artifacts from the personal
-   public MIT repository: https://github.com/dorianganessa/fourdock-macos.
-2. Get the actual signed-Chrome QR/passkey and work Gmail result. The user's
-   clarification: embedded Ferdium immediately reports inability to confirm the
-   passkey; no prompt arrives on the phone. Official Chrome probe is now open in
-   a separate profile, with no extension required for this first runtime gate.
-3. If authentication succeeds, check the extension in that same profile, then
-   controlled notifications/attachments. Native app acceptance separately requires
-   a device-approved signature or IT authorization; close-to-hide remains a gap.
+The ready extension's installation page has been opened in the same dedicated
+probe profile. Owner is asked to Load unpacked from the repository's extension
+folder and Open workspace. It should adopt the already-linked WhatsApp tab.
+Do not inspect account pages/data while the owner authenticates. No messages sent.
+Do not copy cookies, delete passkeys, reset profiles or log out working devices.
 
-## Delivered local evidence
+## Verified builds and artifacts
 
-Logic checks: four passed. Browser fixtures: eleven passed (see TESTING.md).
-Container benchmark: median selection request 12.54 ms; p95 16.34 ms; five-minute
-mean CPU 1.40% of one core; mean RSS 754.71 MiB, final 520.67 MiB. This includes the
-testing browser/children and automation, not authenticated apps or the blocked
-native launcher. No Ferdium comparison or lightweight claim. See PERFORMANCE.md.
+Artifact source commit: 409647319f51f18312b10cfc8deacd5b948b068e.
+Green workflow (both architectures):
+https://github.com/dorianganessa/fourdock-macos/actions/runs/42247664905.
 
-Privacy audit before initial publication passed for 34 tracked files and full
-local history. Public key in extension manifest is intentionally public; no private
-key/browser profile/account content is tracked. Personal GitHub noreply author used.
+CI performs clean checkout, npm ci, syntax/identity checks, four logic tests,
+Swift build, ad-hoc signature verification, native framing self-check, twelve
+headful browser fixture checks, and artifact upload. arm64: macos-26; Intel:
+macos-15-intel. An earlier Intel immediate keyboard assertion was corrected with
+a bounded wait for observed selection. The macos-15 arm64 pool stalled in queue;
+the official macos-26 pool completed successfully.
 
-## Latest authentication and CI checkpoint
+Both ZIPs downloaded, allowlists inspected, bundled source/licenses compared
+byte-for-byte and signatures verified without execution on the target.
 
-Real WhatsApp test FAILED: signed Chrome probe hangs at QR linking, then phone
-reports inability to link before passkey. Capacity is available; existing regular
-browser session is operational and untouched. One official phone-number linking
-test has been requested to isolate QR handling. See AUTHENTICATION.md.
+| Archive | ZIP bytes | Uncompressed bytes | SHA-256 |
+|---|---:|---:|---|
+| Fourdock-macOS-arm64.zip | 61543 | 211601 | c2b79286d91f48373219a94b278d068cafabad7cf093a1b021a14e0fb9c9c952 |
+| Fourdock-macOS-x86_64.zip | 60670 | 172897 | 5b7285e2254555d1c0986dd6edc9e8f64958ef70108d2b214541f4d455a3e0c4 |
 
-Personal public MIT repository: https://github.com/dorianganessa/fourdock-macos.
-Initial source: f3f010e0202349d98cd15b20bb3a7484493ded31.
-Initial workflow: https://github.com/dorianganessa/fourdock-macos/actions/runs/42244346285.
-Arm64 CI passed all checks, native build/protocol self-test and UI fixtures; ZIP
-downloaded and signature verified without execution on the managed target.
-Intel compilation/protocol passed, but an immediate post-keypress UI assertion
-failed. Added a bounded wait for observed asynchronous selection; next CI must pass.
+These packages contain the launcher/extension/notices; official Chrome is required
+separately. Prototype delivery tag: v0.1.0-prototype. SHA256SUMS and build
+provenance accompany delivery. No Developer ID signature/notarization is claimed.
+No browser profile, credential, account content or private screenshot is packaged.
 
-Initial arm64 ZIP: 59,050 bytes, 192,331 bytes uncompressed, Chrome excluded.
-SHA-256: 85572cf3b5ed7443cdc6e4bc895887c89a35e5adf35bf4ea77237d6a665fa764.
-Artifact contains only executable, extension code, plist, signature and notices.
+## Performance evidence
+
+Local fixture benchmark: window API-ready proxies 2.027 / 1.357 / 1.006 s;
+four-fixture readiness 3.953 / 1.745 / 1.340 s. Median selection request 12.54 ms,
+p95 16.34 ms. Five-minute mean CPU 1.40% of one core; mean aggregate RSS
+754.71 MiB, final 520.67 MiB. Includes testing browser/children and Node, excludes
+blocked native launcher. See PERFORMANCE.md and raw anonymous evidence.
+Do not interpret API acknowledgements as measured first paint or these numbers as
+authenticated app costs. No performance optimization has been claimed.
+
+## Next three concrete actions
+
+1. Obtain the owner's two integration observations: whether successful phone-number
+   linking opened chats/used a passkey; whether loading the extension adopted that
+   live tab without a new login. Preserve this dedicated-profile session.
+2. After integration, have owner complete Gmail/Telegram/Fastmail login and a
+   restart-persistence check; then controlled incoming notifications, synthetic
+   attachments and real network/sleep-wake checks. Never send to contacts without
+   explicit authorization. Keep QR/passkey acceptance separately failed/unverified.
+3. Obtain approved native signing/IT authorization, verify packaged-app opening and
+   native bridge on target, then resolve close-to-hide/Chrome identity constraints
+   through a supported architecture. Update TESTING.md and measure authenticated
+   service costs before declaring daily-use readiness.

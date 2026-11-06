@@ -4,7 +4,9 @@ A small, local workspace for WhatsApp, Telegram, Fastmail and work Gmail.
 **Authentication prototype — not yet ready for daily use.** The actual WhatsApp
 post-QR passkey and corporate Gmail SSO/MFA require verification by the account owner.
 The first owner test in full Chrome failed at QR linking, before the passkey.
-Changing engines has **not** demonstrated a fix. See [investigation](docs/AUTHENTICATION.md).
+The owner subsequently reported success with official **Link with phone number**.
+The original QR/passkey flow and restart persistence remain unverified. See
+[investigation](docs/AUTHENTICATION.md).
 
 Fourdock uses **official Google Chrome**, a dedicated browser profile, an extension
 and a small Swift launcher. Sites run as top-level browser tabs. Chrome keeps its
@@ -24,12 +26,17 @@ No backend, Fourdock account, cookie import or private service API is involved.
 
 ## Install and authenticate
 
-Download a `Fourdock-macOS-arm64.zip` or `Fourdock-macOS-x86_64.zip` from the
+Prototype ZIPs are available on the
+[prerelease page](https://github.com/dorianganessa/fourdock-macos/releases/tag/v0.1.0-prototype).
+Download a `Fourdock-macOS-arm64.zip` or `Fourdock-macOS-x86_64.zip` from there or the
 [macOS workflow artifacts](https://github.com/dorianganessa/fourdock-macos/actions/workflows/macos.yml).
 Extract it, move `Fourdock.app` to `~/Applications`, and open it. These are ad-hoc
 signed test builds, not Developer ID signed or notarized releases. macOS may offer
 a per-app Open Anyway action in Privacy & Security; follow your device's policy.
 If the device refuses the app, use the extension-only procedure below.
+The managed development Mac requires a device-approved signature/IT authorization;
+the current native bundle is not approved there. Prepared signing steps are in
+[SIGNING.md](docs/SIGNING.md).
 
 The one-time setup screen opens Chrome with a **new Fourdock profile** and shows
 an extension folder in Finder. In `chrome://extensions`, enable Developer mode,
@@ -90,6 +97,10 @@ bash scripts/open-browser.sh --auth-probe
 This opens WhatsApp and Gmail in official Chrome's dedicated probe profile. Test
 QR + the actual passkey and company SSO/MFA yourself. Runtime success is only the
 first gate; subsequently verify the installed extension in the same profile.
+If the reported QR failure recurs, the official phone-number method has a reported
+successful result in this profile. Keep numbers and codes in official UI only.
+The extension adopts existing service tabs without reloading them when it creates
+the workspace. No export or import of browser authentication data occurs.
 
 This path works independently of the blocked native launcher and still lets you
 test the actual authentication in the full, signed browser:

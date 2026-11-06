@@ -1,0 +1,57 @@
+{
+  "date": "2026-11-06T15:58:00.704Z",
+  "environment": "darwin x64",
+  "fixture": true,
+  "results": [
+    {
+      "test": "adopt existing authenticated-probe fixture tab without reload, duplicate or draft loss",
+      "status": "PASS AUTOMATICO"
+    },
+    {
+      "test": "T05 synthetic 50 switches and draft preservation",
+      "status": "PASS AUTOMATICO",
+      "medianMs": 73.62432700000136,
+      "p95Ms": 149.74856999999975
+    },
+    {
+      "test": "T05 sidebar selects mapped service",
+      "status": "PASS AUTOMATICO"
+    },
+    {
+      "test": "T05 native Cmd+3 switches to existing Fastmail tab",
+      "status": "PASS AUTOMATICO"
+    },
+    {
+      "test": "T09 minimize/show retains loaded service",
+      "status": "PASS AUTOMATICO"
+    },
+    {
+      "test": "preferences, per-tab zoom and content-free diagnostics",
+      "status": "PASS AUTOMATICO"
+    },
+    {
+      "test": "T10 synthetic offline/online preserves draft",
+      "status": "PASS AUTOMATICO"
+    },
+    {
+      "test": "T07 synthetic file selection and browser download",
+      "status": "PASS AUTOMATICO"
+    },
+    {
+      "test": "T08 popup opener retained and popup closes",
+      "status": "PASS AUTOMATICO"
+    },
+    {
+      "test": "T08 external link fallback opens a separate browser tab without native bridge",
+      "status": "PASS AUTOMATICO"
+    },
+    {
+      "test": "T10 isolated service reload; origin storage survives",
+      "status": "PASS AUTOMATICO"
+    },
+    {
+      "test": "preferences and origin storage survive full browser restart",
+      "status": "PASS AUTOMATICO"
+    }
+  ]
+}

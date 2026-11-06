@@ -3,6 +3,10 @@
 Measured 2026-11-06 on macOS 27.0.1 arm64, Chrome for Testing 157.0.8103.38,
 Playwright 1.56.1 / Node 26.4.0. No authenticated service benchmark exists.
 Raw synthetic evidence: [evidence/benchmark.json](evidence/benchmark.json).
+This is the pre-adoption baseline (initial implementation, f3f010e). The subsequent
+live-tab adoption feature changes workspace creation; its startup cost has not
+been remeasured. Recollect after real-service integration. The table is historical
+measured evidence, not a claim about the final authenticated build.
 
 | Observation | Measured value |
 |---|---|

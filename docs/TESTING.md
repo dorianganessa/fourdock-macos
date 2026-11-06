@@ -23,7 +23,7 @@ Sanitized automated results: [evidence/ui-results.json](evidence/ui-results.json
 | T10 | Offline/online, sleep/wake, isolated failure recovery | NON ESEGUITO | Fixture offline/online preserves draft; scoped reload preserves other services; origin storage survives. Physical sleep/wake and actual service recovery pending |
 | T11 | Clipboard, zoom, focus, resize, themes, keyboard | NON ESEGUITO | Fixture zoom, saved dark preference and keyboard selection pass; synthetic screenshot inspected. Clipboard, real layouts, small windows and accessibility pending |
 | T12 | Install/open packaged build on target Mac; timely permissions | BLOCCATO | Swift compiled and signed; first native execution rejected by AMFI -423; executable subsequently absent. Managed Mac confirmed; no signing identity. Need approved signing/IT authorization |
-| T13 | Clean clone build/test; GitHub macOS workflows/artifacts | PASS AUTOMATICO | Arm64 initial run and Intel follow-up both pass clean checkout, install, native build/protocol and UI fixtures. Intel selection wait fixed. Latest unified run pending; arm64 macos-15 pool queued, moved primary runner to official macos-26 pool |
+| T13 | Clean clone build/test; GitHub macOS workflows/artifacts | PASS AUTOMATICO | Both jobs of workflow 42247664905 passed clean checkout/install/build/protocol and twelve UI fixture checks. Inspected ZIPs and verified signatures without target execution. Evidence: ci-arm64-ui-results.json and ci-x86_64-ui-results.json |
 
 ## Automated procedures and observations
 

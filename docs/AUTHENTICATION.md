@@ -1,6 +1,9 @@
 # Authentication investigation
 
 Updated 2026-11-06. **WhatsApp acceptance has failed. No engine is validated.**
+Phone test environment reported by owner: Android, standard WhatsApp; version not
+provided. The alternate phone-number flow has a reported successful result, while
+the original QR-plus-passkey gate remains failed/unverified.
 Only anonymous stages/results are recorded. No identifiers, QR images, credentials,
 assertions, cookies, account screenshots or chat content belong in this repository.
 
@@ -10,15 +13,17 @@ assertions, cookies, account screenshots or chat content belong in this reposito
 | Official signed Chrome, fresh dedicated profile, no extension | QR linking hangs; retry gives inability to link on phone, before passkey | FAIL. Engine substitution has not demonstrated a fix; this is earlier than the Ferdium error |
 | Linked-device capacity check | Owner confirmed capacity remains | Capacity hypothesis excluded; no devices removed |
 | Existing browser baseline | An already linked regular browser session works | Preserve it. This does not prove a new pairing can succeed |
-| Official phone-number linking, dedicated profile | Test requested; result pending | Change only pairing method to distinguish QR-specific failure |
+| Official phone-number linking, dedicated profile | Owner reported "worked" | Alternate linking success reported. Exact chat loading, passkey participation and restart persistence have not yet been confirmed |
 | Work Gmail | Result not reported | BLOCCATO / owner verification needed |
 
 The Chrome extension is a tested container candidate, not a proven workaround.
 After two investigated explanations failed to resolve the incident, additional
 context was requested in accordance with the user's debugging instructions.
-Next test: a single official phone-number linking attempt, with number/code entered
-only in official interfaces. It may still require the actual passkey. A successful
-alternate method would not pass the explicitly requested QR-plus-passkey test.
+The single official phone-number attempt was reported successful. The owner was
+asked to clarify whether chats opened and whether a passkey was requested. Preserve
+this new dedicated-profile session. This does not pass the originally requested
+QR-plus-passkey test. Next integration: load the extension in the same dedicated
+profile and adopt that live service tab, then check persistence after restart.
 
 Do not invent a retry cooldown or service incident, remove passkeys, clear account
 data, log out of working sessions, or change managed network/security settings.

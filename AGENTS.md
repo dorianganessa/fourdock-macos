@@ -44,8 +44,10 @@ scripts/open-browser.sh --auth-probe. User is testing QR/passkey and work Gmail.
 Do not inspect the user's page content or profile while they authenticate.
 Browser capability differences are evidence, not a proven cause or fix.
 
-Latest account test: official Chrome probe FAILED before passkey (QR hangs, then
-phone cannot link). Capacity excluded; existing regular Chrome session works and
-must stay untouched. One official phone-number pairing test is pending, entered
-only by the owner through official UI. See docs/AUTHENTICATION.md. No engine is
-validated. Never claim this extension solves WhatsApp until actual evidence exists.
+QR account test: official Chrome probe FAILED before passkey (QR hangs, then phone
+cannot link). Capacity excluded; existing regular Chrome session must stay untouched.
+Latest update: owner reported official phone-number linking "worked". Await exact
+chat/passkey confirmation. Extension now adopts existing service tabs without
+reload; twelve UI fixture checks pass on both CI architectures at 4096473. Owner
+was asked to Load unpacked in the same dedicated profile and Open workspace.
+No QR/passkey gate is passed; no account contents were inspected by the agent.
