@@ -141,3 +141,13 @@ already loaded, Reload it in chrome://extensions, then refresh service tabs only
 after the owner preserves any unsent drafts. Never automatically reload their
 pages or clear authentication data. Final delivery:
 https://github.com/dorianganessa/fourdock-macos/releases/tag/v0.1.1-prototype.
+
+## Publication receipt
+
+0.1.1 prerelease published and verified (not a draft), with both architecture ZIPs,
+SHA256SUMS.txt and BUILD-PROVENANCE.json. Tag target / release source:
+1da09bdb8ea349172607971ce2e6b10593c6b72d; compiled artifact source is be47d46.
+Public anonymous ARM download succeeded and its SHA-256 matched the recorded hash.
+0.1.0 remains in history, marked superseded. Source tree is clean apart from this
+final receipt update. No real account acceptance gate has been silently passed.
+Owner integration and exact chat/passkey feedback remain the next dependency.
