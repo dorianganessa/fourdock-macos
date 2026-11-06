@@ -32,6 +32,7 @@ jobs:
       - run: npm run build
         env:
           FOURDOCK_ARCH: ${{ matrix.arch }}
+      - run: node scripts/test-native.mjs
       - run: npx playwright install chromium
       - run: npm run test:ui
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
