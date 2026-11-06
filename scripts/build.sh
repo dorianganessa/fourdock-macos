@@ -28,7 +28,11 @@ cat > "$APP/Contents/Info.plist" <<'PLIST'
 PLIST
 codesign --force --sign - "$APP"
 codesign --verify --deep --strict "$APP"
-"$APP/Contents/MacOS/Fourdock" --self-test
+if [ "${FOURDOCK_BUILD_ONLY:-0}" = "1" ]; then
+  echo "Build only: native execution not checked on this host."
+else
+  "$APP/Contents/MacOS/Fourdock" --self-test
+fi
 ditto -c -k --sequesterRsrc --keepParent "$APP" "dist/Fourdock-macOS-$ARCH.zip"
 shasum -a 256 "dist/Fourdock-macOS-$ARCH.zip" > "dist/Fourdock-macOS-$ARCH.zip.sha256"
 echo "Built $APP (ad-hoc signed; not notarized)"

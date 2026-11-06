@@ -71,6 +71,12 @@ with `FOURDOCK_ARCH=x86_64 npm run build` on an Intel host. Xcode users with an
 inactive developer directory can prefix with
 `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer`.
 
+On a host that permits compilation but rejects native execution, use
+`FOURDOCK_BUILD_ONLY=1 npm run build`. It compiles, verifies the ad-hoc signature
+and packages the app without running its executable. Such a build is not an
+execution test. Native window/IPC checks run on the approved macOS CI hosts;
+the managed target still needs its accepted signing/IT authorization.
+
 Synthetic browser tests use Chrome for Testing **only**, in disposable profiles:
 
 ```sh
