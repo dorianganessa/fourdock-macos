@@ -42,10 +42,18 @@ Downloaded Chrome for Testing 157.0.8103.38 is ad-hoc signed and has no such
 entitlement: it is useful for synthetic checks, not evidence of iCloud passkeys.
 
 These facts identify capability differences, **not the confirmed root cause of
-the user's WhatsApp failure**. We have asked whether the passkey prompt is on the
-Mac or phone and what stage/error is visible. A phone-side WhatsApp approval or
-encrypted history recovery flow may be different from browser WebAuthn. Do not
-claim that obtaining the browser entitlement necessarily resolves that incident.
+the user's WhatsApp failure**. The user clarified that after QR the embedded
+browser requests passkey confirmation, then displays "impossibile confermare la
+passkey" immediately; no phone prompt ever arrives. This points to the browser
+side of cross-device authentication, but the identical signed-Chrome flow still
+needs verification. Do not claim the iCloud/browser entitlement alone proves
+phone/hybrid transport works or necessarily resolves the incident.
+
+`bash scripts/open-browser.sh --auth-probe` opens official Chrome with WhatsApp
+and Gmail in the same dedicated probe profile, before extension installation.
+This tests the runtime's real account flow without WebAuthn overrides. It does not
+pass final Fourdock interaction/lifecycle checks. Extension integration must be
+checked afterwards in that same profile.
 
 The provisional runnable route uses the already installed signed Chrome, with a
 separate user-data directory and a Manifest V3 extension for switching, preferences

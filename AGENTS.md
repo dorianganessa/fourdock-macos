@@ -37,6 +37,15 @@ Do not retry native execution to bypass the policy or change global security.
 Use CI for native build/self-checks; that does not prove acceptance on this Mac.
 Extension-only work may continue subject to device extension policy.
 
-Authentication remains unconfirmed. The exact Ferdium failure has not been
-established: user was asked whether the passkey prompt is on Mac/phone and its
-error wording. Browser capability differences are evidence, not a proven cause.
+Authentication remains unconfirmed. User clarified: after QR, Ferdium's embedded
+browser requests passkey confirmation, then immediately says it cannot confirm;
+no phone prompt arrives. A separate official Chrome profile has been opened with
+scripts/open-browser.sh --auth-probe. User is testing QR/passkey and work Gmail.
+Do not inspect the user's page content or profile while they authenticate.
+Browser capability differences are evidence, not a proven cause or fix.
+
+Latest account test: official Chrome probe FAILED before passkey (QR hangs, then
+phone cannot link). Capacity excluded; existing regular Chrome session works and
+must stay untouched. One official phone-number pairing test is pending, entered
+only by the owner through official UI. See docs/AUTHENTICATION.md. No engine is
+validated. Never claim this extension solves WhatsApp until actual evidence exists.

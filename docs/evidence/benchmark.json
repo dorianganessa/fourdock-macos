@@ -1,0 +1,557 @@
+{
+  "date": "2026-11-06T15:28:43.967Z",
+  "platform": "darwin 27.0.0 arm64",
+  "fixture": true,
+  "nativeLauncherIncluded": false,
+  "starts": [
+    {
+      "run": 1,
+      "browserWindowMs": 2026.742583,
+      "fourFixtureServicesMs": 3952.9901250000003
+    },
+    {
+      "run": 2,
+      "browserWindowMs": 1357.0156659999993,
+      "fourFixtureServicesMs": 1745.1515
+    },
+    {
+      "run": 3,
+      "browserWindowMs": 1005.5049170000002,
+      "fourFixtureServicesMs": 1340.1797500000002
+    }
+  ],
+  "switchRequestMs": [
+    11.355082999999468,
+    14.407290999999532,
+    14.565042000000176,
+    13.154125000000022,
+    13.84100000000035,
+    11.969584000000395,
+    13.354917000000569,
+    8.857750000000124,
+    19.1812089999994,
+    8.738875000000007,
+    14.75395799999933,
+    12.079791999999543,
+    13.843499999999949,
+    7.387332999999671,
+    13.311999999999898,
+    7.621249999999236,
+    12.293582999999671,
+    8.779832999999599,
+    13.087832999999591,
+    9.593208000000232,
+    12.770541999999296,
+    12.503208000000086,
+    9.315458000000035,
+    13.085124999999607,
+    15.43475000000035,
+    13.554124999999658,
+    14.155707999999322,
+    16.340707999999722,
+    10.76483399999961,
+    14.34416599999986,
+    13.473416000000725,
+    12.22820800000045,
+    9.653833000000304,
+    12.538416000000325,
+    12.064832999999453,
+    8.884625000000597,
+    14.871167000000241,
+    9.229041999999936,
+    11.083209000000352,
+    14.638374999999542,
+    12.68212500000027,
+    12.254249999999956,
+    13.447250000000167,
+    9.230833999999959,
+    12.35424999999941,
+    12.452749999999469,
+    10.427499999999782,
+    13.23041700000067,
+    18.28758299999936,
+    9.714832999999999
+  ],
+  "idle": [
+    {
+      "elapsedSeconds": 5.144953959,
+      "processes": 13,
+      "rssMiB": 1240.890625,
+      "lifetimeCpuPercent": 1.4000000000000001,
+      "cpuSeconds": 4.61,
+      "intervalCpuPercent": 6.219686367459683
+    },
+    {
+      "elapsedSeconds": 10.206981041999999,
+      "processes": 13,
+      "rssMiB": 1243.546875,
+      "lifetimeCpuPercent": 1.3,
+      "cpuSeconds": 4.720000000000001,
+      "intervalCpuPercent": 2.1730425024673923
+    },
+    {
+      "elapsedSeconds": 15.276738959000003,
+      "processes": 13,
+      "rssMiB": 1235.6875,
+      "lifetimeCpuPercent": 1.1,
+      "cpuSeconds": 4.819999999999999,
+      "intervalCpuPercent": 1.9724807700319762
+    },
+    {
+      "elapsedSeconds": 20.355620042,
+      "processes": 13,
+      "rssMiB": 1084.890625,
+      "lifetimeCpuPercent": 1.3000000000000003,
+      "cpuSeconds": 5.21,
+      "intervalCpuPercent": 7.67885669356202
+    },
+    {
+      "elapsedSeconds": 25.455684584,
+      "processes": 13,
+      "rssMiB": 1067.359375,
+      "lifetimeCpuPercent": 0.8999999999999999,
+      "cpuSeconds": 5.29,
+      "intervalCpuPercent": 1.5686075997898636
+    },
+    {
+      "elapsedSeconds": 30.537474,
+      "processes": 13,
+      "rssMiB": 1092.5,
+      "lifetimeCpuPercent": 0.30000000000000004,
+      "cpuSeconds": 5.54,
+      "intervalCpuPercent": 4.919526952708345
+    },
+    {
+      "elapsedSeconds": 35.621486334000004,
+      "processes": 13,
+      "rssMiB": 1047.515625,
+      "lifetimeCpuPercent": 0.1,
+      "cpuSeconds": 5.6,
+      "intervalCpuPercent": 1.1801702289103762
+    },
+    {
+      "elapsedSeconds": 40.687668334,
+      "processes": 13,
+      "rssMiB": 1071.5,
+      "lifetimeCpuPercent": 0.1,
+      "cpuSeconds": 5.6499999999999995,
+      "intervalCpuPercent": 0.9869365135322782
+    },
+    {
+      "elapsedSeconds": 45.794004667,
+      "processes": 13,
+      "rssMiB": 1039.4375,
+      "lifetimeCpuPercent": 0.3,
+      "cpuSeconds": 5.679999999999999,
+      "intervalCpuPercent": 0.5875053667366675
+    },
+    {
+      "elapsedSeconds": 50.892486292,
+      "processes": 13,
+      "rssMiB": 1024.109375,
+      "lifetimeCpuPercent": 1.6,
+      "cpuSeconds": 5.71,
+      "intervalCpuPercent": 0.5884104760307173
+    },
+    {
+      "elapsedSeconds": 55.96761287500001,
+      "processes": 13,
+      "rssMiB": 981.78125,
+      "lifetimeCpuPercent": 0.2,
+      "cpuSeconds": 5.7299999999999995,
+      "intervalCpuPercent": 0.3940788406538066
+    },
+    {
+      "elapsedSeconds": 61.062443709,
+      "processes": 13,
+      "rssMiB": 1062.46875,
+      "lifetimeCpuPercent": 1.1,
+      "cpuSeconds": 5.830000000000001,
+      "intervalCpuPercent": 1.9627737064920487
+    },
+    {
+      "elapsedSeconds": 66.169372959,
+      "processes": 13,
+      "rssMiB": 1044.140625,
+      "lifetimeCpuPercent": 1.2,
+      "cpuSeconds": 5.89,
+      "intervalCpuPercent": 1.1748743141487366
+    },
+    {
+      "elapsedSeconds": 71.236866584,
+      "processes": 13,
+      "rssMiB": 1049.390625,
+      "lifetimeCpuPercent": 0.1,
+      "cpuSeconds": 5.930000000000001,
+      "intervalCpuPercent": 0.7893448509271869
+    },
+    {
+      "elapsedSeconds": 76.335964542,
+      "processes": 13,
+      "rssMiB": 998.046875,
+      "lifetimeCpuPercent": 0.2,
+      "cpuSeconds": 5.9799999999999995,
+      "intervalCpuPercent": 0.9805655904600474
+    },
+    {
+      "elapsedSeconds": 81.41149716700001,
+      "processes": 13,
+      "rssMiB": 790.140625,
+      "lifetimeCpuPercent": 0.1,
+      "cpuSeconds": 6,
+      "intervalCpuPercent": 0.39404731439393376
+    },
+    {
+      "elapsedSeconds": 86.48718366700001,
+      "processes": 13,
+      "rssMiB": 791.15625,
+      "lifetimeCpuPercent": 0.4,
+      "cpuSeconds": 6.029999999999999,
+      "intervalCpuPercent": 0.5910530526264642
+    },
+    {
+      "elapsedSeconds": 91.56651341700001,
+      "processes": 13,
+      "rssMiB": 715.375,
+      "lifetimeCpuPercent": 0.2,
+      "cpuSeconds": 6.12,
+      "intervalCpuPercent": 1.7718873243069275
+    },
+    {
+      "elapsedSeconds": 96.64477845900001,
+      "processes": 13,
+      "rssMiB": 705.203125,
+      "lifetimeCpuPercent": 1.2,
+      "cpuSeconds": 6.15,
+      "intervalCpuPercent": 0.5907529392791441
+    },
+    {
+      "elapsedSeconds": 101.734232042,
+      "processes": 13,
+      "rssMiB": 714.390625,
+      "lifetimeCpuPercent": 0.1,
+      "cpuSeconds": 6.209999999999999,
+      "intervalCpuPercent": 1.1789084824432476
+    },
+    {
+      "elapsedSeconds": 106.826635917,
+      "processes": 13,
+      "rssMiB": 706.96875,
+      "lifetimeCpuPercent": 0.1,
+      "cpuSeconds": 6.2700000000000005,
+      "intervalCpuPercent": 1.1782254800047915
+    },
+    {
+      "elapsedSeconds": 111.963038834,
+      "processes": 13,
+      "rssMiB": 663.3125,
+      "lifetimeCpuPercent": 0.7,
+      "cpuSeconds": 6.430000000000001,
+      "intervalCpuPercent": 3.1150204254897282
+    },
+    {
+      "elapsedSeconds": 117.040967959,
+      "processes": 13,
+      "rssMiB": 696.859375,
+      "lifetimeCpuPercent": 0.1,
+      "cpuSeconds": 6.510000000000001,
+      "intervalCpuPercent": 1.5754453839487197
+    },
+    {
+      "elapsedSeconds": 122.13560037500001,
+      "processes": 13,
+      "rssMiB": 704.65625,
+      "lifetimeCpuPercent": 0.5,
+      "cpuSeconds": 6.5600000000000005,
+      "intervalCpuPercent": 0.9814250748095527
+    },
+    {
+      "elapsedSeconds": 127.22500500000001,
+      "processes": 13,
+      "rssMiB": 702.171875,
+      "lifetimeCpuPercent": 0.2,
+      "cpuSeconds": 6.58,
+      "intervalCpuPercent": 0.3929732743542585
+    },
+    {
+      "elapsedSeconds": 132.309691375,
+      "processes": 13,
+      "rssMiB": 702.359375,
+      "lifetimeCpuPercent": 0.1,
+      "cpuSeconds": 6.600000000000001,
+      "intervalCpuPercent": 0.39333792735646134
+    },
+    {
+      "elapsedSeconds": 137.406959209,
+      "processes": 13,
+      "rssMiB": 686.234375,
+      "lifetimeCpuPercent": 1.3,
+      "cpuSeconds": 6.640000000000001,
+      "intervalCpuPercent": 0.7847341223309767
+    },
+    {
+      "elapsedSeconds": 142.50966725,
+      "processes": 13,
+      "rssMiB": 675.71875,
+      "lifetimeCpuPercent": 0.30000000000000004,
+      "cpuSeconds": 6.6800000000000015,
+      "intervalCpuPercent": 0.7838974849943001
+    },
+    {
+      "elapsedSeconds": 147.603276959,
+      "processes": 13,
+      "rssMiB": 660.671875,
+      "lifetimeCpuPercent": 0.7999999999999999,
+      "cpuSeconds": 6.710000000000001,
+      "intervalCpuPercent": 0.5889732765938429
+    },
+    {
+      "elapsedSeconds": 152.677002709,
+      "processes": 13,
+      "rssMiB": 640.140625,
+      "lifetimeCpuPercent": 0.1,
+      "cpuSeconds": 6.730000000000002,
+      "intervalCpuPercent": 0.394187644060213
+    },
+    {
+      "elapsedSeconds": 157.763224292,
+      "processes": 13,
+      "rssMiB": 641.6875,
+      "lifetimeCpuPercent": 0.1,
+      "cpuSeconds": 6.770000000000001,
+      "intervalCpuPercent": 0.786438407121186
+    },
+    {
+      "elapsedSeconds": 162.87316825000002,
+      "processes": 13,
+      "rssMiB": 657.9375,
+      "lifetimeCpuPercent": 0.1,
+      "cpuSeconds": 6.82,
+      "intervalCpuPercent": 0.9784843123713693
+    },
+    {
+      "elapsedSeconds": 167.962934542,
+      "processes": 13,
+      "rssMiB": 610.34375,
+      "lifetimeCpuPercent": 0.2,
+      "cpuSeconds": 6.91,
+      "intervalCpuPercent": 1.7682540776275044
+    },
+    {
+      "elapsedSeconds": 173.027976,
+      "processes": 13,
+      "rssMiB": 606.75,
+      "lifetimeCpuPercent": 5.1000000000000005,
+      "cpuSeconds": 7.040000000000001,
+      "intervalCpuPercent": 2.5666127528861953
+    },
+    {
+      "elapsedSeconds": 178.111216334,
+      "processes": 13,
+      "rssMiB": 604.78125,
+      "lifetimeCpuPercent": 0.2,
+      "cpuSeconds": 7.07,
+      "intervalCpuPercent": 0.5901747316439062
+    },
+    {
+      "elapsedSeconds": 183.187067625,
+      "processes": 13,
+      "rssMiB": 626.890625,
+      "lifetimeCpuPercent": 0.1,
+      "cpuSeconds": 7.1899999999999995,
+      "intervalCpuPercent": 2.36413545473193
+    },
+    {
+      "elapsedSeconds": 188.27941408400002,
+      "processes": 13,
+      "rssMiB": 758.421875,
+      "lifetimeCpuPercent": 5.4,
+      "cpuSeconds": 7.620000000000001,
+      "intervalCpuPercent": 8.444044478553403
+    },
+    {
+      "elapsedSeconds": 193.348029667,
+      "processes": 13,
+      "rssMiB": 736.265625,
+      "lifetimeCpuPercent": 0.1,
+      "cpuSeconds": 7.720000000000001,
+      "intervalCpuPercent": 1.9729253158475382
+    },
+    {
+      "elapsedSeconds": 198.439809,
+      "processes": 13,
+      "rssMiB": 723.90625,
+      "lifetimeCpuPercent": 1.5,
+      "cpuSeconds": 7.75,
+      "intervalCpuPercent": 0.5891849987600264
+    },
+    {
+      "elapsedSeconds": 203.515254834,
+      "processes": 13,
+      "rssMiB": 650.953125,
+      "lifetimeCpuPercent": 0.1,
+      "cpuSeconds": 7.770000000000001,
+      "intervalCpuPercent": 0.394054052671058
+    },
+    {
+      "elapsedSeconds": 208.600183125,
+      "processes": 13,
+      "rssMiB": 648.09375,
+      "lifetimeCpuPercent": 0.2,
+      "cpuSeconds": 7.790000000000001,
+      "intervalCpuPercent": 0.3933192142630263
+    },
+    {
+      "elapsedSeconds": 213.696860417,
+      "processes": 13,
+      "rssMiB": 659.546875,
+      "lifetimeCpuPercent": 1.8,
+      "cpuSeconds": 7.84,
+      "intervalCpuPercent": 0.9810313099179605
+    },
+    {
+      "elapsedSeconds": 218.775967625,
+      "processes": 13,
+      "rssMiB": 666.640625,
+      "lifetimeCpuPercent": 0.1,
+      "cpuSeconds": 7.8900000000000015,
+      "intervalCpuPercent": 0.9844249777056837
+    },
+    {
+      "elapsedSeconds": 223.8710235,
+      "processes": 13,
+      "rssMiB": 667.828125,
+      "lifetimeCpuPercent": 0.1,
+      "cpuSeconds": 7.900000000000001,
+      "intervalCpuPercent": 0.19626870137120447
+    },
+    {
+      "elapsedSeconds": 228.944114417,
+      "processes": 13,
+      "rssMiB": 674.734375,
+      "lifetimeCpuPercent": 0.1,
+      "cpuSeconds": 7.95,
+      "intervalCpuPercent": 0.9855924291135452
+    },
+    {
+      "elapsedSeconds": 234.055743584,
+      "processes": 13,
+      "rssMiB": 638.921875,
+      "lifetimeCpuPercent": 0.1,
+      "cpuSeconds": 7.970000000000001,
+      "intervalCpuPercent": 0.39126468972197453
+    },
+    {
+      "elapsedSeconds": 239.130548417,
+      "processes": 13,
+      "rssMiB": 683.359375,
+      "lifetimeCpuPercent": 1,
+      "cpuSeconds": 8.020000000000001,
+      "intervalCpuPercent": 0.9852595645622673
+    },
+    {
+      "elapsedSeconds": 244.201495584,
+      "processes": 13,
+      "rssMiB": 672.359375,
+      "lifetimeCpuPercent": 0.2,
+      "cpuSeconds": 8.040000000000001,
+      "intervalCpuPercent": 0.39440363587600985
+    },
+    {
+      "elapsedSeconds": 249.280912334,
+      "processes": 13,
+      "rssMiB": 594.5,
+      "lifetimeCpuPercent": 0.1,
+      "cpuSeconds": 8.07,
+      "intervalCpuPercent": 0.5906189918360112
+    },
+    {
+      "elapsedSeconds": 254.34838120900002,
+      "processes": 13,
+      "rssMiB": 593.90625,
+      "lifetimeCpuPercent": 0.1,
+      "cpuSeconds": 8.08,
+      "intervalCpuPercent": 0.19733717654062008
+    },
+    {
+      "elapsedSeconds": 259.444311834,
+      "processes": 13,
+      "rssMiB": 501.078125,
+      "lifetimeCpuPercent": 1.7,
+      "cpuSeconds": 8.11,
+      "intervalCpuPercent": 0.5887050316741586
+    },
+    {
+      "elapsedSeconds": 264.519132459,
+      "processes": 13,
+      "rssMiB": 497.515625,
+      "lifetimeCpuPercent": 0.1,
+      "cpuSeconds": 8.16,
+      "intervalCpuPercent": 0.9852564985979377
+    },
+    {
+      "elapsedSeconds": 269.58967245900004,
+      "processes": 13,
+      "rssMiB": 506.953125,
+      "lifetimeCpuPercent": 0.1,
+      "cpuSeconds": 8.21,
+      "intervalCpuPercent": 0.986088266732936
+    },
+    {
+      "elapsedSeconds": 274.666007542,
+      "processes": 13,
+      "rssMiB": 520.546875,
+      "lifetimeCpuPercent": 0.30000000000000004,
+      "cpuSeconds": 8.299999999999999,
+      "intervalCpuPercent": 1.7729326084363024
+    },
+    {
+      "elapsedSeconds": 279.74583945899997,
+      "processes": 13,
+      "rssMiB": 513,
+      "lifetimeCpuPercent": 0.30000000000000004,
+      "cpuSeconds": 8.309999999999999,
+      "intervalCpuPercent": 0.1968569071455722
+    },
+    {
+      "elapsedSeconds": 284.82827175,
+      "processes": 13,
+      "rssMiB": 507.78125,
+      "lifetimeCpuPercent": 0.1,
+      "cpuSeconds": 8.34,
+      "intervalCpuPercent": 0.5902685620254129
+    },
+    {
+      "elapsedSeconds": 289.913595834,
+      "processes": 13,
+      "rssMiB": 512.53125,
+      "lifetimeCpuPercent": 0.1,
+      "cpuSeconds": 8.37,
+      "intervalCpuPercent": 0.5899329030845596
+    },
+    {
+      "elapsedSeconds": 295.216362375,
+      "processes": 13,
+      "rssMiB": 491.3125,
+      "lifetimeCpuPercent": 0.1,
+      "cpuSeconds": 8.430000000000001,
+      "intervalCpuPercent": 1.1314848492026386
+    },
+    {
+      "elapsedSeconds": 300.309132917,
+      "processes": 13,
+      "rssMiB": 520.671875,
+      "lifetimeCpuPercent": 0.1,
+      "cpuSeconds": 8.510000000000002,
+      "intervalCpuPercent": 1.5708542008763517
+    }
+  ],
+  "summary": {
+    "medianSwitchRequestMs": 12.538416000000325,
+    "p95SwitchRequestMs": 16.340707999999722,
+    "meanIdleCpuPercent": 1.4043718488441017,
+    "meanIdleRssMiB": 754.7092161016949,
+    "lastIdleRssMiB": 520.671875,
+    "idleDurationSeconds": 300.309132917
+  }
+}

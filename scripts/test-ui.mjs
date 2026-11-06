@@ -63,6 +63,10 @@ try {
   results.push({ test: 'T05 sidebar selects mapped service', status: 'PASS AUTOMATICO' });
   await pages[0].bringToFront();
   await pages[0].keyboard.press('Meta+3');
+  for (let attempt = 0; attempt < 40; attempt++) {
+    if ((await control.evaluate(() => chrome.tabs.query({ active: true }))).some(t => t.id === stored.mapping.fastmail)) break;
+    await new Promise(resolve => setTimeout(resolve, 50));
+  }
   assert((await control.evaluate(() => chrome.tabs.query({ active: true }))).some(t => t.id === stored.mapping.fastmail));
   results.push({ test: 'T05 native Cmd+3 switches to existing Fastmail tab', status: 'PASS AUTOMATICO' });
   await send({ type: 'hide' });

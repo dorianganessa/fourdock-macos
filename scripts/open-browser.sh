@@ -8,4 +8,9 @@ mkdir -p "$PROFILE"
 chmod 700 "$PROFILE"
 echo 'In chrome://extensions: enable Developer mode, Load unpacked, select:'
 echo "$PWD/extension"
-exec "$CHROME" "--user-data-dir=$PROFILE" --no-first-run --no-default-browser-check chrome://extensions/ >/dev/null 2>&1
+if [ "${1:-}" = "--auth-probe" ]; then
+  # Same signed runtime/profile as the extension-only workspace; no API overrides.
+  exec "$CHROME" "--user-data-dir=$PROFILE" --no-first-run --no-default-browser-check --new-window https://web.whatsapp.com/ https://mail.google.com/ >/dev/null 2>&1
+else
+  exec "$CHROME" "--user-data-dir=$PROFILE" --no-first-run --no-default-browser-check chrome://extensions/ >/dev/null 2>&1
+fi

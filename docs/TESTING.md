@@ -11,7 +11,7 @@ Sanitized automated results: [evidence/ui-results.json](evidence/ui-results.json
 
 | ID | Procedure / expected result | State | Observed evidence / next action |
 |---|---|---|---|
-| T01 | Fresh WhatsApp → QR → actual passkey → chats → restart persists | BLOCCATO | User must identify Mac/phone prompt and perform official login. Entitlement inspection does not prove root cause or fix |
+| T01 | Fresh WhatsApp → QR → actual passkey → chats → restart persists | FAIL | Official Chrome probe hangs during QR linking, then phone reports inability to link before passkey. Capacity excluded; existing regular browser session works. One official phone-number test pending; see AUTHENTICATION.md |
 | T02 | Telegram login → restart persists | NON ESEGUITO | Official /k/ variant prepared; user login then restart |
 | T03 | Fastmail login + MFA → restart persists | NON ESEGUITO | User login then restart |
 | T04 | Work Gmail + SSO/MFA, redirect/popup → restart persists | BLOCCATO | User login required in dedicated signed Chrome; company policy may reject the profile |
@@ -23,7 +23,7 @@ Sanitized automated results: [evidence/ui-results.json](evidence/ui-results.json
 | T10 | Offline/online, sleep/wake, isolated failure recovery | NON ESEGUITO | Fixture offline/online preserves draft; scoped reload preserves other services; origin storage survives. Physical sleep/wake and actual service recovery pending |
 | T11 | Clipboard, zoom, focus, resize, themes, keyboard | NON ESEGUITO | Fixture zoom, saved dark preference and keyboard selection pass; synthetic screenshot inspected. Clipboard, real layouts, small windows and accessibility pending |
 | T12 | Install/open packaged build on target Mac; timely permissions | BLOCCATO | Swift compiled and signed; first native execution rejected by AMFI -423; executable subsequently absent. Managed Mac confirmed; no signing identity. Need approved signing/IT authorization |
-| T13 | Clean clone build/test; GitHub macOS workflows/artifacts | NON ESEGUITO | Local JavaScript checks and fixtures pass. Workflow configured for arm64/Intel; record actual run before passing |
+| T13 | Clean clone build/test; GitHub macOS workflows/artifacts | FAIL | Initial arm64 CI passes clean checkout/install/build/native protocol/UI and artifact upload. Intel build/protocol pass; immediate keyboard assertion fails. Added bounded wait for selection; verify next run |
 
 ## Automated procedures and observations
 

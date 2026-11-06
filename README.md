@@ -3,6 +3,8 @@
 A small, local workspace for WhatsApp, Telegram, Fastmail and work Gmail.
 **Authentication prototype — not yet ready for daily use.** The actual WhatsApp
 post-QR passkey and corporate Gmail SSO/MFA require verification by the account owner.
+The first owner test in full Chrome failed at QR linking, before the passkey.
+Changing engines has **not** demonstrated a fix. See [investigation](docs/AUTHENTICATION.md).
 
 Fourdock uses **official Google Chrome**, a dedicated browser profile, an extension
 and a small Swift launcher. Sites run as top-level browser tabs. Chrome keeps its
@@ -78,6 +80,16 @@ a macOS desktop session. `npm run benchmark` measures three fixture startups,
 50 switches, then five minutes of idle browser resources; see [method](docs/PERFORMANCE.md).
 
 ## Extension-only fallback
+
+For the smallest real authentication check, before installing the extension:
+
+```sh
+bash scripts/open-browser.sh --auth-probe
+```
+
+This opens WhatsApp and Gmail in official Chrome's dedicated probe profile. Test
+QR + the actual passkey and company SSO/MFA yourself. Runtime success is only the
+first gate; subsequently verify the installed extension in the same profile.
 
 This path works independently of the blocked native launcher and still lets you
 test the actual authentication in the full, signed browser:
