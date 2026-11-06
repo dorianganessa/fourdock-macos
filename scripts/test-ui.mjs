@@ -19,10 +19,19 @@ try {
   const control = await context.newPage();
   await control.goto(`chrome-extension://${extensionId}/options.html`);
   const send = message => control.evaluate(m => chrome.runtime.sendMessage(m), message);
+  // Model the already-authenticated runtime probe with a synthetic live document.
+  // Workspace creation must adopt this exact tab and preserve its unsent draft.
+  const probe = await context.newPage(); await probe.goto('https://web.whatsapp.com/');
+  await probe.locator('#draft').fill('synthetic probe draft');
+  const probeIdentity = await probe.evaluate(() => window.loadIdentity);
   const launch = await send({ type: 'launch' });
   assert(!launch?.error, JSON.stringify(launch));
   const stored = await control.evaluate(() => chrome.storage.local.get(['mapping', 'workspaceId']));
   assert.equal(Object.keys(stored.mapping).length, 4);
+  assert.equal(await probe.evaluate(() => window.loadIdentity), probeIdentity);
+  assert.equal(await probe.locator('#draft').inputValue(), 'synthetic probe draft');
+  assert.equal(context.pages().filter(p => p.url().startsWith('https://web.whatsapp.com/')).length, 1);
+  results.push({ test: 'adopt existing authenticated-probe fixture tab without reload, duplicate or draft loss', status: 'PASS AUTOMATICO' });
   const urls = ['https://web.whatsapp.com/', 'https://web.telegram.org/k/', 'https://app.fastmail.com/', 'https://mail.google.com/'];
   for (let attempt = 0; attempt < 100 && context.pages().length < 6; attempt++) await new Promise(resolve => setTimeout(resolve, 100));
   // First navigations from the browser extension can precede automation target

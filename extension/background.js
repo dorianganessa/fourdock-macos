@@ -59,16 +59,29 @@ async function ensureWorkspace() {
   if (!workspaceId) {
     // Chrome popup/app windows contain one tab; a normal window is required to
     // keep all four top-level service documents alive without unsupported APIs.
-    const window = await chrome.windows.create({ type: 'normal', url: SERVICES.map(s => s.url), width: 1180, height: 820, focused: true });
+    // Reuse authenticated probe tabs in this dedicated profile. Moving a tab
+    // preserves the live document, avoids duplicate WhatsApp instances and keeps
+    // drafts; no cookie transfer or authentication API interception is involved.
+    const open = await chrome.tabs.query({});
+    const existing = Object.fromEntries(SERVICES.map(s => [s.id, open.find(t => serviceForURL(t.url)?.id === s.id)]));
+    const anchor = SERVICES.find(s => existing[s.id]);
+    const window = await chrome.windows.create({ type: 'normal', ...(anchor ? { tabId: existing[anchor.id].id } : { url: SERVICES[0].url }), width: 1180, height: 820, focused: true });
     workspaceId = window.id;
-    SERVICES.forEach((s, i) => { mapping[s.id] = window.tabs[i].id; });
+    mapping = anchor ? { [anchor.id]: existing[anchor.id].id } : { [SERVICES[0].id]: window.tabs[0].id };
+    for (const [index, service] of SERVICES.entries()) {
+      let tabId = mapping[service.id] || existing[service.id]?.id;
+      if (tabId) await chrome.tabs.move(tabId, { windowId: workspaceId, index });
+      else tabId = (await chrome.tabs.create({ windowId: workspaceId, url: service.url, active: false, index })).id;
+      mapping[service.id] = tabId;
+    }
     await chrome.storage.local.set({ mapping, workspaceId });
-    for (const tab of window.tabs) {
-      await chrome.tabs.update(tab.id, { autoDiscardable: false });
+    for (const tabId of Object.values(mapping)) {
+      await chrome.tabs.update(tabId, { autoDiscardable: false });
       // A newly-created tab may still have an empty URL. Apply zoom on completion
       // when the permitted service origin exists, without failing workspace setup.
-      await chrome.tabs.setZoom(tab.id, prefs.zoom).catch(() => {});
+      await chrome.tabs.setZoom(tabId, prefs.zoom).catch(() => {});
     }
+    await chrome.tabs.update(mapping.whatsapp, { active: true });
   }
   return mapping;
 }
