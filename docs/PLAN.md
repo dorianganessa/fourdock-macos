@@ -24,7 +24,7 @@ Commits use the owner's verified GitHub noreply identity.
   non-discardable tabs, title-only badges, preferences, diagnostics, scoped reload,
   browser attachments and optional Swift bridge implemented. Native execution on
   target blocked by signing policy; window-close behavior remains a functional gap.
-- [ ] 3: Four logic tests and twelve fixture checks pass on both macOS CI
+- [ ] 3: Four logic tests and fourteen fixture checks pass on both macOS CI
   architectures. Real four-account logins, OS notifications, attachments,
   sleep/wake and target packaged-app behavior remain unverified.
 - [ ] 4: Three fixture startups, 50 switches and 300.31 seconds idle measured.
@@ -69,12 +69,12 @@ Do not copy cookies, delete passkeys, reset profiles or log out working devices.
 
 ## Verified builds and artifacts
 
-Artifact source commit: 409647319f51f18312b10cfc8deacd5b948b068e.
+Artifact source commit: be47d4653061e754eb906b2b1b20e695b0bd6e84.
 Green workflow (both architectures):
-https://github.com/dorianganessa/fourdock-macos/actions/runs/42247664905.
+https://github.com/dorianganessa/fourdock-macos/actions/runs/42255453874.
 
 CI performs clean checkout, npm ci, syntax/identity checks, four logic tests,
-Swift build, ad-hoc signature verification, native framing self-check, twelve
+Swift build, ad-hoc signature verification, native framing self-check, fourteen
 headful browser fixture checks, and artifact upload. arm64: macos-26; Intel:
 macos-15-intel. An earlier Intel immediate keyboard assertion was corrected with
 a bounded wait for observed selection. The macos-15 arm64 pool stalled in queue;
@@ -85,11 +85,11 @@ byte-for-byte and signatures verified without execution on the target.
 
 | Archive | ZIP bytes | Uncompressed bytes | SHA-256 |
 |---|---:|---:|---|
-| Fourdock-macOS-arm64.zip | 61543 | 211601 | c2b79286d91f48373219a94b278d068cafabad7cf093a1b021a14e0fb9c9c952 |
-| Fourdock-macOS-x86_64.zip | 60670 | 172897 | 5b7285e2254555d1c0986dd6edc9e8f64958ef70108d2b214541f4d455a3e0c4 |
+| Fourdock-macOS-arm64.zip | 61889 | 212351 | a2a73619dee57a574414c1555a5132e2993facbcbdbcb20271e8ba6878f097fa |
+| Fourdock-macOS-x86_64.zip | 61005 | 173647 | ddd78a5e70ea6fd907410c4646555c3ae7175cadcc184fd42e36a4e964b8bea9 |
 
 These packages contain the launcher/extension/notices; official Chrome is required
-separately. Prototype delivery tag: v0.1.0-prototype. SHA256SUMS and build
+separately. Prototype delivery tag: v0.1.1-prototype. SHA256SUMS and build
 provenance accompany delivery. No Developer ID signature/notarization is claimed.
 No browser profile, credential, account content or private screenshot is packaged.
 
@@ -116,3 +116,28 @@ authenticated app costs. No performance optimization has been claimed.
    native bridge on target, then resolve close-to-hide/Chrome identity constraints
    through a supported architecture. Update TESTING.md and measure authenticated
    service costs before declaring daily-use readiness.
+
+## Final 0.1.1 verification checkpoint
+
+Both CI hosts also opened the actual packaged AppKit window, observed it through
+WindowServer metadata, checked the user-private socket and scoped host manifest,
+and delivered a framed native-host message into that running process. Evidence:
+docs/evidence/native-ci.json. This is a native CI execution check, not target-Mac
+approval or an account login test.
+
+Compilation-only packaging also succeeded on the managed Mac with
+FOURDOCK_BUILD_ONLY=1 npm run build. This does not execute the blocked binary.
+The default CI path still executes the native self-check and GUI/IPC test.
+
+0.1.1 corrects WhatsApp's absolute-root overlap with the rail, confirmed using only
+public unauthenticated geometry: at 1280px width, service left=68, rail right=68,
+service right=1280. It uses a closed rail shadow root, exercises buttons through
+accessibility, and initializes title counts/selected identity on live-tab adoption.
+No authenticated page contents or QR images were captured. The historical fixture
+performance baseline predates live-tab adoption and these layout changes.
+
+Owner integration feedback remains pending. If an earlier unpacked extension was
+already loaded, Reload it in chrome://extensions, then refresh service tabs only
+after the owner preserves any unsent drafts. Never automatically reload their
+pages or clear authentication data. Final delivery:
+https://github.com/dorianganessa/fourdock-macos/releases/tag/v0.1.1-prototype.

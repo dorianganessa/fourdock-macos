@@ -23,7 +23,7 @@ Sanitized automated results: [evidence/ui-results.json](evidence/ui-results.json
 | T10 | Offline/online, sleep/wake, isolated failure recovery | NON ESEGUITO | Fixture offline/online preserves draft; scoped reload preserves other services; origin storage survives. Physical sleep/wake and actual service recovery pending |
 | T11 | Clipboard, zoom, focus, resize, themes, keyboard | NON ESEGUITO | Fixture zoom, saved dark preference and keyboard selection pass; synthetic screenshot inspected. Clipboard, real layouts, small windows and accessibility pending |
 | T12 | Install/open packaged build on target Mac; timely permissions | BLOCCATO | Swift compiled and signed; first native execution rejected by AMFI -423; executable subsequently absent. Managed Mac confirmed; no signing identity. Need approved signing/IT authorization |
-| T13 | Clean clone build/test; GitHub macOS workflows/artifacts | PASS AUTOMATICO | Both jobs of workflow 42247664905 passed clean checkout/install/build/protocol and twelve UI fixture checks. Inspected ZIPs and verified signatures without target execution. Evidence: ci-arm64-ui-results.json and ci-x86_64-ui-results.json |
+| T13 | Clean clone build/test; GitHub macOS workflows/artifacts | PASS AUTOMATICO | Both jobs of workflow 42255453874 passed clean checkout/install/build/protocol, actual native window/IPC checks and fourteen browser fixture checks. Inspected ZIPs and verified signatures without target execution. Evidence: ci-arm64-ui-results.json and ci-x86_64-ui-results.json |
 
 ## Automated procedures and observations
 
@@ -67,3 +67,22 @@ a real sleep/wake without sending the drafts. Keep account screenshots private.
 - Close loses tabs: use explicit Hide for the prototype. Meeting close-to-hide needs
   supported browser-host integration or a native architecture with available passkey
   capability. The original requirement remains failed, not waived.
+
+## Additional 0.1.1 native and layout evidence
+
+- PASS AUTOMATICO, 2026-11-06, macos-26 arm64 and macos-15-intel: launch actual
+  packaged app, observe its setup window on screen using basic WindowServer
+  metadata, verify 0600 IPC socket, verify host manifest scope/path, deliver framed
+  hello through the separate native host and observe the real app's marker write.
+  See native-ci.json and workflow 42255453874. No Screen Recording/Accessibility
+  permission, account content or screenshots are needed for this observation.
+- PASS AUTOMATICO: preserve a live tab/draft while adopting it; initialize its
+  explicit title count immediately, without waiting for another title event.
+- PASS AUTOMATICO: WhatsApp absolute-root fixture does not overlap the 68px rail.
+  Public unauthenticated WhatsApp was also checked: x=68 and right=1280 at width
+  1280 after the CSS fix. No QR image was retained. Authenticated layout remains
+  NON ESEGUITO pending owner feedback.
+- PASS AUTOMATICO: sidebar button is identified/clicked through the browser
+  accessibility tree while the rail's shadow root remains closed.
+- Target native opening remains BLOCCATO; compile/sign/ZIP only succeeded with
+  FOURDOCK_BUILD_ONLY=1. Do not substitute this result for execution or login.

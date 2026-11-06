@@ -1,5 +1,5 @@
 {
-  "date": "2026-11-06T15:57:32.383Z",
+  "date": "2026-11-06T16:47:39.241Z",
   "environment": "darwin arm64",
   "fixture": true,
   "results": [
@@ -8,10 +8,18 @@
       "status": "PASS AUTOMATICO"
     },
     {
+      "test": "existing service title count initializes badge state when its live tab is adopted",
+      "status": "PASS AUTOMATICO"
+    },
+    {
+      "test": "WhatsApp absolute application root stays beside sidebar without clipping or overlap",
+      "status": "PASS AUTOMATICO"
+    },
+    {
       "test": "T05 synthetic 50 switches and draft preservation",
       "status": "PASS AUTOMATICO",
-      "medianMs": 80.52054099999987,
-      "p95Ms": 193.58070899999984
+      "medianMs": 53.635583000001134,
+      "p95Ms": 149.8834169999991
     },
     {
       "test": "T05 sidebar selects mapped service",

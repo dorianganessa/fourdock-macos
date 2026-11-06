@@ -94,3 +94,31 @@ References:
 - https://developer.chrome.com/docs/extensions/develop/concepts/native-messaging
 - https://chromium.googlesource.com/chromium/src/+/HEAD/chrome/common/chrome_paths.cc
 - https://docs.github.com/en/actions/reference/runners/github-hosted-runners
+
+## 2026-11-06 — Live-tab initialization and actual service geometry
+
+The official phone-number login was reported successful. Workspace creation now
+adopts existing service tabs in the dedicated profile without reloading, copying
+cookies or resetting unsent drafts. It initializes title counts from existing tab
+metadata and broadcasts each tab's service identity so the selected rail item is
+correct even when the content script loaded before the tab became managed.
+
+Public unauthenticated WhatsApp geometry exposed a real layout defect: its #app
+is an absolute viewport root, so HTML padding alone left it at x=0 with full 1280px
+width under the 68px rail. A small WhatsApp-specific CSS adapter now positions it
+at x=68, right edge 1280, verified on the public page without reading account data
+or recording QR images. Fixtures reproduce the absolute-root layout and assert no
+overlap. Fastmail's public roots already fit; Telegram's full-width overlay is a
+separate overlay rather than an application root, so no speculative adapter was
+applied there. Authenticated layouts remain owner-verification gates.
+
+The rail uses a closed shadow root to keep other services' badge text out of the
+site's ordinary DOM queries. Browser UI tests operate its buttons through Chrome's
+accessibility tree instead of opening that DOM solely for test convenience.
+
+FOURDOCK_BUILD_ONLY=1 explicitly omits execution checks while retaining compilation,
+signature verification and ZIP creation. This path succeeded on the managed Mac;
+it grants no execution trust. Default CI builds still execute the native self-check,
+and a separate test observes the real packaged AppKit window through WindowServer
+metadata and delivers a framed message through the native host into that process.
+No Screen Recording or Accessibility permission is requested for that observation.

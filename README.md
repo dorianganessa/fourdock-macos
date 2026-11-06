@@ -27,7 +27,7 @@ No backend, Fourdock account, cookie import or private service API is involved.
 ## Install and authenticate
 
 Prototype ZIPs are available on the
-[prerelease page](https://github.com/dorianganessa/fourdock-macos/releases/tag/v0.1.0-prototype).
+[prerelease page](https://github.com/dorianganessa/fourdock-macos/releases/tag/v0.1.1-prototype).
 Download a `Fourdock-macOS-arm64.zip` or `Fourdock-macOS-x86_64.zip` from there or the
 [macOS workflow artifacts](https://github.com/dorianganessa/fourdock-macos/actions/workflows/macos.yml).
 Extract it, move `Fourdock.app` to `~/Applications`, and open it. These are ad-hoc
@@ -107,6 +107,12 @@ If the reported QR failure recurs, the official phone-number method has a report
 successful result in this profile. Keep numbers and codes in official UI only.
 The extension adopts existing service tabs without reloading them when it creates
 the workspace. No export or import of browser authentication data occurs.
+
+If you already loaded an earlier development version, use **Reload** on Fourdock
+in chrome://extensions. Save any unsent drafts before refreshing existing service
+tabs to apply updated content scripts and CSS. Fourdock does not automatically
+reload your service pages during an extension update. Verify login persistence
+after refreshing; do not clear browser data or remove the working linked device.
 
 This path works independently of the blocked native launcher and still lets you
 test the actual authentication in the full, signed browser:

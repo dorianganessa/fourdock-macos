@@ -20,6 +20,10 @@ failed hypotheses ask the user for context. Verify actual writes after schema ed
 Check Notion MCP connectivity before Notion work. No delegated agents requested.
 
 Commands: npm ci; npm run check; npm test; npm run build; npm start.
+On this managed target use FOURDOCK_BUILD_ONLY=1 npm run build to compile/package
+without executing the blocked binary. Do not run npm start or native tests here
+until an accepted signature/IT authorization is available. Native GUI/IPC checks
+run only on CI (scripts/test-native.mjs is guarded accordingly).
 Browser fixtures: npx playwright install chromium; npm run test:ui; npm run benchmark.
 Set FOURDOCK_TEST_BROWSER to a compatible testing browser if already installed.
 Before publication: stage intended files; npm run audit; inspect staged diff and
@@ -51,3 +55,11 @@ chat/passkey confirmation. Extension now adopts existing service tabs without
 reload; twelve UI fixture checks pass on both CI architectures at 4096473. Owner
 was asked to Load unpacked in the same dedicated profile and Open workspace.
 No QR/passkey gate is passed; no account contents were inspected by the agent.
+
+Final code checkpoint: 0.1.1, be47d46; workflow 42255453874 passes both architectures,
+including actual packaged AppKit window observation, private native host IPC and
+fourteen browser fixtures. WhatsApp absolute root is offset beside the rail;
+closed rail is tested through accessibility. Initial badges/selected identity are
+seeded when existing tabs are adopted. Release 0.1.1 is the delivery target.
+Owner's exact chat/passkey and extension-integration feedback is still pending.
+Do not infer a QR/passkey pass from successful official phone-number linking.

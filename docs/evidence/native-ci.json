@@ -1,0 +1,23 @@
+{
+  "date": "2026-11-06",
+  "sourceCommit": "be47d4653061e754eb906b2b1b20e695b0bd6e84",
+  "workflow": "https://github.com/dorianganessa/fourdock-macos/actions/runs/42255453874",
+  "hosts": [
+    {
+      "runner": "macos-26 arm64",
+      "nativeFraming": "PASS AUTOMATICO",
+      "packagedWindowObserved": "PASS AUTOMATICO",
+      "nativeHostRegistrationAndIPC": "PASS AUTOMATICO",
+      "browserFixtureChecks": 14
+    },
+    {
+      "runner": "macos-15-intel x86_64",
+      "nativeFraming": "PASS AUTOMATICO",
+      "packagedWindowObserved": "PASS AUTOMATICO",
+      "nativeHostRegistrationAndIPC": "PASS AUTOMATICO",
+      "browserFixtureChecks": 14
+    }
+  ],
+  "managedTargetExecution": "BLOCCATO",
+  "accountAuthenticationNotTestedByCI": true
+}
