@@ -32,6 +32,8 @@ try {
   assert.equal(await probe.locator('#draft').inputValue(), 'synthetic probe draft');
   assert.equal(context.pages().filter(p => p.url().startsWith('https://web.whatsapp.com/')).length, 1);
   results.push({ test: 'adopt existing authenticated-probe fixture tab without reload, duplicate or draft loss', status: 'PASS AUTOMATICO' });
+  assert.equal((await send({ type: 'state' })).badges.whatsapp, 3);
+  results.push({ test: 'existing service title count initializes badge state when its live tab is adopted', status: 'PASS AUTOMATICO' });
   const urls = ['https://web.whatsapp.com/', 'https://web.telegram.org/k/', 'https://app.fastmail.com/', 'https://mail.google.com/'];
   for (let attempt = 0; attempt < 100 && context.pages().length < 6; attempt++) await new Promise(resolve => setTimeout(resolve, 100));
   // First navigations from the browser extension can precede automation target

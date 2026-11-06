@@ -75,13 +75,16 @@ async function ensureWorkspace() {
       mapping[service.id] = tabId;
     }
     await chrome.storage.local.set({ mapping, workspaceId });
-    for (const tabId of Object.values(mapping)) {
+    for (const [id, tabId] of Object.entries(mapping)) {
+      const tab = await chrome.tabs.get(tabId);
+      unread[id] = serviceForURL(tab.url)?.id === id ? unreadFromTitle(tab.title || '', id) : 0;
       await chrome.tabs.update(tabId, { autoDiscardable: false });
       // A newly-created tab may still have an empty URL. Apply zoom on completion
       // when the permitted service origin exists, without failing workspace setup.
       await chrome.tabs.setZoom(tabId, prefs.zoom).catch(() => {});
     }
     await chrome.tabs.update(mapping.whatsapp, { active: true });
+    await broadcast();
   }
   return mapping;
 }
@@ -107,7 +110,7 @@ async function broadcast() {
   const total = Object.values(badges).reduce((a, b) => a + b, 0);
   await chrome.action.setBadgeText({ text: total ? String(Math.min(total, 9999)) : '' });
   native({ type: 'badge', count: total });
-  await Promise.all(Object.values(mapping).map(id => chrome.tabs.sendMessage(id, { type: 'state', badges, prefs }).catch(() => {})));
+  await Promise.all(Object.entries(mapping).map(([service, id]) => chrome.tabs.sendMessage(id, { type: 'state', service, badges, prefs }).catch(() => {})));
 }
 
 chrome.tabs.onUpdated.addListener((tabId, change, tab) => {
