@@ -50,7 +50,7 @@ try {
     assert(page, `Missing service ${url}`);
     await page.goto(url);
     await page.locator('#draft').fill(`synthetic draft ${url}`);
-    await page.locator('#fourdock-sidebar button').first().waitFor();
+    await page.locator('#fourdock-sidebar').waitFor({ state: 'attached' });
     pages.push(page);
   }
   const layout = await pages[0].evaluate(() => {
@@ -73,7 +73,18 @@ try {
     assert.equal(await pages[i].locator('#draft').inputValue(), `synthetic draft ${urls[i]}`);
   }
   results.push({ test: 'T05 synthetic 50 switches and draft preservation', status: 'PASS AUTOMATICO', medianMs: latencies.toSorted((a,b) => a-b)[25], p95Ms: latencies.toSorted((a,b) => a-b)[47] });
-  await pages[0].locator('#fourdock-sidebar button[aria-label^="Gmail"]').click();
+  await pages[0].bringToFront();
+  // Use the browser accessibility tree rather than exposing the private rail's
+  // shadow DOM merely for the convenience of a CSS test selector.
+  const accessibility = await context.newCDPSession(pages[0]);
+  await accessibility.send('Accessibility.enable');
+  const tree = await accessibility.send('Accessibility.getFullAXTree');
+  const gmailButton = tree.nodes.find(n => n.role?.value === 'button' && n.name?.value?.startsWith('Gmail'));
+  assert(gmailButton?.backendDOMNodeId, 'Gmail service button must be accessible');
+  const { model } = await accessibility.send('DOM.getBoxModel', { backendNodeId: gmailButton.backendDOMNodeId });
+  const q = model.content;
+  await pages[0].mouse.click((q[0] + q[2]) / 2, (q[1] + q[5]) / 2);
+  await accessibility.detach();
   const active = await control.evaluate(() => chrome.tabs.query({ active: true }));
   assert(active.some(t => t.id === stored.mapping.gmail));
   results.push({ test: 'T05 sidebar selects mapped service', status: 'PASS AUTOMATICO' });

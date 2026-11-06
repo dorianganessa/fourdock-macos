@@ -7,7 +7,8 @@
   const host = document.createElement('aside');
   host.id = 'fourdock-sidebar';
   host.style.cssText = 'position:fixed!important;inset:0 auto 0 0!important;width:68px!important;z-index:2147483647!important;display:block!important;transform:none!important;';
-  const shadow = host.attachShadow({ mode: 'open' });
+  // Keep cross-service badge text out of the site's ordinary DOM queries.
+  const shadow = host.attachShadow({ mode: 'closed' });
   const style = document.createElement('style');
   style.textContent = `
     :host { color-scheme:light dark; font:13px -apple-system,BlinkMacSystemFont,sans-serif; }
