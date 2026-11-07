@@ -1,13 +1,16 @@
 # Fourdock for macOS
 
 A small, local workspace for WhatsApp, Telegram, Fastmail and work Gmail.
-**Authentication prototype — not yet ready for daily use.** The actual WhatsApp
-post-QR passkey and corporate Gmail SSO/MFA require verification by the account owner.
+**Prototype — not yet ready for daily use.** On 2026-11-07 the owner confirmed
+all four account logins and session persistence after a full dedicated-browser
+restart. Notifications, attachments, recovery and native target approval remain
+acceptance gates.
 The first owner test in full Chrome failed at QR linking, before the passkey.
 The owner subsequently reported success with official **Link with phone number**.
 On 2026-11-07 the owner confirmed that the extension workspace recovers WhatsApp
-already linked and opens the other three services. Their logins are not yet verified.
-The original QR/passkey flow and restart persistence remain unverified. See
+already linked and opens the other three services. Login and restart persistence
+were then confirmed for all four. The original WhatsApp QR/passkey flow remains
+unverified. See
 [investigation](docs/AUTHENTICATION.md).
 
 Fourdock uses **official Google Chrome**, a dedicated browser profile, an extension
@@ -165,8 +168,9 @@ additional accounts on the same service need a future profile model.
 
 The native build was blocked by this Mac's execution policy. Alternate WhatsApp
 authentication and session access in the extension workspace are owner-confirmed.
-Other account logins, full restart persistence, background notification delivery,
-real attachment workflows, sleep/wake and prolonged usage remain unverified.
+All four logins and full dedicated-browser restart persistence are owner-confirmed.
+Background notification delivery, real attachment workflows, sleep/wake and
+prolonged usage remain unverified.
 Audio/video calls are out of scope.
 Follow [the test matrix](docs/TESTING.md), [decisions](docs/DECISIONS.md), and
 [the handoff plan](docs/PLAN.md) for actual evidence and the next actions.

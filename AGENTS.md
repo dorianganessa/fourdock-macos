@@ -41,23 +41,23 @@ Do not retry native execution to bypass the policy or change global security.
 Use CI for native build/self-checks; that does not prove acceptance on this Mac.
 Extension-only work may continue subject to device extension policy.
 
-Current authentication state (owner report, 2026-11-07): official phone-number
-linking succeeded, and the extension workspace recovers WhatsApp already linked
-and opens Telegram, Fastmail and Gmail. T01-alt is PASS MANUALE CONFERMATO for
-alternate login/workspace session access. This does not prove the other logins,
-full-restart persistence, notifications, drafts or QR/passkey acceptance.
-Original Ferdium passkey confirmation and the separate Chrome QR failure remain
-unresolved. Capacity was excluded. Do not repeat pairing or touch the existing
-regular Chrome/Ferdium profiles. Do not inspect account contents while the owner
-authenticates. Next input requested: Telegram/Fastmail/work Gmail login outcomes,
-including SSO/MFA, entered only in official UI.
+Current authentication state (owner reports, 2026-11-07): all four services are
+logged in, and all return authenticated after complete exit/reopen of the dedicated
+Chrome instance. T01-alt (official phone-number path), T02, T03 and T04 are
+PASS MANUALE CONFERMATO within that scope. SSO/MFA/popup details were not reported.
+Original WhatsApp QR/passkey acceptance is still open; do not repeat pairing,
+logout or profile reset. Do not touch existing regular Chrome/Ferdium profiles.
+No credentials or account contents were inspected. Draft preservation and valid
+incoming background notifications are now requested from the owner. A self-message
+is not sufficient negative evidence for notification failure; use a genuine
+incoming event with settings enabled. The agent sends no real messages/mail.
 
 Final code checkpoint: 0.1.1, be47d46; workflow 42255453874 passes both architectures,
 including actual packaged AppKit window observation, private native host IPC and
 fourteen browser fixtures. WhatsApp absolute root is offset beside the rail;
 closed rail is tested through accessibility. Initial badges/selected identity are
 seeded when existing tabs are adopted. Release 0.1.1 is the delivery target.
-Owner confirmed extension recovery of the linked WhatsApp session and opening
-of all four services. Other account logins, passkey participation and restart
-persistence remain unverified.
+Owner confirmed all four logins and full-restart persistence. Original passkey
+participation, real drafts/notifications/attachments, physical sleep/wake and
+native target execution remain unverified.
 Do not infer a QR/passkey pass from successful official phone-number linking.

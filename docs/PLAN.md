@@ -19,16 +19,17 @@ Commits use the owner's verified GitHub noreply identity.
 - [ ] 1: Official capability investigation complete. QR linking failed in the signed
   Chrome probe before passkey. Alternate phone-number authentication and recovery
   of the already-linked WhatsApp session inside the extension workspace are now
-  owner-confirmed (2026-11-07). Passkey participation, full restart persistence
-  and work Gmail login remain unverified. No QR/passkey acceptance pass.
+  owner-confirmed (2026-11-07). All four account logins and full dedicated-browser
+  restart persistence are now confirmed. Original passkey participation is
+  unreported, and QR/passkey acceptance remains open.
 - [ ] 2: Four-service browser workspace, sidebar, Cmd+1–4, live-tab adoption,
   non-discardable tabs, title-only badges, preferences, diagnostics, scoped reload,
   browser attachments and optional Swift bridge implemented. Native execution on
   target blocked by signing policy; window-close behavior remains a functional gap.
 - [ ] 3: Four logic tests and fourteen fixture checks pass on both macOS CI
-  architectures. WhatsApp workspace integration is manually confirmed. Remaining
-  account logins, full restart, OS notifications, attachments, sleep/wake and
-  target native packaged-app behavior remain unverified.
+  architectures. All four account logins and full-restart persistence are manually
+  confirmed. Real drafts, OS notifications, attachments, sleep/wake and target
+  native packaged-app behavior remain unverified.
 - [ ] 4: Three fixture startups, 50 switches and 300.31 seconds idle measured.
   Real authenticated performance and prolonged usage remain unmeasured; no
   lightweight claim or Ferdium comparison.
@@ -63,9 +64,9 @@ Capacity excluded. Existing regular-browser session works and remains untouched.
 The official phone-number method was reported successful by the owner. On
 2026-11-07 the owner confirmed that the extension workspace recovers WhatsApp
 already linked and opens Telegram, Fastmail and Gmail. This verifies alternate
-WhatsApp authentication and workspace session access, not the other three logins,
-a full browser restart or the original QR/passkey flow. Passkey participation in
-the successful alternate flow remains unreported.
+WhatsApp authentication and workspace session access. The owner subsequently
+confirmed all four account logins and a complete dedicated-browser restart with
+all sessions intact. Original QR/passkey participation remains unreported.
 Do not inspect account pages/data while the owner authenticates. No messages sent.
 Do not copy cookies, delete passkeys, reset profiles or log out working devices.
 
@@ -107,17 +108,16 @@ authenticated app costs. No performance optimization has been claimed.
 
 ## Next three concrete actions
 
-1. Obtain Telegram, Fastmail and corporate Gmail full-login results from the owner,
-   including SSO/MFA when present. Their pages open, but authentication is not yet
-   confirmed. Keep the working WhatsApp session; no new pairing is needed.
-2. After those logins, have the owner preserve unsent drafts and check a controlled
-   full restart of the dedicated workspace; then controlled incoming notifications, synthetic
-   attachments and real network/sleep-wake checks. Never send to contacts without
-   explicit authorization. Keep QR/passkey acceptance separately failed/unverified.
-3. Obtain approved native signing/IT authorization, verify packaged-app opening and
-   native bridge on target, then resolve close-to-hide/Chrome identity constraints
-   through a supported architecture. Update TESTING.md and measure authenticated
-   service costs before declaring daily-use readiness.
+1. Obtain owner results for the requested unsent-draft/Cmd+1–4 check and a valid
+   incoming notification while minimized, including its click destination. No
+   pairing or login retries are needed for the already-working accounts.
+2. Prepare owner-only synthetic attachment preview/cancel/download checks, then
+   controlled offline/online and physical sleep/wake, preserving unsent drafts.
+   Do not send to contacts or manipulate security/network policy.
+3. After active checks finish and the owner leaves the four services idle, collect
+   300 seconds using the read-only real-workspace resource observer. Earlier
+   fixture startup/switch numbers remain separate. Native signing approval and
+   close-to-hide/Chrome identity constraints remain independent blockers.
 
 ## Final 0.1.1 verification checkpoint
 
@@ -139,7 +139,7 @@ No authenticated page contents or QR images were captured. The historical fixtur
 performance baseline predates live-tab adoption and these layout changes.
 
 Owner confirmed WhatsApp workspace recovery and all four service pages opening
-on 2026-11-07. Further login/persistence feedback remains pending. If an earlier
+on 2026-11-07. All logins and full-restart persistence were then owner-confirmed. If an earlier
 unpacked extension was
 already loaded, Reload it in chrome://extensions, then refresh service tabs only
 after the owner preserves any unsent drafts. Never automatically reload their
@@ -154,8 +154,9 @@ SHA256SUMS.txt and BUILD-PROVENANCE.json. Tag target / release source:
 Public anonymous ARM download succeeded and its SHA-256 matched the recorded hash.
 0.1.0 remains in history, marked superseded. Source tree is clean apart from this
 final receipt update. No real account acceptance gate has been silently passed.
-Next dependency: owner login results for the other three services and controlled
-full-restart persistence. Original QR/passkey acceptance remains open.
+Next dependency: owner draft/background-notification results. All four account
+logins and full-restart persistence are confirmed; original QR/passkey acceptance
+remains open.
 
 ## Owner verification, 2026-11-07
 
@@ -164,5 +165,18 @@ linked and opens the other three services, reported directly by the owner. No
 account content, identifiers or screenshots were requested or inspected. Scope:
 session access and service opening only. The owner has been asked to complete
 Telegram/Fastmail/work Gmail logins through official UI and report outcomes.
-The original QR/passkey gate, restart, drafts, notifications and real attachments
-have not been silently passed by this observation.
+This first observation did not cover QR/passkey, restart, drafts, notifications
+or real attachments. Restart was subsequently confirmed in the checkpoint below.
+
+## Owner verification, 2026-11-07 — all services and restart
+
+PASS MANUALE CONFERMATO: owner reported login completed for every service and
+successful authenticated return for all four after the requested full exit/reopen
+of the dedicated browser. Individual SSO/MFA/popup details were not reported.
+The original QR/passkey requirement remains open, and native target execution is
+still blocked. No account contents were inspected and no messages were sent.
+Next requested checks: unsent draft across service switching and a genuine
+incoming notification while minimized, with correct destination after clicking.
+An initial self-message notification suggestion was corrected; it is not a valid
+standalone negative test. Real-process measurement tooling is prepared; its short
+validation run was uncontrolled, not an idle benchmark, and remains private.

@@ -13,7 +13,8 @@
     "test:ui": "node scripts/test-ui.mjs",
     "check": "node scripts/check.mjs",
     "benchmark": "node scripts/benchmark.mjs",
-    "audit": "node scripts/audit.mjs"
+    "audit": "node scripts/audit.mjs",
+    "measure:workspace": "node scripts/measure-workspace.mjs"
   },
   "keywords": [],
   "author": "Adriano Sanges",

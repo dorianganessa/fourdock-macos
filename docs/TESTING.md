@@ -14,15 +14,15 @@ Sanitized automated results: [evidence/ui-results.json](evidence/ui-results.json
 
 | ID | Procedure / expected result | State | Observed evidence / next action |
 |---|---|---|---|
-| T01 | Fresh WhatsApp → QR → actual passkey → chats → restart persists | FAIL | QR probe failed before passkey. The alternate phone-number login and session access inside Fourdock are now confirmed separately; QR/passkey and full restart remain open |
-| T01-alt | Official phone-number login → existing WhatsApp session accessible in extension workspace | PASS MANUALE CONFERMATO | 2026-11-07, target Mac, owner confirms Fourdock recovers WhatsApp already linked. Passkey participation and full restart are not covered. Next: controlled persistence check after remaining logins |
-| T02 | Telegram login → restart persists | NON ESEGUITO | Owner confirmed the /k/ service opens in Fourdock on 2026-11-07. Full login and restart check pending |
-| T03 | Fastmail login + MFA → restart persists | NON ESEGUITO | Owner confirmed the service opens in Fourdock on 2026-11-07. Full login and restart check pending |
-| T04 | Work Gmail + SSO/MFA, redirect/popup → restart persists | BLOCCATO | Owner confirmed the service opens in Fourdock on 2026-11-07. Corporate login, SSO/MFA and restart results pending |
+| T01 | Fresh WhatsApp → QR → actual passkey → chats → restart persists | FAIL | QR probe failed before passkey. Alternate phone-number login and persistence after full restart are confirmed separately. The original QR/passkey path remains unresolved |
+| T01-alt | Official phone-number login → existing WhatsApp session accessible in extension workspace | PASS MANUALE CONFERMATO | 2026-11-07, target Mac, owner confirms Fourdock recovers WhatsApp already linked. The owner subsequently confirmed successful full dedicated-browser restart with all four sessions intact. Passkey participation is not covered |
+| T02 | Telegram login → restart persists | PASS MANUALE CONFERMATO | 2026-11-07, target Mac: owner confirms login completed and authenticated session returned after complete dedicated-browser exit/reopen. Next: drafts/notifications/attachments checks |
+| T03 | Fastmail login + MFA → restart persists | PASS MANUALE CONFERMATO | 2026-11-07, target Mac: owner confirms actual account login and session present after complete dedicated-browser exit/reopen. MFA details unreported; no forced alternate-factor test. Next: notifications/attachments |
+| T04 | Work Gmail + SSO/MFA, redirect/popup → restart persists | PASS MANUALE CONFERMATO | 2026-11-07, target Mac: owner confirms corporate account login and authenticated return after complete dedicated-browser exit/reopen. Individual SSO/MFA/popup paths unreported. Next: incoming-mail notifications and attachments |
 | T05 | 50 switches; no reload; drafts and shortcuts preserved | PASS AUTOMATICO | Four fixture document identities/drafts retained after 50 selections; sidebar and actual Cmd+3 checked. Repeat real draft checks after login |
 | T06 | Unselected/hidden/background notifications, badges, click destination | NON ESEGUITO | Title-count parser tests pass. Actual Chrome/macOS delivery, native Dock bridge and click destination require verification |
 | T07 | Synthetic file select/drag, preview/cancel/download | NON ESEGUITO | File selection and browser download subtests PASS AUTOMATICO. Drag/drop, real preview/cancel and destination opening pending |
-| T08 | External links, login popup/opener/close, internal navigation | NON ESEGUITO | Fixture popup/opener/close and bridge-free external-tab fallback PASS AUTOMATICO. Native default-browser bridge and actual SSO unverified |
+| T08 | External links, login popup/opener/close, internal navigation | NON ESEGUITO | Fixture popup/opener/close and bridge-free external-tab fallback PASS AUTOMATICO. Actual account login works; provider-specific popup behavior and native default-browser bridge remain unverified |
 | T09 | Close-to-hide, Dock reopen, Cmd+Q, restart, scoped logout | FAIL | Minimize/show retains documents (automatic). Chrome window close closes tabs: known gap. Native menu/Dock checks blocked by execution policy |
 | T10 | Offline/online, sleep/wake, isolated failure recovery | NON ESEGUITO | Fixture offline/online preserves draft; scoped reload preserves other services; origin storage survives. Physical sleep/wake and actual service recovery pending |
 | T11 | Clipboard, zoom, focus, resize, themes, keyboard | NON ESEGUITO | Fixture zoom, saved dark preference and keyboard selection pass; synthetic screenshot inspected. Clipboard, real layouts, small windows and accessibility pending |
@@ -90,3 +90,23 @@ a real sleep/wake without sending the drafts. Keep account screenshots private.
   accessibility tree while the rail's shadow root remains closed.
 - Target native opening remains BLOCCATO; compile/sign/ZIP only succeeded with
   FOURDOCK_BUILD_ONLY=1. Do not substitute this result for execution or login.
+
+## Owner verification, 2026-11-07 — complete login and restart
+
+The owner explicitly reported access completed for all four services, then
+confirmed the requested complete exit/reopen of only the dedicated Chrome
+instance returned all four services authenticated. These reports pass the real
+account-login/persistence checks for this extension workspace. They do not pass
+WhatsApp's original QR/passkey method, the blocked native launcher, draft retention,
+notification delivery, attachment behavior, physical sleep/wake or full lifecycle.
+No credentials, inbox/chat content or screenshots were collected.
+
+Requested next: an unsent draft survives Cmd+1–4; a genuine incoming message/email
+notifies with the service unselected and workspace minimized, and clicking opens
+the correct destination. The initial self-message suggestion was corrected:
+self-sent events alone are not reliable negative evidence for incoming-message
+notifications. Do not mark failure without a valid incoming event and enabled
+notification settings. The owner performs any sending; the agent sends nothing.
+Official setting references:
+- https://faq.whatsapp.com/655426345948308/
+- https://support.google.com/mail/answer/1075549

@@ -53,3 +53,33 @@ These results describe the synthetic browser container, not WhatsApp/Gmail's
 actual work or notification reliability. The fixture uses no credentials.
 Longer authenticated usage, real-site idle usage, and a same-conditions Ferdium
 comparison remain NON ESEGUITO. Do not optimize by suspending or unloading services.
+
+## Real authenticated workspace observer (prepared 2026-11-07)
+
+All four logins and full-restart persistence are now owner-confirmed. The read-only
+observer can measure their actual dedicated Chrome process tree without page
+inspection, profile file reads, screenshots, UI automation or process termination:
+
+```sh
+FOURDOCK_MEASURE_IDLE=1 npm run measure:workspace
+```
+
+Use that idle flag only after the owner has finished active tests and leaves all
+four loaded services untouched for five minutes. Defaults: 300 seconds, roughly
+five-second sampling. Without the flag, workload is labeled uncontrolled. A
+10-second uncontrolled smoke run completed successfully on the target; it is not
+a five-minute idle result and does not replace the historical fixture baseline.
+
+The script identifies the dedicated browser from main-process arguments without
+logging them, then records only anonymous aggregate process count, summed RSS and
+CPU-time deltas. Regular Chrome profiles and the Node observer are excluded;
+the blocked native launcher is absent. Shared RSS may be double-counted. Detached
+helpers and CPU after a child disappears between samples can be missed. CPU is
+reported as a percentage of one core. Operator-declared idle is not inferred from
+CPU values. If the browser exits, the report is incomplete rather than silently
+switching to another browser process.
+
+Reports are written with mode 0600 under
+~/Library/Logs/Fourdock/Measurements, outside the source tree. Review any intended
+public evidence first. Do not publish account/profile data or claim
+actual startup/switch timing from this resource-only observer.
