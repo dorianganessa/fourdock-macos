@@ -41,25 +41,23 @@ Do not retry native execution to bypass the policy or change global security.
 Use CI for native build/self-checks; that does not prove acceptance on this Mac.
 Extension-only work may continue subject to device extension policy.
 
-Authentication remains unconfirmed. User clarified: after QR, Ferdium's embedded
-browser requests passkey confirmation, then immediately says it cannot confirm;
-no phone prompt arrives. A separate official Chrome profile has been opened with
-scripts/open-browser.sh --auth-probe. User is testing QR/passkey and work Gmail.
-Do not inspect the user's page content or profile while they authenticate.
-Browser capability differences are evidence, not a proven cause or fix.
-
-QR account test: official Chrome probe FAILED before passkey (QR hangs, then phone
-cannot link). Capacity excluded; existing regular Chrome session must stay untouched.
-Latest update: owner reported official phone-number linking "worked". Await exact
-chat/passkey confirmation. Extension now adopts existing service tabs without
-reload; twelve UI fixture checks pass on both CI architectures at 4096473. Owner
-was asked to Load unpacked in the same dedicated profile and Open workspace.
-No QR/passkey gate is passed; no account contents were inspected by the agent.
+Current authentication state (owner report, 2026-11-07): official phone-number
+linking succeeded, and the extension workspace recovers WhatsApp already linked
+and opens Telegram, Fastmail and Gmail. T01-alt is PASS MANUALE CONFERMATO for
+alternate login/workspace session access. This does not prove the other logins,
+full-restart persistence, notifications, drafts or QR/passkey acceptance.
+Original Ferdium passkey confirmation and the separate Chrome QR failure remain
+unresolved. Capacity was excluded. Do not repeat pairing or touch the existing
+regular Chrome/Ferdium profiles. Do not inspect account contents while the owner
+authenticates. Next input requested: Telegram/Fastmail/work Gmail login outcomes,
+including SSO/MFA, entered only in official UI.
 
 Final code checkpoint: 0.1.1, be47d46; workflow 42255453874 passes both architectures,
 including actual packaged AppKit window observation, private native host IPC and
 fourteen browser fixtures. WhatsApp absolute root is offset beside the rail;
 closed rail is tested through accessibility. Initial badges/selected identity are
 seeded when existing tabs are adopted. Release 0.1.1 is the delivery target.
-Owner's exact chat/passkey and extension-integration feedback is still pending.
+Owner confirmed extension recovery of the linked WhatsApp session and opening
+of all four services. Other account logins, passkey participation and restart
+persistence remain unverified.
 Do not infer a QR/passkey pass from successful official phone-number linking.

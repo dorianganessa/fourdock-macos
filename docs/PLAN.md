@@ -1,6 +1,6 @@
 # Plan and handoff
 
-Updated: 2026-11-06. **Prototype; not ready for daily use.**
+Updated: 2026-11-07. **Prototype; not ready for daily use.**
 
 ## Environment and ownership
 
@@ -17,21 +17,23 @@ Commits use the owner's verified GitHub noreply identity.
 
 - [x] 0: Environment, toolchain, ownership, scoped repository and plan established.
 - [ ] 1: Official capability investigation complete. QR linking failed in the signed
-  Chrome probe before passkey. Owner subsequently reported phone-number linking
-  "worked"; exact chat loading/passkey participation and restart persistence are
-  awaiting clarification. Work Gmail unverified. No QR/passkey acceptance pass.
+  Chrome probe before passkey. Alternate phone-number authentication and recovery
+  of the already-linked WhatsApp session inside the extension workspace are now
+  owner-confirmed (2026-11-07). Passkey participation, full restart persistence
+  and work Gmail login remain unverified. No QR/passkey acceptance pass.
 - [ ] 2: Four-service browser workspace, sidebar, Cmd+1–4, live-tab adoption,
   non-discardable tabs, title-only badges, preferences, diagnostics, scoped reload,
   browser attachments and optional Swift bridge implemented. Native execution on
   target blocked by signing policy; window-close behavior remains a functional gap.
 - [ ] 3: Four logic tests and fourteen fixture checks pass on both macOS CI
-  architectures. Real four-account logins, OS notifications, attachments,
-  sleep/wake and target packaged-app behavior remain unverified.
+  architectures. WhatsApp workspace integration is manually confirmed. Remaining
+  account logins, full restart, OS notifications, attachments, sleep/wake and
+  target native packaged-app behavior remain unverified.
 - [ ] 4: Three fixture startups, 50 switches and 300.31 seconds idle measured.
   Real authenticated performance and prolonged usage remain unmeasured; no
   lightweight claim or Ferdium comparison.
 - [ ] 5: Personal repository, MIT/license notices, English README, CI, inspected
-  native ZIPs, checksums and prototype delivery prepared. Daily-use acceptance
+  native ZIPs, checksums and prototype delivery published. Daily-use acceptance
   remains blocked by the real functional gates above.
 
 ## Architecture and known limits
@@ -58,12 +60,12 @@ is required. See SIGNING.md. CI ad-hoc execution does not authorize this Mac.
 See AUTHENTICATION.md. Original Ferdium: passkey confirmation fails before a phone
 prompt. Signed Chrome probe: QR hangs; retry cannot link on phone before passkey.
 Capacity excluded. Existing regular-browser session works and remains untouched.
-The official phone-number method was reported successful by the owner.
-The owner was asked whether chats opened and a passkey was required.
-
-The ready extension's installation page has been opened in the same dedicated
-probe profile. Owner is asked to Load unpacked from the repository's extension
-folder and Open workspace. It should adopt the already-linked WhatsApp tab.
+The official phone-number method was reported successful by the owner. On
+2026-11-07 the owner confirmed that the extension workspace recovers WhatsApp
+already linked and opens Telegram, Fastmail and Gmail. This verifies alternate
+WhatsApp authentication and workspace session access, not the other three logins,
+a full browser restart or the original QR/passkey flow. Passkey participation in
+the successful alternate flow remains unreported.
 Do not inspect account pages/data while the owner authenticates. No messages sent.
 Do not copy cookies, delete passkeys, reset profiles or log out working devices.
 
@@ -105,11 +107,11 @@ authenticated app costs. No performance optimization has been claimed.
 
 ## Next three concrete actions
 
-1. Obtain the owner's two integration observations: whether successful phone-number
-   linking opened chats/used a passkey; whether loading the extension adopted that
-   live tab without a new login. Preserve this dedicated-profile session.
-2. After integration, have owner complete Gmail/Telegram/Fastmail login and a
-   restart-persistence check; then controlled incoming notifications, synthetic
+1. Obtain Telegram, Fastmail and corporate Gmail full-login results from the owner,
+   including SSO/MFA when present. Their pages open, but authentication is not yet
+   confirmed. Keep the working WhatsApp session; no new pairing is needed.
+2. After those logins, have the owner preserve unsent drafts and check a controlled
+   full restart of the dedicated workspace; then controlled incoming notifications, synthetic
    attachments and real network/sleep-wake checks. Never send to contacts without
    explicit authorization. Keep QR/passkey acceptance separately failed/unverified.
 3. Obtain approved native signing/IT authorization, verify packaged-app opening and
@@ -136,7 +138,9 @@ accessibility, and initializes title counts/selected identity on live-tab adopti
 No authenticated page contents or QR images were captured. The historical fixture
 performance baseline predates live-tab adoption and these layout changes.
 
-Owner integration feedback remains pending. If an earlier unpacked extension was
+Owner confirmed WhatsApp workspace recovery and all four service pages opening
+on 2026-11-07. Further login/persistence feedback remains pending. If an earlier
+unpacked extension was
 already loaded, Reload it in chrome://extensions, then refresh service tabs only
 after the owner preserves any unsent drafts. Never automatically reload their
 pages or clear authentication data. Final delivery:
@@ -150,4 +154,15 @@ SHA256SUMS.txt and BUILD-PROVENANCE.json. Tag target / release source:
 Public anonymous ARM download succeeded and its SHA-256 matched the recorded hash.
 0.1.0 remains in history, marked superseded. Source tree is clean apart from this
 final receipt update. No real account acceptance gate has been silently passed.
-Owner integration and exact chat/passkey feedback remain the next dependency.
+Next dependency: owner login results for the other three services and controlled
+full-restart persistence. Original QR/passkey acceptance remains open.
+
+## Owner verification, 2026-11-07
+
+PASS MANUALE CONFERMATO: Fourdock's extension workspace recovers WhatsApp already
+linked and opens the other three services, reported directly by the owner. No
+account content, identifiers or screenshots were requested or inspected. Scope:
+session access and service opening only. The owner has been asked to complete
+Telegram/Fastmail/work Gmail logins through official UI and report outcomes.
+The original QR/passkey gate, restart, drafts, notifications and real attachments
+have not been silently passed by this observation.

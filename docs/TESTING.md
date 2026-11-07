@@ -1,20 +1,24 @@
 # Testing ledger
 
-Date: 2026-11-06. Target: managed macOS 27.0.1 arm64. Synthetic UI runtime:
+Updated: 2026-11-07. Automated baseline: 2026-11-06. Target: managed macOS 27.0.1 arm64. Synthetic UI runtime:
 Chrome for Testing 157.0.8103.38, Playwright 1.56.1, Node 26.4.0. Profiles are
 temporary. External DNS is blocked only in the synthetic browser; attached page
-navigations are fulfilled from fixtures. No account credentials or messages used.
+navigations are fulfilled from fixtures. Automated checks use no real credentials
+or messages. Manual checks below are based on owner reports; the agent has not
+inspected account content.
 
 Allowed states: PASS AUTOMATICO, PASS MANUALE CONFERMATO, FAIL, BLOCCATO, NON ESEGUITO.
-No manual test is passed. Fixture subtests do not pass real-account requirements.
+Only the explicitly confirmed manual subtests are passed. Fixture subtests do not
+pass real-account requirements.
 Sanitized automated results: [evidence/ui-results.json](evidence/ui-results.json).
 
 | ID | Procedure / expected result | State | Observed evidence / next action |
 |---|---|---|---|
-| T01 | Fresh WhatsApp → QR → actual passkey → chats → restart persists | FAIL | Official Chrome probe hangs during QR linking, then phone reports inability to link before passkey. Capacity excluded; existing regular browser session works. One official phone-number test pending; see AUTHENTICATION.md |
-| T02 | Telegram login → restart persists | NON ESEGUITO | Official /k/ variant prepared; user login then restart |
-| T03 | Fastmail login + MFA → restart persists | NON ESEGUITO | User login then restart |
-| T04 | Work Gmail + SSO/MFA, redirect/popup → restart persists | BLOCCATO | User login required in dedicated signed Chrome; company policy may reject the profile |
+| T01 | Fresh WhatsApp → QR → actual passkey → chats → restart persists | FAIL | QR probe failed before passkey. The alternate phone-number login and session access inside Fourdock are now confirmed separately; QR/passkey and full restart remain open |
+| T01-alt | Official phone-number login → existing WhatsApp session accessible in extension workspace | PASS MANUALE CONFERMATO | 2026-11-07, target Mac, owner confirms Fourdock recovers WhatsApp already linked. Passkey participation and full restart are not covered. Next: controlled persistence check after remaining logins |
+| T02 | Telegram login → restart persists | NON ESEGUITO | Owner confirmed the /k/ service opens in Fourdock on 2026-11-07. Full login and restart check pending |
+| T03 | Fastmail login + MFA → restart persists | NON ESEGUITO | Owner confirmed the service opens in Fourdock on 2026-11-07. Full login and restart check pending |
+| T04 | Work Gmail + SSO/MFA, redirect/popup → restart persists | BLOCCATO | Owner confirmed the service opens in Fourdock on 2026-11-07. Corporate login, SSO/MFA and restart results pending |
 | T05 | 50 switches; no reload; drafts and shortcuts preserved | PASS AUTOMATICO | Four fixture document identities/drafts retained after 50 selections; sidebar and actual Cmd+3 checked. Repeat real draft checks after login |
 | T06 | Unselected/hidden/background notifications, badges, click destination | NON ESEGUITO | Title-count parser tests pass. Actual Chrome/macOS delivery, native Dock bridge and click destination require verification |
 | T07 | Synthetic file select/drag, preview/cancel/download | NON ESEGUITO | File selection and browser download subtests PASS AUTOMATICO. Drag/drop, real preview/cancel and destination opening pending |

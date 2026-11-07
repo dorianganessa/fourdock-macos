@@ -5,6 +5,8 @@ A small, local workspace for WhatsApp, Telegram, Fastmail and work Gmail.
 post-QR passkey and corporate Gmail SSO/MFA require verification by the account owner.
 The first owner test in full Chrome failed at QR linking, before the passkey.
 The owner subsequently reported success with official **Link with phone number**.
+On 2026-11-07 the owner confirmed that the extension workspace recovers WhatsApp
+already linked and opens the other three services. Their logins are not yet verified.
 The original QR/passkey flow and restart persistence remain unverified. See
 [investigation](docs/AUTHENTICATION.md).
 
@@ -161,9 +163,11 @@ window plus any login/settings windows. Fourdock and Chrome can both have Dock i
 All four services share one dedicated browser profile with normal origin isolation;
 additional accounts on the same service need a future profile model.
 
-The native build was blocked by this Mac's execution policy. No real account login,
-background notification delivery, real attachment workflow, sleep/wake, or long
-authenticated session has been confirmed. Audio/video calls are out of scope.
+The native build was blocked by this Mac's execution policy. Alternate WhatsApp
+authentication and session access in the extension workspace are owner-confirmed.
+Other account logins, full restart persistence, background notification delivery,
+real attachment workflows, sleep/wake and prolonged usage remain unverified.
+Audio/video calls are out of scope.
 Follow [the test matrix](docs/TESTING.md), [decisions](docs/DECISIONS.md), and
 [the handoff plan](docs/PLAN.md) for actual evidence and the next actions.
 
