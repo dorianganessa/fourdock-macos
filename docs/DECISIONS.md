@@ -1,5 +1,30 @@
 # Decisions and authentication evidence
 
+## 2026-11-08 — Evaluate native WebKit before choosing Electron
+
+The owner prefers a standalone app and authorized a Swift/WKWebView compatibility
+probe. Earlier Electron-first advice reflected implementation convenience, not
+observed authentication superiority. The successful phone-number method in Chrome
+does not establish support in either embedded engine. Do not claim it does.
+
+The minimal app uses AppKit, two retained WKWebViews, separate identifier-based
+persistent website stores (macOS 14+), same-configuration login popups, native edit
+shortcuts, close-to-hide and Dock reopen. It starts at official WhatsApp/Gmail
+pages without a custom user agent, WebAuthn interception, certificate exceptions,
+account data import, or scripts in real pages. HTTPS redirects stay in their
+originating service context. Unsupported custom schemes are a documented probe
+limitation rather than a reason to alter authentication.
+
+The owner cannot obtain IT authorization/signing. Therefore the prototype may be
+compiled/inspected here and run with synthetic content on CI, but real target
+authentication remains blocked. No interpreter/debugger route, signature reuse or
+security change is an authorized solution. Keep the existing Chrome sessions intact.
+
+Official WebKit profile/popup references checked 2026-11-08:
+- https://webkit.org/blog/14423/building-profiles-with-new-webkit-api/
+- https://developer.apple.com/documentation/webkit/wkwebsitedatastore
+- https://developer.apple.com/documentation/webkit/wkuidelegate/webview(_:createwebviewwith:for:windowfeatures:)
+
 ## 2026-11-06 — Authenticate before choosing an embedded web engine
 
 The user needs WhatsApp's post-QR passkey confirmation, not just four web pages.

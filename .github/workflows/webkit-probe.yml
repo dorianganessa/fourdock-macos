@@ -1,0 +1,42 @@
+name: Swift WebKit compatibility probe
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'native/webkit-probe/**'
+      - 'tests/webkit-probe/**'
+      - 'scripts/*webkit-probe*'
+      - '.github/workflows/webkit-probe.yml'
+  pull_request:
+    paths:
+      - 'native/webkit-probe/**'
+      - 'tests/webkit-probe/**'
+      - 'scripts/*webkit-probe*'
+      - '.github/workflows/webkit-probe.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: webkit-probe-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  webkit:
+    runs-on: macos-26
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '22'
+      - run: bash scripts/build-webkit-probe.sh
+      - run: bash scripts/build-webkit-probe.sh --fixtures
+      - run: node scripts/test-webkit-probe.mjs
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: Fourdock-WebKit-Probe-arm64-ad-hoc
+          path: |
+            dist/Fourdock-WebKit-Probe-arm64.zip
+            dist/Fourdock-WebKit-Probe-arm64.zip.sha256
+            dist/webkit-probe-results.json
+          if-no-files-found: error
+          retention-days: 14

@@ -61,3 +61,13 @@ Owner confirmed all four logins and full-restart persistence. Original passkey
 participation, real drafts/notifications/attachments, physical sleep/wake and
 native target execution remain unverified.
 Do not infer a QR/passkey pass from successful official phone-number linking.
+
+2026-11-08: owner authorized a Swift/WKWebView compatibility probe before Electron.
+Separate code: native/webkit-probe; build: npm run build:webkit (never executes).
+Read docs/WEBKIT_PROBE.md. It uses two new persistent WebKit stores and a distinct
+bundle ID, not any existing Chrome/Ferdium data. Native execution remains blocked.
+Owner says IT authorization/signing is not available; do not ask again or run the
+probe through Swift/interpreter/debugger to circumvent the restriction. CI fixture
+execution is separate from target approval and real account authentication.
+Owner deferred draft/notification checks for the existing Chrome workspace; their
+tentative "credo funzioni" is not an explicit test pass.

@@ -9,6 +9,8 @@
   "scripts": {
     "start": "bash scripts/start.sh",
     "build": "bash scripts/build.sh",
+    "build:webkit": "bash scripts/build-webkit-probe.sh",
+    "test:webkit:ci": "node scripts/test-webkit-probe.mjs",
     "test": "node --test tests/*.test.mjs",
     "test:ui": "node scripts/test-ui.mjs",
     "check": "node scripts/check.mjs",

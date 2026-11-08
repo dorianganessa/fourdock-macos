@@ -1,6 +1,9 @@
 # Fourdock for macOS
 
 A small, local workspace for WhatsApp, Telegram, Fastmail and work Gmail.
+An independent [Swift + WKWebView compatibility probe](docs/WEBKIT_PROBE.md) is
+now being evaluated as a standalone alternative. It has not passed real logins
+on the target Mac; the working Chrome workspace remains separate.
 **Prototype — not yet ready for daily use.** On 2026-11-07 the owner confirmed
 all four account logins and session persistence after a full dedicated-browser
 restart. Notifications, attachments, recovery and native target approval remain

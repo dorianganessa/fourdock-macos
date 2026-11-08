@@ -1,6 +1,27 @@
 # Plan and handoff
 
-Updated: 2026-11-07. **Prototype; not ready for daily use.**
+Updated: 2026-11-08. **Prototype; not ready for daily use.**
+
+## Current direction — Swift/WebKit compatibility probe
+
+The owner questioned the normal-browser UX and authorized a minimal Swift +
+WKWebView probe before committing to Electron. See [WEBKIT_PROBE.md](WEBKIT_PROBE.md).
+The two-service app is independently packaged; no change to the existing working
+Chrome workspace or profiles. Local compilation, ad-hoc signature verification
+and fixture source type-checking passed using the installed Command Line Tools.
+Explicit Xcode DEVELOPER_DIR encountered an unaccepted license; no license was
+accepted and no global toolchain/security setting changed.
+
+Native execution and real WhatsApp/Gmail tests remain BLOCCATO. The owner said
+IT authorization/signing is not available. Do not retry execution or ask the same
+approval question again. CI synthetic WebKit checks are the available independent
+validation; they cannot establish real authentication, device approval or resource
+use. The existing Chrome draft/notification checks were deferred by the owner;
+"credo funzioni" is not a confirmed pass.
+
+Immediate next actions: complete synthetic probe CI; record its actual evidence;
+retain both runtime options without declaring a migration. Actual WebKit login
+testing requires an approved execution environment and owner-only authentication.
 
 ## Environment and ownership
 

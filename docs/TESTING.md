@@ -1,6 +1,6 @@
 # Testing ledger
 
-Updated: 2026-11-07. Automated baseline: 2026-11-06. Target: managed macOS 27.0.1 arm64. Synthetic UI runtime:
+Updated: 2026-11-08. Automated baseline: 2026-11-06. Target: managed macOS 27.0.1 arm64. Synthetic UI runtime:
 Chrome for Testing 157.0.8103.38, Playwright 1.56.1, Node 26.4.0. Profiles are
 temporary. External DNS is blocked only in the synthetic browser; attached page
 navigations are fulfilled from fixtures. Automated checks use no real credentials
@@ -110,3 +110,21 @@ notification settings. The owner performs any sending; the agent sends nothing.
 Official setting references:
 - https://faq.whatsapp.com/655426345948308/
 - https://support.google.com/mail/answer/1075549
+
+## Separate Swift/WKWebView probe, 2026-11-08
+
+These results do not change the Chrome test matrix above. The owner deferred the
+real draft/notification checks; a tentative report is not a confirmed test pass.
+
+| ID | Procedure | State | Evidence |
+|---|---|---|---|
+| W01 | Compile/package native WebKit probe, verify signature | PASS AUTOMATICO | Installed Command Line Tools, arm64 macOS 14 target; no execution. Fixture Swift source also type-checks |
+| W02 | Synthetic WKWebView isolation, 50 switches/drafts, close/reopen, popup/opener/close, persistent storage/cookies after process restart | NON ESEGUITO | CI workflow prepared; actual CI outcome must be recorded |
+| W03 | WhatsApp phone-number linking → chats → full app restart persists | BLOCCATO | Native execution not approved on target; owner has no IT authorization/signing route. No pairing attempted |
+| W04 | Work Gmail actual login/SSO/MFA/popup → inbox → restart persists | BLOCCATO | Same execution restriction. No Google auth flow attempted in WKWebView |
+
+No WKWebView account contents were inspected. Real app code contains no injected
+scripts, account-cookie inspection or credential override. A separate CI executable
+uses loopback synthetic pages, random store IDs, fixture-only script assertions and
+synthetic HttpOnly cookies. No UI screenshot or WebKit system navigation log is
+published. This probe does not implement notifications or full attachment handling.
