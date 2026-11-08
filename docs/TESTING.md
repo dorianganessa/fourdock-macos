@@ -119,7 +119,7 @@ real draft/notification checks; a tentative report is not a confirmed test pass.
 | ID | Procedure | State | Evidence |
 |---|---|---|---|
 | W01 | Compile/package native WebKit probe, verify signature | PASS AUTOMATICO | Installed Command Line Tools, arm64 macOS 14 target; no execution. Fixture Swift source also type-checks |
-| W02 | Synthetic WKWebView isolation, 50 switches/drafts, close/reopen, popup/opener/close, persistent storage/cookies after process restart | NON ESEGUITO | CI workflow prepared; actual CI outcome must be recorded |
+| W02 | Synthetic WKWebView isolation, 50 switches/drafts, close/reopen, popup/opener/close, persistent storage/cookies after process restart | PASS AUTOMATICO | macos-26 arm64, workflow 42532731659, source c486831. Both write/read processes passed; synthetic evidence in webkit-probe-ci.json. Not a real-login test |
 | W03 | WhatsApp phone-number linking → chats → full app restart persists | BLOCCATO | Native execution not approved on target; owner has no IT authorization/signing route. No pairing attempted |
 | W04 | Work Gmail actual login/SSO/MFA/popup → inbox → restart persists | BLOCCATO | Same execution restriction. No Google auth flow attempted in WKWebView |
 
@@ -128,3 +128,7 @@ scripts, account-cookie inspection or credential override. A separate CI executa
 uses loopback synthetic pages, random store IDs, fixture-only script assertions and
 synthetic HttpOnly cookies. No UI screenshot or WebKit system navigation log is
 published. This probe does not implement notifications or full attachment handling.
+
+WebKit run: https://github.com/dorianganessa/fourdock-macos/actions/runs/42532731659.
+The downloaded production ZIP passed checksum verification and allowlist inspection;
+the extracted app passed codesign --verify --deep --strict without target execution.

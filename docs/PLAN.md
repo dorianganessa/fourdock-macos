@@ -19,9 +19,19 @@ validation; they cannot establish real authentication, device approval or resour
 use. The existing Chrome draft/notification checks were deferred by the owner;
 "credo funzioni" is not a confirmed pass.
 
-Immediate next actions: complete synthetic probe CI; record its actual evidence;
-retain both runtime options without declaring a migration. Actual WebKit login
+Retain both runtime options without declaring a migration. Actual WebKit login
 testing requires an approved execution environment and owner-only authentication.
+
+Synthetic CI subsequently passed on macos-26 arm64:
+https://github.com/dorianganessa/fourdock-macos/actions/runs/42532731659,
+source c486831ff2aca33e86a3a43b6b18c9b079bf9d39. W02 passes isolation,
+50 switches/drafts, close/reopen, popup/opener/close and full-process storage/cookie
+persistence. Downloaded production ZIP checksum/contents and extracted signature
+verified without execution here. Evidence: docs/evidence/webkit-probe-ci.json.
+Next dependency is an approved execution environment for owner-only W03/W04;
+the owner cannot obtain that approval for this Mac. No login retry is pending.
+Existing Chrome/native regression workflow 42532731468 also passed both
+architectures for this source commit; the new probe did not replace that product.
 
 ## Environment and ownership
 

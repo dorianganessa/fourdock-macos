@@ -61,6 +61,14 @@ CI artifacts contain the production probe ZIP/checksum and synthetic result JSON
 Current synthetic execution status is recorded in [TESTING.md](TESTING.md). CI
 execution establishes neither managed-Mac approval nor real login compatibility.
 
+Both synthetic phases passed on macos-26 arm64 in
+[workflow 42532731659](https://github.com/dorianganessa/fourdock-macos/actions/runs/42532731659),
+source c486831ff2aca33e86a3a43b6b18c9b079bf9d39. The production ZIP was downloaded,
+contents inspected, checksum matched and extracted signature verified without
+execution on the target. SHA-256:
+`a64ad0dd2df75632d869124cf21145609a5476983efd93bc37e73bdc8e7379fe`.
+This CI package differs from the local CLT build, so its checksum is separate.
+
 ## Real authentication, only on an approved execution environment
 
 This section is a future procedure, not an instruction to bypass this Mac's block.

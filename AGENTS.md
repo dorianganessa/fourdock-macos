@@ -71,3 +71,7 @@ probe through Swift/interpreter/debugger to circumvent the restriction. CI fixtu
 execution is separate from target approval and real account authentication.
 Owner deferred draft/notification checks for the existing Chrome workspace; their
 tentative "credo funzioni" is not an explicit test pass.
+WebKit synthetic CI 42532731659 passed on macos-26 arm64, source c486831. It covers
+isolated stores/cookies, 50 retained-document/draft switches, hide/reopen, popup/
+opener/close and full-process persistence. Artifact checksum/signature inspected.
+W03/W04 real logins stay BLOCCATO; do not turn synthetic passes into auth claims.

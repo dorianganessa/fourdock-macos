@@ -1,0 +1,30 @@
+{
+  "sourceCommit": "c486831ff2aca33e86a3a43b6b18c9b079bf9d39",
+  "workflow": "https://github.com/dorianganessa/fourdock-macos/actions/runs/42532731659",
+  "runner": "macos-26 arm64",
+  "runtime": "system WKWebView",
+  "syntheticOnly": true,
+  "productionArtifact": {
+    "name": "Fourdock-WebKit-Probe-arm64.zip",
+    "sha256": "a64ad0dd2df75632d869124cf21145609a5476983efd93bc37e73bdc8e7379fe",
+    "downloadChecksumVerified": true,
+    "archiveContentsInspected": true,
+    "signatureVerifiedWithoutTargetExecution": true,
+    "deviceApproved": false
+  },
+  "results": [
+    {
+      "phase": "write",
+      "state": "PASS AUTOMATICO",
+      "summary": "PASS WebKit synthetic write: isolated storage/cookies, 50 switches/drafts, close/reopen, popup/opener/close"
+    },
+    {
+      "phase": "read",
+      "state": "PASS AUTOMATICO",
+      "summary": "PASS WebKit synthetic read: isolated storage/cookies, full-process restart"
+    }
+  ],
+  "targetExecution": "BLOCCATO",
+  "realWhatsAppLogin": "BLOCCATO",
+  "realWorkGmailLogin": "BLOCCATO"
+}
