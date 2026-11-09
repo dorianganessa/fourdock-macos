@@ -1,0 +1,34 @@
+{
+  "date": "2026-11-09",
+  "target": "company-managed macOS arm64",
+  "bundleIdentifier": "com.fourdock.webkit-probe",
+  "artifact": "local CLT arm64 build, source c486831ff2aca33e86a3a43b6b18c9b079bf9d39",
+  "attemptedBy": "owner, normal application opening",
+  "ownerReportedError": "The application cannot be opened because its executable is missing.",
+  "observedEvents": [
+    {
+      "timestamp": "2026-11-09T16:31:11.155+01:00",
+      "process": "amfid",
+      "domain": "AppleMobileFileIntegrityError",
+      "code": -423,
+      "description": "The file is adhoc signed or signed by an unknown certificate chain"
+    },
+    {
+      "timestamp": "2026-11-09T16:31:11.310+01:00",
+      "process": "launchservicesd",
+      "reportedExitStatus": 9
+    }
+  ],
+  "postAttemptInspection": {
+    "executableDirectoryEmpty": true,
+    "directoryModificationTime": "2026-11-09T16:31:11+01:00",
+    "originalArchiveContainsExecutable": true,
+    "archiveExecutableMatchesInfoPlistName": true,
+    "fileRemovalComponent": "unidentified"
+  },
+  "state": "FAIL",
+  "realAuthenticationTested": false,
+  "securitySettingsChanged": false,
+  "agentRebuiltRestoredOrRetried": false,
+  "rawSystemLogsIncluded": false
+}

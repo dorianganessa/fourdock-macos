@@ -2,6 +2,21 @@
 
 Updated: 2026-11-09. **Prototype; not ready for daily use.**
 
+## Actual owner launch, 2026-11-09 16:31 CET
+
+The owner subsequently attempted a normal app launch and reported an executable-
+missing alert. Fresh read-only investigation now confirms this build's rejection:
+amfid logged AppleMobileFileIntegrityError -423 at 16:31:11.155 for the probe's
+executable, followed by LaunchServices exit status 9. The executable directory is
+now empty and its modification time matches 16:31:11. The original ZIP still
+contains the expected executable; its name agrees with CFBundleExecutable.
+This is a new observed failure, superseding the untested status in the earlier
+review below. Which component removed the file remains unidentified; a universal
+company policy has not been established. No rebuild/restore/retry was performed.
+Real WhatsApp/Gmail checks remain blocked; next dependency is an execution/signing
+route accepted by this Mac. The owner has no IT route, and no repeat approval
+question is pending. See docs/evidence/webkit-target-launch.json.
+
 ## Execution evidence correction, 2026-11-09
 
 The owner challenged the certainty of the new probe's reported block. The new

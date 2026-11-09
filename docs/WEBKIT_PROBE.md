@@ -30,6 +30,15 @@ Chrome/Ferdium profiles are not read, copied, reset or changed.
 
 ## Build and current blocker
 
+Subsequent owner launch, 2026-11-09 16:31 CET: this build's rejection is now
+observed. The owner tried normal opening and received an executable-missing alert.
+amfid logged error -423 for this executable (ad-hoc or unknown certificate chain);
+LaunchServices recorded exit status 9. Its executable directory is now empty;
+the original ZIP still contains the correctly named binary. The file-removal
+component is not identified. No restore/rebuild/retry was attempted. See
+[sanitized target evidence](evidence/webkit-target-launch.json). Real logins
+remain untested, and the earlier read-only review below is historical.
+
 Evidence correction, 2026-11-09: this new app has NOT been launched on the target.
 Its rejection is therefore unverified. The execution hold below was a precaution
 based on the first app's AMFI failure, not evidence that this probe also failed.

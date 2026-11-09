@@ -118,10 +118,11 @@ real draft/notification checks; a tentative report is not a confirmed test pass.
 
 | ID | Procedure | State | Evidence |
 |---|---|---|---|
+| W00 | Owner opens the packaged WebKit app normally on the target | FAIL | 2026-11-09 16:31 CET: owner reports missing-executable alert. amfid records -423 for this executable; process exit status 9. MacOS directory is empty; original ZIP contains correctly named executable. File-removal component unknown. See webkit-target-launch.json |
 | W01 | Compile/package native WebKit probe, verify signature | PASS AUTOMATICO | Installed Command Line Tools, arm64 macOS 14 target; no execution. Fixture Swift source also type-checks |
 | W02 | Synthetic WKWebView isolation, 50 switches/drafts, close/reopen, popup/opener/close, persistent storage/cookies after process restart | PASS AUTOMATICO | macos-26 arm64, workflow 42532731659, source c486831. Both write/read processes passed; synthetic evidence in webkit-probe-ci.json. Not a real-login test |
-| W03 | WhatsApp phone-number linking → chats → full app restart persists | BLOCCATO | Native execution not approved on target; owner has no IT authorization/signing route. No pairing attempted |
-| W04 | Work Gmail actual login/SSO/MFA/popup → inbox → restart persists | BLOCCATO | Same execution restriction. No Google auth flow attempted in WKWebView |
+| W03 | WhatsApp phone-number linking → chats → full app restart persists | BLOCCATO | Owner's normal launch now failed with AMFI -423 (W00). No pairing attempted |
+| W04 | Work Gmail actual login/SSO/MFA/popup → inbox → restart persists | BLOCCATO | Owner's normal launch now failed with AMFI -423 (W00). No Google auth flow attempted in WKWebView |
 
 No WKWebView account contents were inspected. Real app code contains no injected
 scripts, account-cookie inspection or credential override. A separate CI executable
@@ -139,3 +140,7 @@ on an operational hold based on the earlier app's AMFI incident. Fresh read-only
 checks pass codesign verification and return rejected from spctl assessment;
 that alone establishes neither a specific company policy nor the outcome of an
 actual launch. No execution/security changes were attempted in this review.
+
+Subsequent owner launch, 16:31 CET: W00 now FAIL with direct AMFI evidence. This
+supersedes NON ESEGUITO for target opening, while real login tests remain blocked.
+Only a sanitized event summary is published; raw system logs remain uncommitted.

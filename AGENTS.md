@@ -85,3 +85,15 @@ failure remains unidentified. Earlier "blocked" wording for this new probe meant
 an operational execution hold based on the earlier failure, not a new observed
 failure. Preserve the no-bypass/no-security-change rule and the existing hold;
 do not describe a universal IT/signing requirement as a proven fact.
+
+2026-11-09 16:31 CET: owner attempted the normal open command and reported
+"The application cannot be opened because its executable is missing." Fresh
+target evidence now CONFIRMS rejection of this WebKit probe: amfid recorded
+AppleMobileFileIntegrityError -423 for its executable at 16:31:11.155 (ad-hoc or
+unknown certificate chain); LaunchServices recorded process exit status 9. The
+MacOS directory is now empty (mtime 16:31:11), while the original ZIP still
+contains the correctly named executable. The responsible file-removal component
+is not identified. This supersedes the earlier untested status for this build,
+but does not establish a universal enterprise policy. No rebuild, restore or
+retry is pending; real authentication remains blocked. Sanitized evidence:
+docs/evidence/webkit-target-launch.json. Do not publish raw system logs/paths.
