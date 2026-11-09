@@ -2,6 +2,32 @@
 
 Updated: 2026-11-09. **Prototype; not ready for daily use.**
 
+## Current direction: internal-development alternatives and Astra review
+
+The owner asked for a thorough alternatives study and an explicit Astra opinion,
+then clarified that internal development is central and excluded Ferdium. No
+further Ferdium trial is a next action. See [ALTERNATIVES.md](ALTERNATIVES.md).
+
+Research covers our Swift/WebKit shell, native code reuse/fork of MIT Paguro,
+Electron/WebContentsView, Swift/CEF, Tauri/Wry, our own OS/PWA orchestration and
+the existing Chrome extension. The intended product is a recognizable app with
+notification identity, service catalog and stable per-service global shortcuts.
+No engine has passed real account authentication in our own executable.
+
+Astra favors Electron for the complete custom product, conditioned on actual
+login/notification results; native Swift remains a candidate using existing code.
+The proposed sequence is accepted execution/signing, real-service compatibility,
+then full shell/features. A regular own Developer ID/notarization route is distinct
+from company IT signing and remains untested; the observed ad-hoc refusal does not
+establish rejection of all personally signed software. No enrollment/purchase or
+signing operation was performed. Current code remains unchanged.
+
+For comparison only, official Paguro 1.1.3 DMG checksum, signature, stapled ticket,
+Gatekeeper assessment and stapler validation passed here; the image was inspected
+read-only and unmounted, without installation/launch. Its lack of passkeys and
+notification bridge limits are documented, so a fork would still require our own
+signature and real compatibility tests. Evidence: paguro-inspection.json.
+
 ## Actual owner launch, 2026-11-09 16:31 CET
 
 The owner subsequently attempted a normal app launch and reported an executable-

@@ -1,5 +1,16 @@
 # Fourdock
 
+Current owner direction, 2026-11-09: alternatives research must include INTERNAL
+DEVELOPMENT (standalone native/Electron architectures, extensible services,
+native notification identity and direct global service hotkeys). Owner explicitly
+excluded Ferdium; do not request another trial or present it as the next action.
+Astra consultation was explicitly requested and completed. See ALTERNATIVES.md
+under docs for the source-backed comparison. No runtime migration, account
+enrollment/purchase, signing key import, installation or hotkey change is approved
+by a research request alone. Regular own-identity signing remains an option to
+evaluate; do not infer that IT approval is universally required from the observed
+ad-hoc rejection. Preserve the no-bypass rule.
+
 Build a local macOS workspace for WhatsApp, Telegram, Fastmail and work Gmail.
 WhatsApp QR followed by the user's actual passkey is the primary acceptance gate.
 Never describe this as ready before real authentication and background notifications
