@@ -5,6 +5,13 @@ independent Astra opinion, then clarified that internal development is central
 and excluded Ferdium. Do not request another Ferdium trial. This report records
 architectural choices and evidence, not completed account compatibility tests.
 
+Subsequent focused finding, 2026-11-09: [the Electron passkey audit](ELECTRON_PASSKEYS.md)
+supersedes the general Electron recommendation below for the mandatory Android
+phone-passkey requirement. Stock Electron 45.2.3 lacks hybrid discovery integration;
+the relevant upstream PRs remain unmerged. A patched runtime is an R&D alternative,
+not a ready stock-Electron solution. Do not repeat generic engine trials before
+accounting for this specific missing capability.
+
 ## Proposed product
 
 A standalone Fourdock window, recognizable Dock/menu-bar identity, persistent

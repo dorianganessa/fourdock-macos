@@ -1,5 +1,14 @@
 # Fourdock
 
+Latest 2026-11-09 finding: read docs/ELECTRON_PASSKEYS.md before proposing Electron.
+The required phone-passkey path is NOT implemented by stock Electron45.2.3:
+source audit confirms no hybrid ConfigureDiscoveries override/QR key setup;
+pinned Chromium156.0.8078.80 needs that setup. PR55427 + dependency55426 are still
+open/unmerged; reported hardware test is Linux+Android+GitHub, not Mac+WhatsApp.
+Apple platformPasskeys/AASA support is a separate route. Do not promise a plain
+Electron JS prototype will solve the gate. A patched-runtime experiment would
+be new scoped work and still needs accepted signing and actual phone testing.
+
 Current owner direction, 2026-11-09: alternatives research must include INTERNAL
 DEVELOPMENT (standalone native/Electron architectures, extensible services,
 native notification identity and direct global service hotkeys). Owner explicitly

@@ -2,6 +2,24 @@
 
 Updated: 2026-11-09. **Prototype; not ready for daily use.**
 
+## Latest decision: focused Electron passkey audit
+
+The owner requires passkeys and asked whether Electron would actually work.
+Read [ELECTRON_PASSKEYS.md](ELECTRON_PASSKEYS.md). Source audit of stable 45.2.3 /
+Chromium 156.0.8078.80 confirms that Electron does not configure hybrid/caBLE
+discovery; Chromium's required QR generator key is therefore absent on that
+path. PR55427 proposes the missing integration and depends on PR55426; both are
+open/unmerged as checked 2026-11-09. Reported hardware verification is Linux +
+Android + GitHub, not macOS + WhatsApp. The Apple platform-passkey API is a
+separate associated-domain route, not an automatic fix for third-party sites.
+
+Do not build a full stock-Electron shell on the earlier generic recommendation.
+The viable development question is whether to pursue a patched-runtime feasibility
+experiment with legitimate signing and real macOS/Android account checks. No
+runtime was installed, executed or patched during research. No new owner pairing
+attempt is pending. Existing Chrome results do not pass the original QR/passkey
+gate. Signature acceptance remains an independent unresolved dependency.
+
 ## Current direction: internal-development alternatives and Astra review
 
 The owner asked for a thorough alternatives study and an explicit Astra opinion,
