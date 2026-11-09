@@ -1,6 +1,6 @@
 # Testing ledger
 
-Updated: 2026-11-08. Automated baseline: 2026-11-06. Target: managed macOS 27.0.1 arm64. Synthetic UI runtime:
+Updated: 2026-11-09. Automated baseline: 2026-11-06. Target: managed macOS 27.0.1 arm64. Synthetic UI runtime:
 Chrome for Testing 157.0.8103.38, Playwright 1.56.1, Node 26.4.0. Profiles are
 temporary. External DNS is blocked only in the synthetic browser; attached page
 navigations are fulfilled from fixtures. Automated checks use no real credentials
@@ -132,3 +132,10 @@ published. This probe does not implement notifications or full attachment handli
 WebKit run: https://github.com/dorianganessa/fourdock-macos/actions/runs/42532731659.
 The downloaded production ZIP passed checksum verification and allowlist inspection;
 the extracted app passed codesign --verify --deep --strict without target execution.
+
+2026-11-09 correction: this new probe has never been launched on the target.
+Its execution outcome is NON ESEGUITO, not an observed rejection. W03/W04 remain
+on an operational hold based on the earlier app's AMFI incident. Fresh read-only
+checks pass codesign verification and return rejected from spctl assessment;
+that alone establishes neither a specific company policy nor the outcome of an
+actual launch. No execution/security changes were attempted in this review.

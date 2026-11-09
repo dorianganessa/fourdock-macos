@@ -1,6 +1,18 @@
 # Plan and handoff
 
-Updated: 2026-11-08. **Prototype; not ready for daily use.**
+Updated: 2026-11-09. **Prototype; not ready for daily use.**
+
+## Execution evidence correction, 2026-11-09
+
+The owner challenged the certainty of the new probe's reported block. The new
+WebKit app has never been launched locally, so rejection of this build has NOT
+been verified. Read-only checks: codesign --verify --deep --strict passes and
+spctl --assess --type execute returns rejected. The latter is a Gatekeeper policy
+assessment, not an execution attempt or proof of an enterprise-wide ad-hoc ban.
+The first build's AMFI failure is historical evidence for that build only; the
+precise cause remains unconfirmed. Earlier BLOCCATO wording below describes our
+execution hold, not a newly observed failure. No security settings changed and
+no local launch was attempted during this review.
 
 ## Current direction — Swift/WebKit compatibility probe
 

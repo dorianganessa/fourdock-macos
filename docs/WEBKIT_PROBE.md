@@ -30,6 +30,12 @@ Chrome/Ferdium profiles are not read, copied, reset or changed.
 
 ## Build and current blocker
 
+Evidence correction, 2026-11-09: this new app has NOT been launched on the target.
+Its rejection is therefore unverified. The execution hold below was a precaution
+based on the first app's AMFI failure, not evidence that this probe also failed.
+Fresh read-only checks pass codesign verification and return rejected from spctl;
+the latter does not establish a specific company-wide ban on locally built apps.
+
 ```sh
 npm run build:webkit
 ```

@@ -75,3 +75,13 @@ WebKit synthetic CI 42532731659 passed on macos-26 arm64, source c486831. It cov
 isolated stores/cookies, 50 retained-document/draft switches, hide/reopen, popup/
 opener/close and full-process persistence. Artifact checksum/signature inspected.
 W03/W04 real logins stay BLOCCATO; do not turn synthetic passes into auth claims.
+
+2026-11-09 evidence correction: the NEW WebKit probe has never been launched on
+the target. Its execution rejection is NOT verified. codesign --verify --deep
+--strict passes; spctl --assess --type execute returns rejected. An ad-hoc app's
+spctl rejection alone does not establish an organization-wide execution ban or
+prove what a normal local launch would do. The exact cause of the original AMFI
+failure remains unidentified. Earlier "blocked" wording for this new probe meant
+an operational execution hold based on the earlier failure, not a new observed
+failure. Preserve the no-bypass/no-security-change rule and the existing hold;
+do not describe a universal IT/signing requirement as a proven fact.
