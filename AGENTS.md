@@ -1,5 +1,13 @@
 # Fourdock
 
+2026-11-10 clarification: owner reports failure in OFFICIAL WhatsApp for macOS,
+not only our Swift probe. Exact error/stage requested, pending. Installed bundle
+metadata: 26.45.13/build1108933973; no app/profile/account inspection. Keep its
+diagnosis separate from Fourdock AMFI and Electron hybrid limitations. Public
+similar reports found; see docs/AUTHENTICATION.md. Chrome's confirmed login used
+phone-number linking, not a confirmed passkey success. Do not claim only Web
+works universally, an official-app global outage, or a shared root cause.
+
 Latest 2026-11-09 finding: read docs/ELECTRON_PASSKEYS.md before proposing Electron.
 The required phone-passkey path is NOT implemented by stock Electron45.2.3:
 source audit confirms no hybrid ConfigureDiscoveries override/QR key setup;

@@ -1,6 +1,6 @@
 # Authentication investigation
 
-Updated 2026-11-07. **All four services' logins and session persistence after a
+Updated 2026-11-10. **All four services' logins and session persistence after a
 full dedicated-browser restart are owner-confirmed. The original WhatsApp
 QR/passkey acceptance remains open.**
 Phone test environment reported by owner: Android, standard WhatsApp; version not
@@ -8,6 +8,52 @@ provided. The alternate phone-number flow has a reported successful result, whil
 the original QR-plus-passkey gate remains failed/unverified.
 Only anonymous stages/results are recorded. No identifiers, QR images, credentials,
 assertions, cookies, account screenshots or chat content belong in this repository.
+
+## Official macOS app and public reports, 2026-11-10
+
+The owner clarified that the newly mentioned native-app failure concerns
+**official WhatsApp for macOS**, not our Swift probe. Do not conflate this with
+Fourdock's AMFI incident or Electron's missing hybrid integration. The exact
+official-app error, location and stage have been requested and are pending.
+Read-only bundle metadata shows WhatsApp 26.45.13, build 1108933973; no official
+WhatsApp profile, account data or authentication screen was inspected.
+
+The successful Chrome trial was official phone-number linking. It does not
+establish a successful passkey ceremony. No fresh passkey result was confirmed
+on Chrome, Safari or the official Mac app, and no universal platform failure can
+be inferred from the current evidence.
+
+Public first-hand reports do exist:
+
+- A Reddit commenter describes the Mac client failing to relink while WhatsApp
+  Web on the same Mac completes a passkey check. The thread contains mixed
+  iPhone/Android and error reports; it establishes that users discuss a similar
+  symptom, not the cause of this owner's failure.
+  [Direct comment](https://www.reddit.com/r/MacOS/comments/1rftzcy/comment/ouvd0bi/).
+- Another report describes a Samsung Android primary phone, successful Mac
+  linking/sync, and forced logout after 30–60 seconds. That is a distinct
+  post-link stage and must not be treated as the same error without confirmation.
+  [First-hand report](https://www.reddit.com/r/whatsapp/comments/1v1zciq/whatsapp_on_macos_forcelogs_me_out_3060s_after/).
+- WAHA issue 2138, opened 2026-06-30, documents Android accounts requiring
+  passkey continuation after device pairing, including third-party engine
+  compatibility problems. This is a third-party integration report, not an
+  official WhatsApp Mac incident acknowledgement or a recommended client.
+  [Technical issue](https://github.com/devlikeapro/waha/issues/2138).
+
+The 2026-08-27 Google/WhatsApp case study documents real credential-provider and
+cross-platform challenges, including unreliable Bluetooth dependency and confusion
+between WebAuthn QR codes and WhatsApp linking QR codes. Its discussion of native
+Android/iOS credentials does not establish a Mac client bug or explain this user's
+error. [Primary case study](https://developer.android.com/blog/posts/how-whats-app-upgraded-to-secure-seamless-sign-in-for-1-billion-users-with-passkeys).
+
+WhatsApp officially lists Mac as a supported linked-device platform. No official
+acknowledgement of this exact owner's current failure or one ongoing global
+outage was established. Similar community reports cannot establish either.
+[Supported linked devices](https://faq.whatsapp.com/378279804439436/).
+
+The next diagnostic dependency is the official app's exact error/stage, not a
+new generic framework experiment. No new linking attempt, profile reset, key
+deletion, update/reinstall, credential bridge or network/security change was made.
 
 | Trial | Observed result | Meaning |
 |---|---|---|
