@@ -1,4 +1,5 @@
 import { SERVICES, serviceForURL, unreadFromTitle, safeExternal, normalizePrefs } from './core.js';
+import { notificationRelay } from './notifications.js';
 
 let bridge;
 let queue = Promise.resolve();
@@ -12,6 +13,7 @@ const serialize = task => {
   queue = result.catch(() => {});
   return result;
 };
+const notifications = notificationRelay(chrome, id => select(id));
 
 function native(message) {
   try { bridge?.postMessage(message); } catch { /* No native host in browser fixture tests. */ }
@@ -45,6 +47,10 @@ async function restore() {
     if (!live.some(t => t.id === tabId)) delete mapping[id];
   }
   if (!live.some(t => t.windowId === workspaceId)) workspaceId = undefined;
+  for (const [id, tabId] of Object.entries(mapping)) {
+    const tab = live.find(t => t.id === tabId);
+    unread[id] = serviceForURL(tab?.url)?.id === id ? unreadFromTitle(tab.title || '', id) : 0;
+  }
   connect();
 }
 const ready = restore();
@@ -140,10 +146,10 @@ chrome.windows.onRemoved.addListener(id => {
 chrome.runtime.onMessage.addListener((message, sender, respond) => {
   // A page content script can control its own mapped service only. Extension pages
   // are trusted UI; external web pages have no runtime messaging permission.
-  const fromUI = sender.url?.startsWith(chrome.runtime.getURL('')) === true;
-  const service = Object.keys(mapping).find(id => mapping[id] === sender.tab?.id);
   const handle = async () => {
     await ready;
+    const fromUI = sender.url?.startsWith(chrome.runtime.getURL('')) === true;
+    const service = Object.keys(mapping).find(id => mapping[id] === sender.tab?.id);
     if (!fromUI && !service) throw new Error('Unmanaged tab');
     switch (message.type) {
       case 'launch': if (!fromUI) break; return ensureWorkspace();
@@ -152,6 +158,23 @@ chrome.runtime.onMessage.addListener((message, sender, respond) => {
       case 'reload': if (service) { await chrome.tabs.reload(sender.tab.id); return { ok: true }; } break;
       case 'hide': if (workspaceId) await chrome.windows.update(workspaceId, { state: 'minimized' }); return { ok: true };
       case 'options': await chrome.runtime.openOptionsPage(); return { ok: true };
+      case 'shortcuts':
+        if (!fromUI) break;
+        await chrome.tabs.create({ url: 'chrome://extensions/shortcuts' }); return { ok: true };
+      case 'notification-create':
+        if (!service || sender.frameId !== 0 || serviceForURL(sender.url)?.id !== service) break;
+        if (!prefs.notifications[service]) return { error: 'Relay disabled', code: 'notification-disabled' };
+        return notifications.create(service, sender, message);
+      case 'notification-close':
+        if (!service || sender.frameId !== 0 || serviceForURL(sender.url)?.id !== service) break;
+        await notifications.close(service, sender, message.id); return { ok: true };
+      case 'notification-test':
+        if (!fromUI || !SERVICES.some(s => s.id === message.service)) break;
+        return notifications.create(message.service, {}, { id: crypto.randomUUID(), title: 'Notification test',
+          body: 'This is a Fourdock test preview. Click to open the service.' }, true);
+      case 'notification-status':
+        if (!fromUI) break;
+        return { permission: await chrome.notifications.getPermissionLevel(), commands: await chrome.commands.getAll() };
       case 'prefs':
         if (!fromUI) break;
         prefs = normalizePrefs(message.prefs);
@@ -184,9 +207,11 @@ chrome.runtime.onMessage.addListener((message, sender, respond) => {
 });
 
 chrome.commands.onCommand.addListener(command => {
-  const i = Number(command.replace('service-', '')) - 1;
-  if (SERVICES[i]) ready.then(() => serialize(() => select(SERVICES[i].id)));
+  const service = SERVICES.find(s => command === `focus-${s.id}`);
+  if (service) return ready.then(() => serialize(() => select(service.id))).catch(() => {});
 });
+chrome.notifications.onClicked.addListener(id => ready.then(() => serialize(() => notifications.event(id, 'click'))).catch(() => {}));
+chrome.notifications.onClosed.addListener(id => ready.then(() => serialize(() => notifications.event(id, 'close'))).catch(() => {}));
 chrome.action.onClicked.addListener(() => ready.then(() => serialize(ensureWorkspace)));
 chrome.runtime.onInstalled.addListener(() => ready.then(() => chrome.runtime.openOptionsPage()));
 chrome.alarms.create('bridge', { periodInMinutes: 1 });

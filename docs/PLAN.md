@@ -2,6 +2,24 @@
 
 Updated: 2026-11-10. **Prototype; not ready for daily use.**
 
+## Current direction: improve the working Chrome workspace
+
+Owner explicitly returned to the existing Chrome version and requested direct
+service shortcuts and clearer notifications, including sender and preview.
+Extension 0.2.0 declares four global commands (macOS Control+Shift+1–4), retains
+in-page Cmd+1–4, and relays page Notifications with Fourdock/service identity,
+local service artwork, original previews and click callbacks. Per-service opt-out,
+actual assignment display and synthetic test buttons are in preferences.
+See [CHROME_NOTIFICATIONS.md](CHROME_NOTIFICATIONS.md). This supersedes further
+engine/authentication experiments as the current implementation direction.
+
+Chrome still owns the OS notification identity. Service-worker push notifications
+are not intercepted. No real-account notification pass is claimed. Existing login
+evidence is retained, profiles untouched and native execution hold preserved.
+Local syntax and eleven synthetic Node tests pass; real Chromium-world fixture
+checks and owner OS/global-hotkey/incoming-event verification are pending.
+
+
 ## Current diagnostic dependency: official WhatsApp Mac app
 
 The owner clarified that official WhatsApp for macOS also fails. A subsequent

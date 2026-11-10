@@ -29,5 +29,6 @@ export function normalizePrefs(raw = {}) {
     badges: raw.badges !== false,
     externalLinks: raw.externalLinks !== false,
     zoom: Math.min(1.75, Math.max(0.5, Number(raw.zoom) || 1)),
+    notifications: Object.fromEntries(SERVICES.map(s => [s.id, raw.notifications?.[s.id] !== false])),
   };
 }

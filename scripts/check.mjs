@@ -13,4 +13,11 @@ const { createHash } = await import('node:crypto');
 const id = [...createHash('sha256').update(Buffer.from(manifest.key, 'base64')).digest('hex').slice(0, 32)].map(c => String.fromCharCode(97 + parseInt(c, 16))).join('');
 assert.equal(id, expected);
 assert((await readFile('native/main.swift', 'utf8')).includes(`let extensionID = "${id}"`));
+for (const service of ['whatsapp', 'telegram', 'fastmail', 'gmail']) {
+  assert.equal(manifest.commands[`focus-${service}`].global, true);
+  const png = await readFile(`extension/icons/${service}.png`);
+  assert.equal(png.readUInt32BE(16), 128);
+  assert.equal(png.readUInt32BE(20), 128);
+}
+assert.equal(manifest.version, JSON.parse(await readFile('package.json', 'utf8')).version);
 console.log('PASS JavaScript syntax, narrow extension permissions and native/extension identity');

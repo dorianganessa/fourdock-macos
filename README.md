@@ -1,6 +1,12 @@
 # Fourdock for macOS
 
 A small, local workspace for WhatsApp, Telegram, Fastmail and work Gmail.
+**Current direction (2026-11-10): return to the working Chrome workspace.**
+Version 0.2.0 adds global service shortcuts and a notification relay that retains
+sender/preview while adding Fourdock and the service name. macOS attribution
+remains Chrome; service-worker push notifications are outside the page relay.
+See [setup and limits](docs/CHROME_NOTIFICATIONS.md). Existing browser sessions
+are reused; no new native app or authentication method is needed for these features.
 An independent [Swift + WKWebView compatibility probe](docs/WEBKIT_PROBE.md) is
 now being evaluated as a standalone alternative. It has not passed real logins
 on the target Mac; the working Chrome workspace remains separate.
@@ -142,8 +148,13 @@ are unavailable, and external links fall back to a tab in this dedicated browser
 
 - Sidebar buttons or **Cmd+1–4** select existing service tabs. Tabs are marked
   non-discardable to avoid normal memory-saver eviction. No reload on selection.
+- **Control+Shift+1–4** on macOS are declared global service shortcuts. Inspect
+  actual assignments under preferences; conflicts can leave a shortcut unassigned.
 - Enable notifications in each site's settings, allow Chrome's site prompt, then
-  allow Chrome in macOS Notifications. Notifications are attributed to Chrome.
+  allow Chrome in macOS Notifications. Page notifications gain a Fourdock/service
+  label and icon while retaining sender/preview and the site's click callback.
+  macOS attribution remains Chrome. Test each service from preferences;
+  service-worker push notifications retain their original appearance.
 - Badges use explicit numeric counts from tab titles. Some services/locales do not
   expose a reliable count; no badge is then shown. No message scraping or polling.
 - File upload, drag/drop, download, copy/paste, page zoom and edit shortcuts use

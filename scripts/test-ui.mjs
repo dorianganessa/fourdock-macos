@@ -63,6 +63,41 @@ try {
   assert(layout.appLeft >= layout.railRight && layout.appRight <= layout.viewport + 1);
   results.push({ test: 'WhatsApp absolute application root stays beside sidebar without clipping or overlap', status: 'PASS AUTOMATICO' });
   const ids = await Promise.all(pages.map(p => p.evaluate(() => window.loadIdentity)));
+  // Real Chromium MAIN/isolated worlds, synthetic notification contents only.
+  // Stub the final OS delivery to avoid banners/permissions on unattended CI.
+  await worker.evaluate(() => {
+    globalThis.syntheticNotices = {};
+    chrome.notifications.create = async (id, options) => { globalThis.syntheticNotices[id] = options; return id; };
+    chrome.notifications.clear = async id => { delete globalThis.syntheticNotices[id]; return true; };
+  });
+  await context.grantPermissions(['notifications'], { origin: 'https://web.whatsapp.com' });
+  await pages[0].evaluate(() => {
+    window.syntheticClicks = 0;
+    window.syntheticNotification = new Notification('Synthetic sender', { body: 'Synthetic preview' });
+    window.syntheticNotification.onclick = () => { window.syntheticClicks++; };
+  });
+  let notices;
+  for (let attempt = 0; attempt < 60; attempt++) {
+    notices = await worker.evaluate(() => globalThis.syntheticNotices);
+    if (Object.keys(notices).length) break;
+    await new Promise(resolve => setTimeout(resolve, 50));
+  }
+  assert.equal(Object.keys(notices).length, 1);
+  assert.equal(Object.values(notices)[0].title, 'Fourdock · WhatsApp — Synthetic sender');
+  assert.equal(Object.values(notices)[0].message, 'Synthetic preview');
+  const routes = await control.evaluate(() => chrome.storage.session.get('notificationRoutes'));
+  assert(!JSON.stringify(routes).includes('Synthetic sender'));
+  assert(!JSON.stringify(routes).includes('Synthetic preview'));
+  const route = Object.values(routes.notificationRoutes)[0];
+  await control.evaluate(async ({ route }) => chrome.tabs.sendMessage(route.tabId,
+    { type: 'notification-event', id: route.id, event: 'click' }, { documentId: route.documentId }), { route });
+  for (let attempt = 0; attempt < 40 && !(await pages[0].evaluate(() => window.syntheticClicks)); attempt++) await new Promise(resolve => setTimeout(resolve, 25));
+  assert.equal(await pages[0].evaluate(() => window.syntheticClicks), 1);
+  await pages[0].evaluate(() => window.syntheticNotification.close());
+  results.push({ test: 'page Notification relay across real Chromium worlds preserves preview and original click handler without storing payloads; OS delivery stubbed', status: 'PASS AUTOMATICO' });
+  const commandState = await send({ type: 'notification-status' });
+  assert.equal(commandState.commands.filter(c => c.name.startsWith('focus-')).length, 4);
+  results.push({ test: 'Chrome accepts four service commands declared global; physical OS key delivery remains manual', status: 'PASS AUTOMATICO' });
   const latencies = [];
   const names = ['whatsapp','telegram','fastmail','gmail'];
   for (let i = 0; i < 50; i++) {

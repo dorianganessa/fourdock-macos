@@ -7,7 +7,7 @@ APP="$PWD/dist/Fourdock.app"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources/extension"
 SDK="$(xcrun --sdk macosx --show-sdk-path)"
 xcrun swiftc -swift-version 5 -O -sdk "$SDK" -target "$ARCH-apple-macos13.5" -framework AppKit native/main.swift -o "$APP/Contents/MacOS/Fourdock"
-cp extension/* "$APP/Contents/Resources/extension/"
+cp -R extension/. "$APP/Contents/Resources/extension/"
 cp LICENSE "$APP/Contents/Resources/LICENSE"
 cp docs/THIRD_PARTY_NOTICES.md "$APP/Contents/Resources/THIRD_PARTY_NOTICES.md"
 cat > "$APP/Contents/Info.plist" <<'PLIST'
@@ -18,8 +18,8 @@ cat > "$APP/Contents/Info.plist" <<'PLIST'
 <key>CFBundleIdentifier</key><string>com.fourdock.macos</string>
 <key>CFBundleName</key><string>Fourdock</string>
 <key>CFBundleDisplayName</key><string>Fourdock</string>
-<key>CFBundleVersion</key><string>2</string>
-<key>CFBundleShortVersionString</key><string>0.1.1</string>
+<key>CFBundleVersion</key><string>3</string>
+<key>CFBundleShortVersionString</key><string>0.2.0</string>
 <key>CFBundlePackageType</key><string>APPL</string>
 <key>LSMinimumSystemVersion</key><string>13.5</string>
 <key>NSHighResolutionCapable</key><true/>

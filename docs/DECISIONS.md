@@ -1,5 +1,19 @@
 # Decisions and authentication evidence
 
+## 2026-11-10 — Return to Chrome, add global shortcuts and labelled previews
+
+Owner chose the previously working Chrome workspace and requested clearer
+notifications including sender/preview. Keep the same profile, extension ID and
+top-level service tabs. Four global extension commands focus existing services;
+no new native hotkey daemon is needed. A MAIN-world page Notification relay adds
+Fourdock/service text and local artwork through chrome.notifications, retaining
+original page click handlers. It does not touch WebAuthn or export sessions.
+Only routing metadata enters browser-session storage, never notification payloads.
+macOS sender identity remains Chrome; website service-worker pushes stay outside
+this relay. These limits are explicit rather than claiming native app identity.
+Per-service opt-out and synthetic test buttons make the change reviewable.
+Real background delivery and physical global shortcuts require owner verification.
+
 ## 2026-11-08 — Evaluate native WebKit before choosing Electron
 
 The owner prefers a standalone app and authorized a Swift/WKWebView compatibility

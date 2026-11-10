@@ -1,6 +1,6 @@
 # Testing ledger
 
-Updated: 2026-11-09. Automated baseline: 2026-11-06. Target: managed macOS 27.0.1 arm64. Synthetic UI runtime:
+Updated: 2026-11-10. Automated baseline: 2026-11-06. Target: managed macOS 27.0.1 arm64. Synthetic UI runtime:
 Chrome for Testing 157.0.8103.38, Playwright 1.56.1, Node 26.4.0. Profiles are
 temporary. External DNS is blocked only in the synthetic browser; attached page
 navigations are fulfilled from fixtures. Automated checks use no real credentials
@@ -11,6 +11,27 @@ Allowed states: PASS AUTOMATICO, PASS MANUALE CONFERMATO, FAIL, BLOCCATO, NON ES
 Only the explicitly confirmed manual subtests are passed. Fixture subtests do not
 pass real-account requirements.
 Sanitized automated results: [evidence/ui-results.json](evidence/ui-results.json).
+
+## Chrome extension 0.2.0, 2026-11-10
+
+- PASS AUTOMATICO: local syntax/permission/identity/icon checks and eleven Node
+  tests. They cover the actual background command handler selecting all four
+  retained tabs and restoring a minimized workspace, refusal of foreign origins,
+  frames/unmanaged tabs, per-service notification opt-out, page/isolated transport
+  in either startup order, sender/preview retention, site click callback, tag
+  replacement/close, permission/disconnection fallback, payload-free session
+  routing and click routing after constructing a new worker relay.
+- NON ESEGUITO: added Chromium fixture for real MAIN/isolated worlds, synthetic
+  notification preview/click transport and four registered global commands. OS
+  banner delivery is deliberately stubbed in that fixture.
+- NON ESEGUITO: target physical global key delivery from another app; actual
+  service banners, artwork, preview and click destination with the workspace
+  minimized; whether each service emits page notifications or worker pushes.
+  Preferences provide four synthetic notification tests. Real incoming messages
+  remain owner-only and are not replaced by synthetic passes.
+
+No page/account content is recorded. See CHROME_NOTIFICATIONS.md for coverage
+limits. Existing T01–T13 statuses below remain unchanged by these additions.
 
 | ID | Procedure / expected result | State | Observed evidence / next action |
 |---|---|---|---|

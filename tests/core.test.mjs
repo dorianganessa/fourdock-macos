@@ -19,8 +19,11 @@ test('external opening rejects executable and local-file protocols', () => {
   for (const url of ['file:///etc/passwd', 'javascript:alert(1)', 'data:text/html,test', 'fourdock://quit', 'bad']) assert.equal(safeExternal(url), false);
 });
 test('preferences remain bounded and reject arbitrary appearance values', () => {
-  assert.deepEqual(normalizePrefs({ theme: 'evil', zoom: -99 }), { theme: 'system', zoom: .5, badges: true, externalLinks: true });
+  assert.deepEqual(normalizePrefs({ theme: 'evil', zoom: -99 }), { theme: 'system', zoom: .5, badges: true, externalLinks: true,
+    notifications: { whatsapp: true, telegram: true, fastmail: true, gmail: true } });
   assert.equal(normalizePrefs({ zoom: Infinity }).zoom, 1.75);
   assert.equal(normalizePrefs({ zoom: 'not-a-number' }).zoom, 1);
   assert.equal(normalizePrefs({ badges: false }).badges, false);
+  assert.deepEqual(normalizePrefs({ notifications: { gmail: false, other: true } }).notifications,
+    { whatsapp: true, telegram: true, fastmail: true, gmail: false });
 });

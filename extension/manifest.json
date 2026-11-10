@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Fourdock",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "A dedicated four-service workspace using the full browser authentication stack.",
   "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAtQ9Raf7xZ6eqpXDnhp2mHCBY/frPPY/H8sE3K3cFdVtjeq3Je8STwqKfvrk+0Fmpnfjl++HGa01TeLbtr66liA2Uzp74QTz5W6fdChZRTqWC3QgzjHlDtTUjlCKVt2pIswIGZPgYlMhJnnrp374GoICMJRN4sGgWmkYiVJ4VjkfCTcyKeJSh/mXoqgl9NwwMIEwS269MLtWy4Qv99aci7nHROiekaAsPG+YAK9Ic6xdxY03ym5Bpnqoj3yLVDLXA9/VkE+X4iiYxw119zOUz7vSUOX9FE9q4wXYhjJ2F2WfiS/xnyMks2voF8JQ17yc0lKELwAr5qXxeNkjxYzVBVQIDAQAB",
   "permissions": [
@@ -9,7 +9,8 @@
     "storage",
     "nativeMessaging",
     "alarms",
-    "contextMenus"
+    "contextMenus",
+    "notifications"
   ],
   "host_permissions": [
     "https://web.whatsapp.com/*",
@@ -22,9 +23,17 @@
     "type": "module"
   },
   "action": {
-    "default_title": "Open Fourdock"
+    "default_title": "Open Fourdock",
+    "default_icon": "icons/fourdock.png"
   },
+  "icons": { "128": "icons/fourdock.png" },
   "content_scripts": [
+    {
+      "matches": ["https://web.whatsapp.com/*", "https://web.telegram.org/*", "https://app.fastmail.com/*", "https://mail.google.com/*"],
+      "js": ["notification-page.js"],
+      "world": "MAIN",
+      "run_at": "document_start"
+    },
     {
       "matches": [
         "https://web.whatsapp.com/*",
@@ -33,6 +42,7 @@
         "https://mail.google.com/*"
       ],
       "js": [
+        "notification-content.js",
         "sidebar.js"
       ],
       "css": [
@@ -43,33 +53,37 @@
   ],
   "options_page": "options.html",
   "commands": {
-    "service-1": {
+    "focus-whatsapp": {
       "suggested_key": {
-        "default": "Alt+1",
-        "mac": "Command+1"
+        "default": "Ctrl+Shift+1",
+        "mac": "MacCtrl+Shift+1"
       },
-      "description": "Select service 1"
+      "description": "Fourdock: WhatsApp",
+      "global": true
     },
-    "service-2": {
+    "focus-telegram": {
       "suggested_key": {
-        "default": "Alt+2",
-        "mac": "Command+2"
+        "default": "Ctrl+Shift+2",
+        "mac": "MacCtrl+Shift+2"
       },
-      "description": "Select service 2"
+      "description": "Fourdock: Telegram",
+      "global": true
     },
-    "service-3": {
+    "focus-fastmail": {
       "suggested_key": {
-        "default": "Alt+3",
-        "mac": "Command+3"
+        "default": "Ctrl+Shift+3",
+        "mac": "MacCtrl+Shift+3"
       },
-      "description": "Select service 3"
+      "description": "Fourdock: Fastmail",
+      "global": true
     },
-    "service-4": {
+    "focus-gmail": {
       "suggested_key": {
-        "default": "Alt+4",
-        "mac": "Command+4"
+        "default": "Ctrl+Shift+4",
+        "mac": "MacCtrl+Shift+4"
       },
-      "description": "Select service 4"
+      "description": "Fourdock: Gmail",
+      "global": true
     }
   },
   "content_security_policy": {

@@ -1,5 +1,15 @@
 # Fourdock
 
+2026-11-10 CURRENT OWNER DIRECTION: return to the working Chrome extension,
+improve notification identity and direct global service shortcuts. Owner wants
+sender AND preview. Extension 0.2.0 relays page Notifications (not WebAuthn) via
+chrome.notifications, retains page click callbacks, uses local service icons,
+and declares Control+Shift+1–4 global commands. Same extension ID/profile. Chrome
+still owns OS sender identity; service-worker push notifications are not relayed.
+Read docs/CHROME_NOTIFICATIONS.md. Do not claim all real incoming notifications or
+physical global hotkeys tested. Local eleven-test synthetic suite passes; browser
+fixture/owner checks pending. No native execution/profile reset/auth retry needed.
+
 2026-11-10 screenshot clarification: phone linked-device QR scanner shows
 "Usa WhatsApp Web ufficiale per continuare" and asks for the official web client
 in a browser. No passkey error/prompt is visible. This identifies a pairing/client
