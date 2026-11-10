@@ -12,6 +12,18 @@ Only the explicitly confirmed manual subtests are passed. Fixture subtests do no
 pass real-account requirements.
 Sanitized automated results: [evidence/ui-results.json](evidence/ui-results.json).
 
+## Reopened wacli reuse research, 2026-11-10
+
+Completed source/metadata review, not an execution test: Mission Control 0.2.6
+at 4d4ffaf, its CLI adapter/daemon, notification/title badge implementations,
+MIT license, WA Passkey Connector interface, upstream wacli auth documentation,
+and current Chrome macOS PWA attribution/permission requirements.
+NON ESEGUITO: candidate UI/CLI build or tests, live auth, new session compatibility,
+PWA install/OS badge/banner, global shortcut or four-service integration.
+No production service, existing session or private monitor source was changed.
+See WACLI_REUSE.md. Existing Chrome test results below remain applicable only to
+that implementation and cannot be transferred to these candidates.
+
 ## Chrome extension 0.2.0, 2026-11-10
 
 - PASS MANUALE CONFERMATO: owner reports the requested global shortcut works

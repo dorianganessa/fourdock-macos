@@ -2,6 +2,22 @@
 
 Updated: 2026-11-10. **Prototype; not ready for daily use.**
 
+## Latest exploration: reuse an existing wacli client and authentication helper
+
+Owner reopened the deferred idea and explicitly prefers adapting authentication
+and reusing existing software over writing a client. Source review identified
+wacli Mission Control 0.2.6 (MIT), plus an existing public passkey-assertion
+connector implementing the same general architecture as the owner's helper.
+See [WACLI_REUSE.md](WACLI_REUSE.md) for pinned sources and concrete boundaries.
+The PWA path now has a current primary reference: Chrome152+ macOS installed PWAs
+have their own native notification attribution and permission-bound Dock badges.
+This does not imply existing Fourdock extension alerts gain PWA identity.
+
+No new runtime, account, profile, homeserver service or candidate dependency was
+changed. Existing Chrome Fourdock remains the working baseline. Next research
+checks: isolated UI/CLI contract build; separate pairing integration; normal PWA
+identity/badge feasibility if selected. None is a live auth or OS delivery pass.
+
 ## Current direction: improve the working Chrome workspace
 
 Owner reaffirmed this direction after reviewing their existing wacli browser

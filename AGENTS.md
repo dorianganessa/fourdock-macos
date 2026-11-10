@@ -1,5 +1,17 @@
 # Fourdock
 
+2026-11-10 LATEST OWNER DIRECTION: explicitly reopened wacli research, confirmed
+that idea, then asked to reuse only authentication and existing client/UI rather
+than rewrite a client. Earlier deferral below is historical. Read WACLI_REUSE.md:
+Mission Control (greenido/wacli-ui 0.2.6, MIT) is a candidate reusable UI atop wacli;
+the owner helper or public WA Passkey Connector can delegate the assertion.
+Unmodified upstream wacli still documents passkey pairing unsupported. No ready
+adapter for the current official web tabs is established. Chrome152+ installed
+macOS PWAs have native notification attribution; Dock badging needs OS permission.
+PWA delivery is a candidate, not target-tested or Chrome-free. Research only:
+preserve current Fourdock and dirty private monitor working tree; no deployment,
+store/credential copying, new pairing, monitor-policy changes or own-binary retry.
+
 2026-11-10 OWNER CHECK: requested Control+Shift+1 global WhatsApp shortcut works.
 Other combinations and actual banners are not yet confirmed. Owner sees no Dock
 badge: this is expected missing capability in extension-only mode, whose badge

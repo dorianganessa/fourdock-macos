@@ -1,5 +1,16 @@
 # Decisions and authentication evidence
 
+## 2026-11-10 — Reopen wacli research with reuse as the priority
+
+Owner explicitly reopened the idea and confirmed it means the wacli browser
+pairing architecture. The subsequent constraint is to reuse existing clients
+and only adapt authentication where possible. This supersedes the deferral below
+for research; it does not authorize replacing the working Chrome workspace or
+changing the production monitor/session. See WACLI_REUSE.md: existing MIT Mission
+Control UI, reusable browser assertion components, upstream pairing gap, version
+contract checks and an installed-PWA delivery candidate. No client rewrite is
+selected or necessary merely to investigate this option.
+
 ## 2026-11-10 — Keep browser-assisted wacli pairing research deferred
 
 The owner reports a working homeserver wacli authentication method. Read-only
