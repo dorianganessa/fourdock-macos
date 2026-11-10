@@ -16,8 +16,22 @@ engine/authentication experiments as the current implementation direction.
 Chrome still owns the OS notification identity. Service-worker push notifications
 are not intercepted. No real-account notification pass is claimed. Existing login
 evidence is retained, profiles untouched and native execution hold preserved.
-Local syntax and eleven synthetic Node tests pass; real Chromium-world fixture
-checks and owner OS/global-hotkey/incoming-event verification are pending.
+Local syntax and eleven synthetic Node tests pass. Workflow 42807740191 passes
+both architectures at 7ad9702, including actual packaged native startup/resource
+installation and sixteen Chromium fixture checks. Preview/click transport across
+real MAIN/isolated worlds and command registration pass; OS banner delivery was
+stubbed in the fixture. The first run exposed the old flat resource installer;
+it now copies the new icon directory recursively, without touching browser data.
+Owner OS/global-hotkey/incoming-event verification remains pending. No native
+execution was attempted on the managed target. See notification-relay-ci.json.
+
+Next three actions:
+1. Owner reloads/reloads-unpacked extension 0.2.0 in the existing dedicated
+   Chrome profile and tests a synthetic notification and global service shortcut.
+2. After saving drafts, owner reloads service pages once and observes a genuine
+   incoming event with the service hidden, including preview/click destination.
+3. Record per-service page-relay versus service-worker push behavior and address
+   only observed gaps. Do not restart engine/authentication experiments.
 
 
 ## Current diagnostic dependency: official WhatsApp Mac app

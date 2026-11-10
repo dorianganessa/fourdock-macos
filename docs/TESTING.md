@@ -21,9 +21,15 @@ Sanitized automated results: [evidence/ui-results.json](evidence/ui-results.json
   in either startup order, sender/preview retention, site click callback, tag
   replacement/close, permission/disconnection fallback, payload-free session
   routing and click routing after constructing a new worker relay.
-- NON ESEGUITO: added Chromium fixture for real MAIN/isolated worlds, synthetic
-  notification preview/click transport and four registered global commands. OS
-  banner delivery is deliberately stubbed in that fixture.
+- PASS AUTOMATICO: workflow 42807740191 at source 7ad9702, both macos-26 arm64 and
+  macos-15-intel. All sixteen Chromium fixture checks pass, including real
+  MAIN/isolated worlds, synthetic notification preview/click transport and four
+  registered global commands. OS banner delivery is deliberately stubbed.
+  Packaged native startup, recursive icon installation, scoped host registration
+  and IPC pass on CI. The earlier run failed because the old flat resource copier
+  treated the new icon directory as a file; the copier and its check were fixed.
+  Downloaded arm64 ZIP checksum and all five packaged icons verified read-only;
+  no native execution on this managed target. See notification-relay-ci.json.
 - NON ESEGUITO: target physical global key delivery from another app; actual
   service banners, artwork, preview and click destination with the workspace
   minimized; whether each service emits page notifications or worker pushes.

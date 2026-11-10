@@ -1,0 +1,163 @@
+{
+  "date": "2026-11-10",
+  "source": "7ad97024ffd28acbe205309f5ea0ce7d0293fd3c",
+  "workflow": "https://github.com/dorianganessa/fourdock-macos/actions/runs/42807740191",
+  "nodeTests": 11,
+  "jobs": {
+    "macos-26 arm64": "PASS AUTOMATICO",
+    "macos-15-intel x86_64": "PASS AUTOMATICO"
+  },
+  "nativePackaging": "CI startup, nested icon installation, native host registration and IPC passed; no target execution",
+  "arm64ArchiveSHA256": "5489491d6c947db7bcab28ae8f6dff0a0cf2eef2e8460b104039443101beda28",
+  "osBannerDelivery": "NOT TESTED: final Chrome notification API delivery stubbed in browser fixtures",
+  "physicalGlobalShortcuts": "NOT TESTED: command registration and handler behavior only",
+  "realAccountNotificationDelivery": "NOT TESTED; owner verification pending",
+  "suites": [
+    {
+      "date": "2026-11-10T11:29:41.814Z",
+      "environment": "darwin arm64",
+      "fixture": true,
+      "results": [
+        {
+          "test": "adopt existing authenticated-probe fixture tab without reload, duplicate or draft loss",
+          "status": "PASS AUTOMATICO"
+        },
+        {
+          "test": "existing service title count initializes badge state when its live tab is adopted",
+          "status": "PASS AUTOMATICO"
+        },
+        {
+          "test": "WhatsApp absolute application root stays beside sidebar without clipping or overlap",
+          "status": "PASS AUTOMATICO"
+        },
+        {
+          "test": "page Notification relay across real Chromium worlds preserves preview and original click handler without storing payloads; OS delivery stubbed",
+          "status": "PASS AUTOMATICO"
+        },
+        {
+          "test": "Chrome accepts four service commands declared global; physical OS key delivery remains manual",
+          "status": "PASS AUTOMATICO"
+        },
+        {
+          "test": "T05 synthetic 50 switches and draft preservation",
+          "status": "PASS AUTOMATICO",
+          "medianMs": 49.692833000000974,
+          "p95Ms": 128.13237500000105
+        },
+        {
+          "test": "T05 sidebar selects mapped service",
+          "status": "PASS AUTOMATICO"
+        },
+        {
+          "test": "T05 native Cmd+3 switches to existing Fastmail tab",
+          "status": "PASS AUTOMATICO"
+        },
+        {
+          "test": "T09 minimize/show retains loaded service",
+          "status": "PASS AUTOMATICO"
+        },
+        {
+          "test": "preferences, per-tab zoom and content-free diagnostics",
+          "status": "PASS AUTOMATICO"
+        },
+        {
+          "test": "T10 synthetic offline/online preserves draft",
+          "status": "PASS AUTOMATICO"
+        },
+        {
+          "test": "T07 synthetic file selection and browser download",
+          "status": "PASS AUTOMATICO"
+        },
+        {
+          "test": "T08 popup opener retained and popup closes",
+          "status": "PASS AUTOMATICO"
+        },
+        {
+          "test": "T08 external link fallback opens a separate browser tab without native bridge",
+          "status": "PASS AUTOMATICO"
+        },
+        {
+          "test": "T10 isolated service reload; origin storage survives",
+          "status": "PASS AUTOMATICO"
+        },
+        {
+          "test": "preferences and origin storage survive full browser restart",
+          "status": "PASS AUTOMATICO"
+        }
+      ]
+    },
+    {
+      "date": "2026-11-10T11:30:25.949Z",
+      "environment": "darwin x64",
+      "fixture": true,
+      "results": [
+        {
+          "test": "adopt existing authenticated-probe fixture tab without reload, duplicate or draft loss",
+          "status": "PASS AUTOMATICO"
+        },
+        {
+          "test": "existing service title count initializes badge state when its live tab is adopted",
+          "status": "PASS AUTOMATICO"
+        },
+        {
+          "test": "WhatsApp absolute application root stays beside sidebar without clipping or overlap",
+          "status": "PASS AUTOMATICO"
+        },
+        {
+          "test": "page Notification relay across real Chromium worlds preserves preview and original click handler without storing payloads; OS delivery stubbed",
+          "status": "PASS AUTOMATICO"
+        },
+        {
+          "test": "Chrome accepts four service commands declared global; physical OS key delivery remains manual",
+          "status": "PASS AUTOMATICO"
+        },
+        {
+          "test": "T05 synthetic 50 switches and draft preservation",
+          "status": "PASS AUTOMATICO",
+          "medianMs": 45.69145500000013,
+          "p95Ms": 115.7928810000003
+        },
+        {
+          "test": "T05 sidebar selects mapped service",
+          "status": "PASS AUTOMATICO"
+        },
+        {
+          "test": "T05 native Cmd+3 switches to existing Fastmail tab",
+          "status": "PASS AUTOMATICO"
+        },
+        {
+          "test": "T09 minimize/show retains loaded service",
+          "status": "PASS AUTOMATICO"
+        },
+        {
+          "test": "preferences, per-tab zoom and content-free diagnostics",
+          "status": "PASS AUTOMATICO"
+        },
+        {
+          "test": "T10 synthetic offline/online preserves draft",
+          "status": "PASS AUTOMATICO"
+        },
+        {
+          "test": "T07 synthetic file selection and browser download",
+          "status": "PASS AUTOMATICO"
+        },
+        {
+          "test": "T08 popup opener retained and popup closes",
+          "status": "PASS AUTOMATICO"
+        },
+        {
+          "test": "T08 external link fallback opens a separate browser tab without native bridge",
+          "status": "PASS AUTOMATICO"
+        },
+        {
+          "test": "T10 isolated service reload; origin storage survives",
+          "status": "PASS AUTOMATICO"
+        },
+        {
+          "test": "preferences and origin storage survive full browser restart",
+          "status": "PASS AUTOMATICO"
+        }
+      ]
+    }
+  ]
+}

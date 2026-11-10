@@ -7,9 +7,9 @@ sender/preview while adding Fourdock and the service name. macOS attribution
 remains Chrome; service-worker push notifications are outside the page relay.
 See [setup and limits](docs/CHROME_NOTIFICATIONS.md). Existing browser sessions
 are reused; no new native app or authentication method is needed for these features.
-An independent [Swift + WKWebView compatibility probe](docs/WEBKIT_PROBE.md) is
-now being evaluated as a standalone alternative. It has not passed real logins
-on the target Mac; the working Chrome workspace remains separate.
+An independent [Swift + WKWebView compatibility probe](docs/WEBKIT_PROBE.md) was
+prepared during the earlier architecture investigation. It has not passed real
+logins on the target Mac; current work uses the Chrome workspace described above.
 **Prototype — not yet ready for daily use.** On 2026-11-07 the owner confirmed
 all four account logins and session persistence after a full dedicated-browser
 restart. Notifications, attachments, recovery and native target approval remain
@@ -39,6 +39,11 @@ No backend, Fourdock account, cookie import or private service API is involved.
   see [the current plan](docs/PLAN.md). Do not disable system protections.
 
 ## Install and authenticate
+
+For the current Chrome-only 0.2.0 workspace, follow
+[the extension setup](docs/CHROME_NOTIFICATIONS.md). Use the existing dedicated
+profile and working sessions; the native packages below are optional and are not
+needed for the global shortcuts or notification relay on this managed Mac.
 
 Prototype ZIPs are available on the
 [prerelease page](https://github.com/dorianganessa/fourdock-macos/releases/tag/v0.1.1-prototype).
