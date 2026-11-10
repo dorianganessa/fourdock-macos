@@ -1,7 +1,7 @@
 ARG WACLI_SOURCE_IMAGE
 FROM ${WACLI_SOURCE_IMAGE} AS paired_cli
 
-FROM node:24-alpine AS build
+FROM node:24-alpine@sha256:a34ab6d7f6f4813f4d0c5469d74685604b962fbdbf5793a7bc7b4998ecb867c8 AS build
 WORKDIR /app
 COPY package*.json ./
 COPY apps/api/package.json apps/api/package.json
@@ -10,7 +10,7 @@ RUN npm ci --ignore-scripts --no-audit --no-fund
 COPY . .
 RUN npm run build
 
-FROM node:24-alpine
+FROM node:24-alpine@sha256:a34ab6d7f6f4813f4d0c5469d74685604b962fbdbf5793a7bc7b4998ecb867c8
 RUN apk add --no-cache ca-certificates libgcc \
     && mkdir /data && chown node:node /data
 WORKDIR /app

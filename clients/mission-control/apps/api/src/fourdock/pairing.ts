@@ -73,7 +73,11 @@ export class Pairing {
       this.phase = packet.phase!; return;
     }
     if (packet.type === 'paired') { this.phase = 'paired'; this.pending = undefined; return; }
-    if (packet.type === 'failed') { this.stop('pairing-refused'); return; }
+    if (packet.type === 'failed') {
+      const code = (packet as Packet & { code?: string }).code || '';
+      this.stop(/^(wa_iq_[45][0-9]{2}|wa_iq_timeout|wa_protocol_failed|assertion_invalid|client_update_required|timeout)$/.test(code) ? code : 'pairing-refused');
+      return;
+    }
     if (packet.type === 'qr') {
       if (this.pending && this.pending.type !== 'qr') throw new Error();
       if (typeof packet.png !== 'string' || packet.png.length > 64000 || !/^[A-Za-z0-9+/=]+$/.test(packet.png)) throw new Error();
@@ -132,7 +136,9 @@ export function createPairingRouter(pm: WacliProcessManager): Router {
   const pairing = new Pairing(process.env.WACLI_BIN || '', process.env.WACLI_STORE_DIR || '');
   const owner = (value: unknown) => typeof value === 'string' ? value : '';
   router.use((_req, res, next) => { res.setHeader('Cache-Control', 'no-store'); next(); });
-  router.get('/pairing', (req, res) => res.json({ mode: process.env.FOURDOCK_MODE || 'demo', ...pairing.snapshot(owner(req.headers['x-fourdock-owner'])) }));
+  router.get('/pairing', (req, res) => res.json({ mode: process.env.FOURDOCK_MODE || 'demo',
+    storedSession: fs.existsSync(`${process.env.WACLI_STORE_DIR}/session.db`),
+    ...pairing.snapshot(owner(req.headers['x-fourdock-owner'])) }));
   router.post('/pairing/start', async (req, res) => {
     if (req.headers['x-fourdock-request'] !== '1') { res.sendStatus(403); return; }
     try { pairing.assertStartable(); await pm.stop(); res.json(pairing.start()); }

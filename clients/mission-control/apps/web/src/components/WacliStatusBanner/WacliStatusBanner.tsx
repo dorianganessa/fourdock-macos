@@ -28,7 +28,7 @@ const GO_INSTALL_CMD =
   'CGO_ENABLED=1 CGO_CFLAGS="-Wno-error=missing-braces" go install -tags sqlite_fts5 github.com/openclaw/wacli/cmd/wacli@latest';
 const INSTALL_GUIDE_URL = 'https://wacli.sh/install.html';
 
-export const WacliStatusBanner: React.FC = () => {
+export const WacliStatusBanner: React.FC<{ pairingHandled?: boolean }> = ({ pairingHandled = false }) => {
   const queryClient = useQueryClient();
   const setActiveModal = useAppStore((s) => s.setActiveModal);
   const { sleeping } = useSleepMode();
@@ -97,6 +97,7 @@ export const WacliStatusBanner: React.FC = () => {
   const isExternalLock = health?.statusSummary === 'store_locked_external';
   const isNotInstalled = health?.wacliInstalled === false || health?.statusSummary === 'not_installed';
   const isNotAuth = health?.statusSummary === 'not_authenticated' || health?.doctor?.authenticated === false;
+  if (pairingHandled && isNotAuth) return null;
 
   return (
     <div

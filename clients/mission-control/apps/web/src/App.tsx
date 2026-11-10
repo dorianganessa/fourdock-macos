@@ -80,7 +80,7 @@ export const App: React.FC = () => {
       <SleepBanner />
 
       {/* System Warning / First-Load wacli Diagnostic Banner */}
-      <WacliStatusBanner />
+      <WacliStatusBanner pairingHandled />
 
       {/* A newer wacli is out: the command to take it, never taken for you */}
       <WacliUpdateNotice />

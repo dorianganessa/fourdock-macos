@@ -37,7 +37,8 @@ chrome.runtime.onMessageExternal.addListener((message, sender, respond) => {
       if (tab) {
         await chrome.scripting.executeScript({ target: { tabId: tab.id }, world: 'MAIN',
           func: () => document.getElementById('fourdock-passkey')?.dispatchEvent(new Event('fourdock-cancel')) }).catch(() => {});
-        // Leave the official page open, without closing any existing WhatsApp tab.
+        const current = await chrome.tabs.get(tab.id).catch(() => null);
+        if (current?.url && new URL(current.url).origin === 'https://web.whatsapp.com') await chrome.tabs.remove(tab.id).catch(() => {});
       }
       await chrome.tabs.update(sender.tab.id, { active: true }).catch(() => {});
       await chrome.windows.update(sender.tab.windowId, { focused: true }).catch(() => {});

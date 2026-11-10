@@ -1,6 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
+import { readUnreadTotal } from '../../hooks/useUnreadBadge.ts';
 
-type PairState = { mode?: string; phase: string; active?: boolean; owner?: string; failure?: string;
+type PairState = { mode?: string; phase: string; active?: boolean; owner?: string; failure?: string; storedSession?: boolean;
   request?: { type: string; id?: string; png?: string; code?: string; publicKey?: Record<string, unknown> } };
 const api = async (route = '', method = 'GET', owner = '', body?: unknown): Promise<PairState> => {
   const response = await fetch(`/api/pairing${route}`, { method, cache: 'no-store', headers: {
@@ -11,6 +13,7 @@ const api = async (route = '', method = 'GET', owner = '', body?: unknown): Prom
 };
 
 export function Fourdock() {
+  const queryClient = useQueryClient();
   const [state, setState] = useState<PairState>({ phase: 'idle' });
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
@@ -60,8 +63,13 @@ export function Fourdock() {
     if (await Notification.requestPermission() !== 'granted') throw new Error('Consenti le notifiche di questa app nelle impostazioni.');
     const service = await navigator.serviceWorker.ready;
     await service.showNotification('Fourdock WhatsApp', { body: 'Notifica di prova: nessun messaggio è stato inviato.', icon: '/icons/app-192.png', tag: 'fourdock-test' });
-    const badges = navigator as Navigator & { setAppBadge?: (count: number) => Promise<void> };
+    const badges = navigator as Navigator & { setAppBadge?: (count: number) => Promise<void>; clearAppBadge?: () => Promise<void> };
     await badges.setAppBadge?.(3);
+    setTimeout(() => {
+      const count = readUnreadTotal(queryClient);
+      if (count) void badges.setAppBadge?.(count).catch(() => {});
+      else void badges.clearAppBadge?.().catch(() => {});
+    }, 10000);
   };
   return <section className="px-4 py-2 border-b border-mc-border bg-mc-surface text-mc-text text-xs" aria-label="Fourdock">
     <div className="flex items-center gap-3 flex-wrap">
@@ -77,7 +85,7 @@ export function Fourdock() {
     {expanded && <div className="py-3 flex gap-3 flex-col max-w-xl">
       <p>{demo ? 'Questa prova simula il collegamento. Non scansionare codici e non usare una passkey reale.' : 'Collega un nuovo dispositivo con la tua passkey. La sessione resta in questa istanza del client.'}</p>
       <p role="status">{state.failure ? 'Collegamento interrotto. Nessun nuovo tentativo automatico.' : state.phase === 'paired' ? 'Collegamento completato.' : state.phase === 'passkey' ? 'Conferma la passkey per continuare.' : state.phase === 'confirm' ? 'Conferma il collegamento.' : state.active ? 'Collegamento in corso…' : 'Pronto per iniziare.'}</p>
-      {!state.active && state.phase !== 'paired' && <button disabled={busy} onClick={() => perform(async () => {
+      {!state.active && !state.storedSession && state.phase !== 'paired' && <button disabled={busy} onClick={() => perform(async () => {
         const started = await api('/start', 'POST'); owner.current = started.owner || ''; setState({ ...started, mode: state.mode });
       })}>{demo ? 'Avvia simulazione' : 'Avvia collegamento'}</button>}
       {state.request?.type === 'qr' && !demo && <><p>Sul telefono: WhatsApp → Dispositivi collegati → Collega un dispositivo.</p><img className="w-56 bg-white" src={`data:image/png;base64,${state.request.png}`} alt="Codice per collegare questo client" /></>}
@@ -86,7 +94,7 @@ export function Fourdock() {
         await api('/reply', 'POST', owner.current, { type: 'confirm', id: state.request!.id, confirmed: true });
       })}>{demo ? 'Conferma simulazione' : state.request.code ? 'I codici corrispondono' : 'Confermo il collegamento'}</button></>}
       {state.active && owner.current && <button onClick={() => perform(async () => { await api('/cancel', 'POST', owner.current); owner.current = ''; })}>Annulla</button>}
-      {state.phase === 'paired' && <button disabled={busy || state.active} onClick={() => perform(async () => { await api('/sync', 'POST'); setExpanded(false); })}>Carica conversazioni</button>}
+      {(state.phase === 'paired' || state.storedSession) && <button disabled={busy || state.active} onClick={() => perform(async () => { await api('/sync', 'POST'); setExpanded(false); })}>Carica conversazioni</button>}
     </div>}
     {error && <p role="alert" className="py-2">{error}</p>}
   </section>;
