@@ -13,10 +13,28 @@ assertions, cookies, account screenshots or chat content belong in this reposito
 
 The owner clarified that the newly mentioned native-app failure concerns
 **official WhatsApp for macOS**, not our Swift probe. Do not conflate this with
-Fourdock's AMFI incident or Electron's missing hybrid integration. The exact
-official-app error, location and stage have been requested and are pending.
+Fourdock's AMFI incident or Electron's missing hybrid integration. The owner then
+provided a phone screenshot from the linked-device QR scanner. Its warning is:
+"Usa WhatsApp Web ufficiale per continuare"; the explanation says it appears the
+official WhatsApp Web is not in use and asks the owner to continue in a browser.
+Only this generic error text is recorded; the private screenshot is not published.
+No passkey prompt/error is visible in this screenshot. Do not infer from this that
+a passkey could never be requested later, or that the rejection's internal cause
+has been identified. The phone WhatsApp version and beta status were requested
+for a focused comparison and remain pending.
 Read-only bundle metadata shows WhatsApp 26.45.13, build 1108933973; no official
-WhatsApp profile, account data or authentication screen was inspected.
+WhatsApp profile or account data was inspected. A subsequent read-only check of
+the installed bundle passed codesign --verify --deep --strict; its Developer ID
+authority is WhatsApp Inc., bundle net.whatsapp.WhatsApp, and a notarization ticket
+is stapled. This supports authenticity of the installed Mac bundle; it does not
+explain the phone-side classification or establish why the pairing was refused.
+
+WABetaInfo's 2026-09-01 original feature report documents the same warning UI as
+an Android linked-device warning for clients considered unofficial. It reports
+observing the feature in beta 2.26.35.1; that is not the owner's confirmed phone
+version, and the article does not establish a false-positive bug in official Mac
+26.45.13. Treat it as identification of the warning, not an authoritative diagnosis.
+[Original UI report](https://wabetainfo.com/whatsapp-is-testing-a-safety-warning-for-unofficial-web-clients/).
 
 The successful Chrome trial was official phone-number linking. It does not
 establish a successful passkey ceremony. No fresh passkey result was confirmed
@@ -51,8 +69,10 @@ acknowledgement of this exact owner's current failure or one ongoing global
 outage was established. Similar community reports cannot establish either.
 [Supported linked devices](https://faq.whatsapp.com/378279804439436/).
 
-The next diagnostic dependency is the official app's exact error/stage, not a
-new generic framework experiment. No new linking attempt, profile reset, key
+The next diagnostic dependency is the phone app's version/beta status and the
+official pairing classification, not a new generic framework experiment. The
+missing Electron hybrid path remains a distinct finding; adding it alone is not
+proven to resolve this warning. No new linking attempt, profile reset, key
 deletion, update/reinstall, credential bridge or network/security change was made.
 
 | Trial | Observed result | Meaning |

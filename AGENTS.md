@@ -1,5 +1,14 @@
 # Fourdock
 
+2026-11-10 screenshot clarification: phone linked-device QR scanner shows
+"Usa WhatsApp Web ufficiale per continuare" and asks for the official web client
+in a browser. No passkey error/prompt is visible. This identifies a pairing/client
+classification warning, not its underlying cause. The installed official Mac
+26.45.13 bundle passes signature verification (WhatsApp Inc. Developer ID,
+stapled notarization). Phone WhatsApp version/beta status requested, pending.
+Do not publish the private screenshot, call the official app counterfeit, or
+assume our Electron hybrid patch would fix this warning. See AUTHENTICATION.md.
+
 2026-11-10 clarification: owner reports failure in OFFICIAL WhatsApp for macOS,
 not only our Swift probe. Exact error/stage requested, pending. Installed bundle
 metadata: 26.45.13/build1108933973; no app/profile/account inspection. Keep its

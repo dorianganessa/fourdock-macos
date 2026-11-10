@@ -4,17 +4,24 @@ Updated: 2026-11-10. **Prototype; not ready for daily use.**
 
 ## Current diagnostic dependency: official WhatsApp Mac app
 
-The owner clarified that official WhatsApp for macOS also fails. The exact error,
-device showing it and stage are requested/pending. This is separate from our
+The owner clarified that official WhatsApp for macOS also fails. A subsequent
+phone screenshot shows "Usa WhatsApp Web ufficiale per continuare" inside the
+linked-device scanner, with instructions to use the official web client in a
+browser. It is not a visible passkey error and does not establish its internal
+cause. Phone WhatsApp version/beta status is requested/pending. This is separate from our
 native executable's AMFI rejection and Electron's missing hybrid implementation.
-The installed official bundle is 26.45.13/build1108933973 (metadata-only check).
+The installed official bundle is 26.45.13/build1108933973. Read-only signature
+verification passes, with WhatsApp Inc. Developer ID and stapled notarization.
+An original WABetaInfo report identifies this warning UI, but does not establish
+the cause for this official Mac app/account. The screenshot is not published.
 Public first-hand reports include Mac relinking failure with Web/passkey success
 and an Android/Mac case of forced logout after successful sync. Those reports do
 not establish a shared cause or current global outage. Google/WhatsApp's primary
 passkey case study also documents cross-platform/credential-provider difficulties.
 Sources and limits: [AUTHENTICATION.md](AUTHENTICATION.md). No account/profile,
 linking, key, network/security or installation changes were made. Preserve the
-working browser sessions and wait for concrete error context before diagnosis.
+working browser sessions and wait for the requested phone-version context before
+assigning a cause. Do not assume a patched Electron runtime resolves this warning.
 
 ## Latest decision: focused Electron passkey audit
 
