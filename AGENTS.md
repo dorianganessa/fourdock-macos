@@ -1,5 +1,12 @@
 # Fourdock
 
+2026-11-10 OWNER CHECK: requested Control+Shift+1 global WhatsApp shortcut works.
+Other combinations and actual banners are not yet confirmed. Owner sees no Dock
+badge: this is expected missing capability in extension-only mode, whose badge
+API updates the Chrome toolbar icon/sidebar. Native NSApp.dockTile badge requires
+the unavailable bridge. Do not suggest a Chrome badge toggle as a fix or treat
+the synthetic Test WhatsApp banner as an unread event. UI/docs now clarify this.
+
 2026-11-10 OWNER DECISION: retain the wacli/browser-passkey research for later;
 do NOT use it now. Continue the existing Chrome Fourdock 0.2.0 and owner setup
 checks. A previously built browser helper signs a client challenge on genuine

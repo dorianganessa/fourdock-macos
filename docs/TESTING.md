@@ -14,6 +14,16 @@ Sanitized automated results: [evidence/ui-results.json](evidence/ui-results.json
 
 ## Chrome extension 0.2.0, 2026-11-10
 
+- PASS MANUALE CONFERMATO: owner reports the requested global shortcut works
+  (Control+Shift+1 to WhatsApp from another app). Other service shortcuts remain
+  individually unverified; do not infer a pass for all four physical combinations.
+- FAIL for requested Dock unread indication in the extension-only workspace:
+  owner sees no Dock indication. Source confirms chrome.action.setBadgeText
+  updates the toolbar extension icon; NSApp.dockTile.badgeLabel requires the
+  unavailable native bridge. This is a known missing capability, not proof that
+  banner delivery failed. Preferences now state the exact badge locations.
+- NON ESEGUITO: actual target banner delivery still has no owner confirmation.
+  The synthetic notification test does not increment service unread counts.
 - PASS AUTOMATICO: local syntax/permission/identity/icon checks and eleven Node
   tests. They cover the actual background command handler selecting all four
   retained tabs and restoring a minimized workspace, refusal of foreign origins,

@@ -38,6 +38,13 @@ Next three actions:
 3. Record per-service page-relay versus service-worker push behavior and address
    only observed gaps. Do not restart engine/authentication experiments.
 
+Owner feedback, 2026-11-10: global Control+Shift+1 works; Dock unread indication
+is absent. The current extension only sets toolbar/sidebar badges. Dock badge
+code is in the unavailable native bridge, so the requested Dock capability is
+an explicit unresolved gap. Banner delivery and the other global assignments
+remain unconfirmed. Preferences now distinguish badges from test banners and
+state that the extension-only workspace does not add a macOS Dock badge.
+
 
 ## Current diagnostic dependency: official WhatsApp Mac app
 

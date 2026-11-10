@@ -54,6 +54,13 @@ chat DOM, credentials, cookies or authentication APIs are inspected.
 
 ## Limits and remaining checks
 
+- Unread counts appear in the sidebar and on the extension's Chrome toolbar
+  icon (pin Fourdock through the puzzle menu). They use explicit service title
+  counts; unknown counts remain empty. The Chrome-only version has no Fourdock
+  Dock badge. That code lives in the native Swift bridge, whose target execution
+  remains blocked. A synthetic notification test does not change unread counts.
+- Owner confirmed Control+Shift+1 works on the target, 2026-11-10. This does not
+  confirm the other three global assignments or notification/banner delivery.
 - macOS attributes alerts to Chrome, including its primary application icon and
   notification settings/grouping. An extension cannot become a separate native
   notification sender. Distinguishing text/service artwork is the improvement.
