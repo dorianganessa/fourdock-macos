@@ -1,0 +1,736 @@
+import { spawn, spawnSync, type ChildProcess } from 'node:child_process';
+import crypto from 'node:crypto';
+import fs from 'node:fs';
+import path from 'node:path';
+import os from 'node:os';
+import readline from 'node:readline';
+import { logger } from '../logger.js';
+import { modeManager } from './mode.js';
+import { StoreLockedError } from './store-lock.js';
+import type { MissionControlStatus } from '../types.js';
+
+export type ProcessState = MissionControlStatus['processState'];
+
+/** How a command handed to the running daemon should run: see runDelegated(). */
+export interface DelegationOptions {
+  lockRetryAttempts?: number;
+}
+
+export interface ProcessManagerOptions {
+  apiPort: number;
+  onStateChange?: (state: ProcessState, reason?: string) => void;
+  onLifecycleEvent?: (event: Record<string, unknown>) => void;
+  /**
+   * How long to wait after an exclusive command before bringing the sync
+   * daemon back. The daemon needs roughly 600ms to reach "connected", so
+   * respawning the instant a command finishes means a command arriving just
+   * afterwards kills a daemon that never got to connect.
+   */
+  respawnDebounceMs?: number;
+}
+
+export const DEFAULT_RESPAWN_DEBOUNCE_MS = 750;
+
+/**
+ * The gap `sync --send-spacing` keeps between commands handed to the daemon.
+ * The gap is not the point - at 1ms it costs nothing. The mode it switches on
+ * is.
+ *
+ * The daemon carries out handed-over commands one at a time. Without the flag a
+ * queued command waits its turn however long that takes, then runs with its
+ * whole budget still ahead of it - including one whose caller already gave up.
+ * Read receipts are slow, because each replays WhatsApp's chat state first, so
+ * a few chats opened in a row could hold a send behind them past its deadline:
+ * the console reported it failed, and then it went out anyway. In this mode the
+ * daemon holds every command to the deadline its caller set: one not started by
+ * then is refused, never run late.
+ *
+ * `WACLI_SEND_SPACING` overrides it: a range such as `2s-5s` paces sends for
+ * real, and an empty value leaves the flag off.
+ */
+export const DEFAULT_SEND_SPACING = '1ms';
+
+/**
+ * Whether this wacli's `sync` takes `--send-spacing` (0.15.1 and later). An
+ * older one refuses to start on a flag it does not know, so the flag is only
+ * passed once `sync --help` has named it. Help is printed before anything opens
+ * the store, so asking works while a daemon holds the lock.
+ *
+ * Synchronous because spawning is; the manager asks once per binary.
+ */
+export function syncSupportsSendSpacing(bin: string): boolean {
+  const probe = spawnSync(bin, ['sync', '--help'], { encoding: 'utf8', timeout: 5_000 });
+  return `${probe.stdout ?? ''}${probe.stderr ?? ''}`.includes('--send-spacing');
+}
+
+/**
+ * How many of our own daemon PIDs to remember.
+ *
+ * A `wacli doctor` result is cached for a few seconds, so the PID it names as
+ * the lock holder can be a daemon of ours that has since exited — and the
+ * health route must not read that as somebody else's wacli. A restart loop
+ * burns through PIDs quickly at the short end of the backoff, so remember more
+ * than one; bounded because nothing else expires this list.
+ */
+export const SPAWNED_PID_HISTORY = 16;
+
+/**
+ * Cleanups of every live manager, run when this process goes down. The hooks
+ * used to be registered per instance, which added three process listeners per
+ * construction and tripped Node's MaxListenersExceededWarning as soon as a test
+ * file built more than a handful of managers. One shared hook over this
+ * registry keeps the count at three however many managers exist.
+ */
+/** Flag values that are credentials rather than configuration. */
+const SECRET_FLAGS = new Set(['--webhook-secret']);
+
+/**
+ * The spawn line is worth logging — it is how you tell which daemon flags a run
+ * actually used — but the webhook secret is an HMAC key, and a log file is the
+ * first thing anyone pastes into a bug report. Keep the shape, drop the key.
+ */
+export function redactArgs(args: string[]): string {
+  const shown = args.map((arg, index) =>
+    index > 0 && SECRET_FLAGS.has(args[index - 1]) ? '<redacted>' : arg
+  );
+  return shown.join(' ');
+}
+
+const shutdownCleanups = new Set<() => void>();
+const SHUTDOWN_EVENTS = ['exit', 'SIGINT', 'SIGTERM'] as const;
+let shutdownHooksRegistered = false;
+
+/** Named so tests can pick it out of the process's other listeners. */
+function wacliShutdownHook(): void {
+  for (const cleanup of shutdownCleanups) {
+    cleanup();
+  }
+}
+
+function registerShutdownHooks(): void {
+  if (shutdownHooksRegistered) return;
+  shutdownHooksRegistered = true;
+  for (const event of SHUTDOWN_EVENTS) {
+    process.once(event, wacliShutdownHook);
+  }
+}
+
+function unregisterShutdownHooks(): void {
+  if (!shutdownHooksRegistered) return;
+  shutdownHooksRegistered = false;
+  for (const event of SHUTDOWN_EVENTS) {
+    process.off(event, wacliShutdownHook);
+  }
+}
+
+export class WacliProcessManager {
+  private child: ChildProcess | null = null;
+  private state: ProcessState = 'stopped';
+  /** The reason announced with the current state, so a repeat can be spotted. */
+  private stateReason: string | undefined;
+  private webhookSecret: string;
+  private apiPort: number;
+  private reconnectAttempts = 0;
+  private restartTimer: NodeJS.Timeout | null = null;
+  private uptimeTimer: NodeJS.Timeout | null = null;
+  private lastError: string | null = null;
+  private isPaused = false;
+  /**
+   * Whether anyone wants a daemon at all: set by start(), cleared by stop().
+   * An exclusive command takes the daemon down and puts it back, and "back"
+   * has to mean back to what it was. Without this every send resurrected a
+   * daemon that had been stopped on purpose, and `--no-sync` lasted exactly
+   * until the first one.
+   */
+  private wantRunning = false;
+  private pauseMutex = Promise.resolve();
+  /** Exclusive actions queued or running; the daemon stays down until it hits 0. */
+  private exclusiveWaiters = 0;
+  /** Commands the running daemon is carrying out for us, until they settle. */
+  private readonly delegated = new Set<Promise<unknown>>();
+  private respawnTimer: NodeJS.Timeout | null = null;
+  private respawnDebounceMs: number;
+  /** Last connection state the daemon reported about itself. */
+  private daemonConnected = false;
+  /** PIDs we have spawned, so a lock held by one is never read as external. */
+  private spawnedPids: number[] = [];
+  /** What syncSupportsSendSpacing() said, and about which binary. */
+  private sendSpacingProbe: { bin: string; supported: boolean } | null = null;
+  private onStateChange?: (state: ProcessState, reason?: string) => void;
+  private onLifecycleEvent?: (event: Record<string, unknown>) => void;
+  /** SIGINTs the daemon if this process goes down; held so dispose() can drop it. */
+  private readonly shutdownCleanup = (): void => {
+    if (this.child && !this.child.killed) {
+      try {
+        this.child.kill('SIGINT');
+      } catch {
+        // ignore
+      }
+    }
+  };
+
+  constructor(options: ProcessManagerOptions) {
+    this.apiPort = options.apiPort;
+    this.respawnDebounceMs = options.respawnDebounceMs ?? DEFAULT_RESPAWN_DEBOUNCE_MS;
+    this.webhookSecret = crypto.randomBytes(32).toString('hex');
+    this.onStateChange = options.onStateChange;
+    this.onLifecycleEvent = options.onLifecycleEvent;
+
+    // Clean up any child processes on exit/signals
+    this.registerProcessHooks();
+  }
+
+  private registerProcessHooks(): void {
+    shutdownCleanups.add(this.shutdownCleanup);
+    registerShutdownHooks();
+  }
+
+  /**
+   * Detaches this manager from the process-wide shutdown hooks. Production keeps
+   * one manager for the life of the process and never needs this; tests build
+   * many, and each one left registered holds its child-kill closure - and the
+   * manager with it - alive. Only the hook is dropped: stop() the daemon first
+   * if one is running, or nothing will be left to shut it down.
+   */
+  public dispose(): void {
+    shutdownCleanups.delete(this.shutdownCleanup);
+    if (shutdownCleanups.size === 0) {
+      unregisterShutdownHooks();
+    }
+  }
+
+  public getWebhookSecret(): string {
+    return this.webhookSecret;
+  }
+
+  public getState(): ProcessState {
+    return this.state;
+  }
+
+  public getPid(): number | null {
+    return this.child?.pid ?? null;
+  }
+
+  public getLastError(): string | null {
+    return this.lastError;
+  }
+
+  public getReconnectAttempts(): number {
+    return this.reconnectAttempts;
+  }
+
+  /**
+   * Whether our own sync daemon reports itself connected to WhatsApp. This is
+   * the only trustworthy answer while the daemon holds the store lock, because
+   * a `wacli doctor` probe run alongside it is refused by that very lock and
+   * reports "locked_by_other_process" about a process that is working fine.
+   */
+  public isDaemonConnected(): boolean {
+    return this.daemonConnected && this.child !== null;
+  }
+
+  /**
+   * Whether this manager has ever spawned `pid`. Answers "is that lock holder
+   * one of ours?" for a PID our current child no longer has — while the daemon
+   * is restarting `getPid()` is null, and a cached doctor result can still name
+   * the process that just exited.
+   */
+  public hasSpawnedPid(pid: number): boolean {
+    return this.spawnedPids.includes(pid);
+  }
+
+  public getHeartbeatAgeSeconds(): number | null {
+    const settings = modeManager.getSettings();
+    const defaultStore = process.platform === 'linux'
+      ? path.join(os.homedir(), '.local/state/wacli')
+      : path.join(os.homedir(), '.wacli');
+    const storeDir = settings.storeDir ?? process.env.WACLI_STORE_DIR ?? defaultStore;
+    const heartbeatPath = path.join(storeDir, 'HEARTBEAT');
+
+    try {
+      if (fs.existsSync(heartbeatPath)) {
+        const raw = fs.readFileSync(heartbeatPath, 'utf8').trim();
+        const date = new Date(raw);
+        if (!isNaN(date.getTime())) {
+          return Math.max(0, Math.floor((Date.now() - date.getTime()) / 1000));
+        }
+      }
+    } catch {
+      // ignore
+    }
+    return null;
+  }
+
+  /**
+   * Announces a transition. Restating the state the daemon is already in is not
+   * a transition, and subscribers treat every call as news — so an unchanged
+   * state and reason is dropped rather than broadcast and logged twice.
+   */
+  private setState(state: ProcessState, reason?: string): void {
+    if (this.state === state && this.stateReason === reason) return;
+
+    this.state = state;
+    this.stateReason = reason;
+    logger.info('process', 'Sync state changed', { state, reason });
+    if (this.onStateChange) {
+      this.onStateChange(state, reason);
+    }
+  }
+
+  public start(): void {
+    this.wantRunning = true;
+    // Exclusive work owns the store until it is done, and brings the daemon
+    // back itself when it is. Spawning now only loses the lock to it — which
+    // is how a Restart pressed mid-send used to end with a daemon nothing
+    // tracked.
+    if (this.exclusiveWaiters > 0) {
+      this.setState('paused', 'Paused for exclusive command');
+      return;
+    }
+    if (this.child || this.state === 'running' || this.state === 'starting') {
+      return;
+    }
+
+    this.isPaused = false;
+    this.cancelPendingRespawn();
+    this.cancelRestartTimer();
+    this.spawnSyncProcess();
+  }
+
+  /**
+   * Wants a daemon, and brings it up through the respawn debounce rather than
+   * at once. Waking from sleep uses this: when a send is what woke it, the
+   * send's exclusive run lands inside the window and cancels the spawn, so the
+   * daemon comes up once afterwards instead of being spawned only for the send
+   * to kill it. Exclusive work already running brings it back when it ends.
+   */
+  public startSoon(): void {
+    this.wantRunning = true;
+    if (this.exclusiveWaiters > 0) return;
+    if (this.child || this.state === 'running' || this.state === 'starting') return;
+
+    this.isPaused = false;
+    this.scheduleRespawn();
+  }
+
+  /**
+   * Brings the daemon back after the exclusive queue drains, but only once it
+   * has stayed drained for the debounce window. Any exclusive action starting
+   * in the meantime cancels it, so a burst of commands produces one respawn at
+   * the end instead of one per command.
+   */
+  private scheduleRespawn(): void {
+    this.cancelPendingRespawn();
+    // One way back at a time: a crash's backoff timer left armed alongside
+    // this one would spawn a second daemon.
+    this.cancelRestartTimer();
+    this.respawnTimer = setTimeout(() => {
+      this.respawnTimer = null;
+      if (this.isPaused || this.exclusiveWaiters > 0 || this.child) {
+        return;
+      }
+      this.spawnSyncProcess();
+    }, this.respawnDebounceMs);
+  }
+
+  private cancelPendingRespawn(): void {
+    if (this.respawnTimer) {
+      clearTimeout(this.respawnTimer);
+      this.respawnTimer = null;
+    }
+  }
+
+  private cancelRestartTimer(): void {
+    if (this.restartTimer) {
+      clearTimeout(this.restartTimer);
+      this.restartTimer = null;
+    }
+  }
+
+  private spawnSyncProcess(): void {
+    const bin = process.env.WACLI_BIN ?? 'wacli';
+    const settings = modeManager.getSettings();
+    const webhookUrl = `http://127.0.0.1:${this.apiPort}/internal/wacli/webhook`;
+
+    const args = [
+      'sync',
+      '--follow',
+      '--events',
+      '--webhook',
+      webhookUrl,
+      '--webhook-secret',
+      this.webhookSecret,
+      '--webhook-allow-private',
+      '--webhook-events',
+      'message,receipt,chat_presence',
+      '--stale-threshold',
+      '2m',
+      '--max-db-size',
+      '2GB',
+    ];
+
+    const storeDir = settings.storeDir ?? process.env.WACLI_STORE_DIR;
+    const account = settings.account ?? process.env.WACLI_ACCOUNT;
+
+    // Independent flags — see the same pairing in commands.ts. The daemon has
+    // to open the same store as the reads do, as the same account, or the
+    // console follows one session while every command runs against another.
+    if (storeDir) {
+      args.push('--store', storeDir);
+    }
+
+    if (account) {
+      args.push('--account', account);
+    }
+
+    const sendSpacing = process.env.WACLI_SEND_SPACING ?? DEFAULT_SEND_SPACING;
+    if (sendSpacing && this.supportsSendSpacing(bin)) {
+      args.push('--send-spacing', sendSpacing);
+    }
+
+    this.setState('starting');
+    logger.info('process', 'Spawning sync daemon', { bin, args: redactArgs(args) });
+
+    // IMPORTANT: Never pass WACLI_READONLY to sync process!
+    const env = { ...process.env };
+    delete env.WACLI_READONLY;
+
+    try {
+      const child = spawn(bin, args, {
+        env,
+        stdio: ['ignore', 'pipe', 'pipe'],
+      });
+
+      this.child = child;
+
+      if (typeof child.pid === 'number') {
+        this.spawnedPids.push(child.pid);
+        if (this.spawnedPids.length > SPAWNED_PID_HISTORY) {
+          this.spawnedPids.shift();
+        }
+      }
+
+      // Handle stderr NDJSON lifecycle stream
+      if (child.stderr) {
+        const rl = readline.createInterface({ input: child.stderr, crlfDelay: Infinity });
+        rl.on('line', (line) => {
+          this.handleStderrLine(line);
+        });
+      }
+
+      // Discard stdout or log if needed
+      if (child.stdout) {
+        child.stdout.resume();
+      }
+
+      child.on('spawn', () => {
+        this.setState('running');
+        // If it runs stably for 60s, reset reconnect counter
+        if (this.uptimeTimer) clearTimeout(this.uptimeTimer);
+        this.uptimeTimer = setTimeout(() => {
+          if (this.state === 'running') {
+            this.reconnectAttempts = 0;
+            logger.info('process', 'Sync daemon stable for 60s; backoff reset');
+          }
+        }, 60000);
+      });
+
+      child.on('error', (err) => {
+        this.lastError = err.message;
+        logger.error('process', 'Sync daemon failed to spawn', { err });
+        this.handleProcessExit(child, -1, null);
+      });
+
+      child.on('close', (code, signal) => {
+        this.handleProcessExit(child, code, signal);
+      });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      this.lastError = msg;
+      this.setState('failed', msg);
+    }
+  }
+
+  /** Asked on the first spawn, not on each respawn after an exclusive command. */
+  private supportsSendSpacing(bin: string): boolean {
+    if (this.sendSpacingProbe?.bin !== bin) {
+      this.sendSpacingProbe = { bin, supported: syncSupportsSendSpacing(bin) };
+    }
+    return this.sendSpacingProbe.supported;
+  }
+
+  public async restart(): Promise<void> {
+    await this.stop();
+    this.reconnectAttempts = 0;
+    this.lastError = null;
+    this.start();
+  }
+
+  private handleStderrLine(line: string): void {
+    const trimmed = line.trim();
+    if (!trimmed) return;
+
+    try {
+      const parsed = JSON.parse(trimmed) as Record<string, unknown>;
+      logger.debug('process', 'Sync lifecycle event', { event: parsed });
+
+      if (parsed.event === 'connected') {
+        this.daemonConnected = true;
+        this.setState('running', 'Connected to WhatsApp');
+        this.lastError = null;
+      } else if (parsed.event === 'logged_out' || parsed.type === 'logged_out') {
+        this.daemonConnected = false;
+        this.setState('logged_out', 'WhatsApp session was logged out or revoked');
+      } else if (parsed.event === 'error') {
+        const data = parsed.data as { message?: string } | undefined;
+        this.lastError = data?.message || JSON.stringify(parsed.data || parsed);
+        logger.error('process', 'Sync daemon reported an error', { reason: this.lastError });
+      } else if (parsed.event === 'disconnected') {
+        this.daemonConnected = false;
+        logger.warn('process', 'Sync daemon disconnected', { event: parsed });
+      }
+
+      if (this.onLifecycleEvent) {
+        this.onLifecycleEvent(parsed);
+      }
+    } catch {
+      // Non-JSON line from wacli stderr (e.g. human logging)
+      const lower = trimmed.toLowerCase();
+      if (lower.includes('error') || lower.includes('fatal') || lower.includes('panic') || lower.includes('locked')) {
+        this.lastError = trimmed;
+      }
+      logger.debug('process', 'wacli stderr', { line: trimmed });
+    }
+  }
+
+  private handleProcessExit(
+    child: ChildProcess,
+    code: number | null,
+    signal: NodeJS.Signals | null
+  ): void {
+    // Only the daemon we track can end the one we track. A child that is not
+    // it has already been handled — a failed spawn raises `error` and then
+    // `close`, which used to count one failure twice — or was replaced, and
+    // clearing `child` on its behalf would lose track of the live one.
+    if (child !== this.child) return;
+    this.child = null;
+    this.daemonConnected = false;
+    if (this.uptimeTimer) {
+      clearTimeout(this.uptimeTimer);
+      this.uptimeTimer = null;
+    }
+
+    // A pause is always someone else's doing: `stop()` and `executeExclusive()`
+    // each add their own `close` listener before killing the child, and this one
+    // was registered at spawn so it runs first. Announcing here would beat the
+    // initiator to it with a blank reason, which is what made every exclusive
+    // command emit `paused` twice — once with no explanation, once with one.
+    // Leave the announcement to whoever asked for the pause.
+    if (this.isPaused) {
+      return;
+    }
+
+    if (this.state === 'logged_out') {
+      logger.warn('process', 'Sync daemon logged out; not restarting');
+      return;
+    }
+
+    const baseReason = signal ? `killed by ${signal}` : `exited with code ${code}`;
+    const reason = this.lastError ? `${baseReason} (${this.lastError})` : baseReason;
+    logger.warn('process', 'Sync daemon exited', { reason, code, signal });
+
+    // Schedule backoff restart
+    this.reconnectAttempts += 1;
+    const delay = Math.min(1000 * Math.pow(2, this.reconnectAttempts - 1), 30000);
+
+    this.setState('restarting', `${reason}. Restarting in ${delay}ms (attempt #${this.reconnectAttempts})`);
+
+    this.cancelRestartTimer();
+    this.restartTimer = setTimeout(() => {
+      this.restartTimer = null;
+      // Something else may have brought the daemon back, or taken it down on
+      // purpose, since this was armed. Spawning regardless started a second
+      // daemon beside the first and lost track of one of them.
+      if (this.child || this.isPaused || !this.wantRunning || this.exclusiveWaiters > 0) return;
+      this.spawnSyncProcess();
+    }, delay);
+  }
+
+  public async stop(): Promise<void> {
+    this.wantRunning = false;
+    this.isPaused = true;
+    this.cancelPendingRespawn();
+    this.cancelRestartTimer();
+
+    // A send the daemon is carrying out would be cut off mid-way, with no
+    // telling whether it went out. Paused, it is handed nothing new.
+    if (this.delegated.size > 0) {
+      await this.delegatedSettled();
+      if (this.wantRunning) {
+        // Started again while that finished, as a wake straight after a
+        // sleep is. The later request stands.
+        if (this.exclusiveWaiters === 0) this.isPaused = false;
+        return;
+      }
+    }
+
+    if (!this.child) {
+      this.setState('stopped');
+      return;
+    }
+
+    return new Promise<void>((resolve) => {
+      const child = this.child;
+      if (!child) {
+        this.setState('stopped');
+        resolve();
+        return;
+      }
+
+      const forceKillTimer = setTimeout(() => {
+        try {
+          child.kill('SIGKILL');
+        } catch {
+          // ignore
+        }
+      }, 3000);
+
+      child.once('close', () => {
+        clearTimeout(forceKillTimer);
+        this.child = null;
+        this.setState('stopped');
+        resolve();
+      });
+
+      try {
+        child.kill('SIGINT');
+      } catch {
+        child.kill('SIGTERM');
+      }
+    });
+  }
+
+  /**
+   * Runs a command the daemon can carry out itself, and leaves the daemon up.
+   *
+   * wacli hands a send, a reaction or a read receipt to a running
+   * `sync --follow` over a socket in the store, rather than failing on the
+   * store lock the daemon holds. Pausing the daemon for them, as
+   * executeExclusive() does, took it off WhatsApp for every one, and whatever
+   * arrived meanwhile waited for the respawn.
+   *
+   * wacli reports the store lock only when it could not hand the command over
+   * (no socket yet, or a wacli too old to take it), so nothing went out and the
+   * command runs again with the daemon paused. Any other failure came after the
+   * hand-over and is not retried: the message may already be on its way.
+   *
+   * `action` gets the options to pass to execWacli. Handed over, that is one
+   * lock attempt: a retry would lose the same race again. Nor `--lock-wait`,
+   * which makes wacli sit out the whole wait before it tries the socket.
+   * `handedOver` says which run this is, for flags that only matter when the
+   * CLI keeps its own connection (see postSendWaitArgs).
+   */
+  public async runDelegated<T>(
+    action: (lock: DelegationOptions, handedOver: boolean) => Promise<T>
+  ): Promise<T> {
+    if (this.canDelegate()) {
+      const handedOver = action({ lockRetryAttempts: 1 }, true);
+      this.delegated.add(handedOver);
+      try {
+        return await handedOver;
+      } catch (err) {
+        if (!(err instanceof StoreLockedError)) throw err;
+        logger.info('process', 'Sync daemon did not take the command; pausing it instead', { err });
+      } finally {
+        this.delegated.delete(handedOver);
+      }
+    }
+    return this.executeExclusive(() => action({}, false));
+  }
+
+  /**
+   * Only a daemon that has said it is connected: wacli opens the hand-off
+   * socket after connecting. And not one going down, or queued to.
+   */
+  private canDelegate(): boolean {
+    return this.isDaemonConnected() && !this.isPaused && this.exclusiveWaiters === 0;
+  }
+
+  private async delegatedSettled(): Promise<void> {
+    await Promise.allSettled([...this.delegated]);
+  }
+
+  public async executeExclusive<T>(action: () => Promise<T>): Promise<T> {
+    // Counted before awaiting the mutex so a caller still queueing already
+    // blocks the respawn below. Without that, the daemon is spawned the instant
+    // one command finishes and killed microseconds later by the next one in
+    // line, and it never survives the ~600ms it needs to connect.
+    this.exclusiveWaiters += 1;
+
+    const prevMutex = this.pauseMutex;
+    let releaseMutex: () => void;
+    this.pauseMutex = new Promise<void>((resolve) => {
+      releaseMutex = resolve;
+    });
+
+    try {
+      // Inside the try so a rejection here still runs the finally. A leaked
+      // waiter count would keep the daemon down permanently, which is a worse
+      // failure than the thrash this guard exists to prevent.
+      await prevMutex;
+      // Handed to the daemon before this queued, and cut off mid-send if the
+      // daemon went down now. None are handed over once this is counted.
+      if (this.delegated.size > 0) await this.delegatedSettled();
+
+      logger.info('process', 'Pausing sync daemon for exclusive store access');
+      this.cancelPendingRespawn();
+      this.isPaused = true;
+      this.cancelRestartTimer();
+
+      if (this.child) {
+        await new Promise<void>((resolve) => {
+          const child = this.child;
+          if (!child) return resolve();
+
+          const killTimer = setTimeout(() => {
+            try { child.kill('SIGKILL'); } catch { /* ignore */ }
+          }, 3000);
+
+          child.once('close', () => {
+            clearTimeout(killTimer);
+            this.child = null;
+            this.setState('paused', 'Paused for exclusive command');
+            resolve();
+          });
+
+          try {
+            child.kill('SIGINT');
+          } catch {
+            resolve();
+          }
+        });
+      } else {
+        this.setState('paused', 'Paused for exclusive command');
+      }
+
+      // Execute exclusive action
+      const result = await action();
+      return result;
+    } finally {
+      this.exclusiveWaiters -= 1;
+      // Stay paused while more exclusive work is queued: the next caller would
+      // only have to kill the daemon again.
+      if (this.exclusiveWaiters === 0) {
+        this.isPaused = false;
+        if (this.wantRunning) {
+          this.scheduleRespawn();
+        } else {
+          // Nothing wants a daemon, so done means down. Say so, rather than
+          // leaving `paused` as the last word for a pause that never ends.
+          this.setState('stopped');
+        }
+      }
+      releaseMutex!();
+    }
+  }
+}

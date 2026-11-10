@@ -1,0 +1,22 @@
+{
+  "manifest_version": 3,
+  "name": "Fourdock \u00b7 conferma passkey",
+  "version": "0.1.0",
+  "description": "Conferma manualmente la passkey WhatsApp nel browser per il client Fourdock.",
+  "permissions": [
+    "scripting"
+  ],
+  "host_permissions": [
+    "https://web.whatsapp.com/*"
+  ],
+  "externally_connectable": {
+    "matches": [
+      "http://127.0.0.1/*"
+    ]
+  },
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAqPQw/5AuEwT5/ob7KFDEnFBQQPGV6Wk7TmXxIfsii6NCAXcpjeo0dcPSnN+wi3/2adOsZTBcGlk5NK5kgiQvP36FFgu2oJ7ajBDCtV/ar7am/Eiw9Ldrd808gjOpW7K2ODpkZUGAtjYqgFNt6hEqmJ6+SBT0+HCzJ+tOGqCel7NkknMDTAGew4VVZtSxRz6zTYawmfw7JOV6Dso5fWIdi8YUNu2hPe9Fi8IByOyx0Om6vJXkaxBFFjX0g6FwOIhOkpt2AEn3SyLEJAKDY9DYghDg/LmZqRA6iXe/w28vG5fuLwmSLP2Wo3jpalCv72Ae9WqXbOSYnXBz3W1YbJOV5QIDAQAB"
+}

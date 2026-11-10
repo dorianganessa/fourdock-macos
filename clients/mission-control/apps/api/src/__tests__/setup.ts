@@ -1,0 +1,19 @@
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+
+/**
+ * Point every on-disk singleton at a throwaway directory before the modules that
+ * read them are imported. Without this the suite loads — and `setReadOnly`
+ * rewrites — the developer's real ~/.wacli-mission-control database.
+ */
+const sandbox = fs.mkdtempSync(path.join(os.tmpdir(), 'wacli-test-'));
+
+process.env.WACLI_DB_FILE = path.join(sandbox, 'mission-control.db');
+process.env.WACLI_STORE_DIR = path.join(sandbox, 'store');
+
+fs.mkdirSync(path.join(sandbox, 'store', 'media'), { recursive: true });
+
+/** Media fixtures must live inside the store to pass path containment. */
+export const TEST_STORE_DIR = path.join(sandbox, 'store');
+export const TEST_MEDIA_DIR = path.join(sandbox, 'store', 'media');

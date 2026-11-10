@@ -1,0 +1,486 @@
+import React, { useState, useRef } from 'react';
+import { createPortal } from 'react-dom';
+import {
+  FileText,
+  Download,
+  Play,
+  Pause,
+  Maximize2,
+  X,
+  Loader2,
+  ImageOff,
+  RotateCw,
+  Smartphone,
+} from 'lucide-react';
+import { api, ApiClientError } from '../../api/client.ts';
+import { useModalDialog } from '../../hooks/useModalDialog.ts';
+import { useSafeMode } from '../../hooks/useSafeMode.ts';
+import { detectTextDirection } from '../../lib/textDirection.ts';
+import type { UnifiedMessage } from '../../types.ts';
+
+/**
+ * Asks the phone for media WhatsApp's servers no longer have (wacli 0.22).
+ *
+ * Its own component so that only a tile that has actually hit an expired file
+ * reads the safe mode, rather than every attachment in the thread polling it.
+ * Asking is a request to WhatsApp, so safe mode leaves the button visible but
+ * shut, saying why.
+ */
+function AskPhoneButton({ onAsk, busy }: { onAsk: () => void; busy: boolean }) {
+  const { isReadOnly } = useSafeMode();
+  return (
+    <button
+      onClick={onAsk}
+      disabled={busy || isReadOnly}
+      className="flex items-center gap-1 px-2 py-1 rounded bg-mc-surface hover:bg-mc-surfaceHover border border-mc-border text-mc-live font-bold transition-colors disabled:opacity-60 disabled:cursor-not-allowed shrink-0"
+      title={
+        isReadOnly
+          ? 'Unlock live sends to ask your phone for it'
+          : 'Ask your phone to send this file again'
+      }
+    >
+      {busy ? <Loader2 size={12} className="animate-spin" /> : <Smartphone size={12} />}
+      <span>ASK PHONE</span>
+    </button>
+  );
+}
+
+interface MediaViewerProps {
+  msg: UnifiedMessage;
+  chatJid: string;
+}
+
+export const MediaViewer: React.FC<MediaViewerProps> = ({ msg, chatJid }) => {
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [downloadError, setDownloadError] = useState<string | null>(null);
+  // WhatsApp's servers no longer have the file; the phone may.
+  const [expired, setExpired] = useState(false);
+  const [localPath, setLocalPath] = useState<string | null>(msg.localPath || null);
+  // Whether an image or sticker has drawn yet, or never will without a retry.
+  const [imageStatus, setImageStatus] = useState<'loading' | 'loaded' | 'failed'>('loading');
+  const [isLightboxOpen, setIsLightboxOpen] = useState(false);
+  const closeLightbox = () => setIsLightboxOpen(false);
+  // The lightbox is a dialog like the rest: Esc closes it, Tab stays inside,
+  // and focus goes back to the thumbnail's neighbourhood afterwards.
+  const lightboxRef = useModalDialog<HTMLDivElement>(isLightboxOpen, closeLightbox);
+
+  // Audio Player State
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [playbackRate, setPlaybackRate] = useState(1);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  const mediaType = msg.mediaType || 'document';
+  // Stickers carry no filename of their own, and the generic
+  // `sticker_attachment` fallback has no extension — so a saved sticker lands as
+  // a file the OS cannot open. They are always WebP, so name it as such.
+  const filename =
+    msg.filename || (mediaType === 'sticker' ? 'sticker.webp' : `${mediaType}_attachment`);
+
+  const mediaSrc = api.getMediaUrl({
+    chat: chatJid,
+    id: msg.msgId,
+    path: localPath || undefined,
+  });
+
+  const downloadSrc = api.getMediaUrl({
+    chat: chatJid,
+    id: msg.msgId,
+    path: localPath || undefined,
+    download: true,
+    filename,
+  });
+
+  const download = async (fromPhone: boolean) => {
+    setIsDownloading(true);
+    setDownloadError(null);
+    try {
+      const res = await api.downloadMedia({ chat: chatJid, id: msg.msgId, fromPhone });
+      if (res.localPath) {
+        setLocalPath(res.localPath);
+      }
+      setExpired(false);
+      // An image that failed gets drawn again, now that there is a file.
+      setImageStatus('loading');
+    } catch (err: unknown) {
+      const errorText = err instanceof Error ? err.message : String(err);
+      setDownloadError(errorText);
+      // Asked of the phone, the answer stands on its own; the button stays
+      // for another try, since a phone that was offline may not be now.
+      if (!fromPhone) setExpired(err instanceof ApiClientError && err.code === 'MEDIA_EXPIRED');
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+  const handleManualDownload = () => download(false);
+  const handleAskPhone = () => download(true);
+
+  const togglePlayAudio = () => {
+    if (!audioRef.current) return;
+    if (isPlaying) {
+      audioRef.current.pause();
+      setIsPlaying(false);
+    } else {
+      audioRef.current
+        .play()
+        .then(() => setIsPlaying(true))
+        .catch(() => {
+          // If playback fails, try downloading first
+          handleManualDownload();
+        });
+    }
+  };
+
+  const togglePlaybackRate = () => {
+    if (!audioRef.current) return;
+    const nextRate = playbackRate === 1 ? 1.5 : playbackRate === 1.5 ? 2 : 1;
+    audioRef.current.playbackRate = nextRate;
+    setPlaybackRate(nextRate);
+  };
+
+  const formatTime = (seconds: number) => {
+    if (isNaN(seconds)) return '0:00';
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+  };
+
+  /**
+   * Stands in for an image that did not load: expired on WhatsApp's servers,
+   * a download that failed, the app asleep. The browser's broken-image icon
+   * said none of that, and offered no way to try again.
+   */
+  const renderUnavailable = (what: string, detail?: string) => (
+    <div className="p-2.5 rounded-md bg-mc-bg/70 border border-mc-border font-mono text-[11px] max-w-sm space-y-1.5">
+      <div className="flex items-center gap-2.5">
+        <ImageOff size={16} className="text-mc-textMuted shrink-0" />
+        <div className="min-w-0 flex-1">
+          <div className="text-mc-text">{what} unavailable</div>
+          {detail && (
+            <div dir={detectTextDirection(detail)} className="text-mc-textMuted truncate" title={detail}>
+              {detail}
+            </div>
+          )}
+        </div>
+        <button
+          onClick={handleManualDownload}
+          disabled={isDownloading}
+          className="flex items-center gap-1 px-2 py-1 rounded bg-mc-surface hover:bg-mc-surfaceHover border border-mc-border text-mc-live font-bold transition-colors disabled:opacity-60 shrink-0"
+          title="Download it from WhatsApp again"
+        >
+          {isDownloading ? <Loader2 size={12} className="animate-spin" /> : <RotateCw size={12} />}
+          <span>RETRY</span>
+        </button>
+      </div>
+      {downloadError && (
+        // The full width of the card, not a column beside the button: the
+        // reason comes last ("... 403 Forbidden"), and a narrow bubble cut it off.
+        <div className="text-mc-danger line-clamp-3 break-words" title={downloadError}>
+          {downloadError}
+        </div>
+      )}
+      {expired && (
+        <div className="flex justify-end">
+          <AskPhoneButton onAsk={handleAskPhone} busy={isDownloading} />
+        </div>
+      )}
+    </div>
+  );
+
+  // 1. IMAGE PREVIEW (Photos)
+  if (mediaType === 'image') {
+    const isLoaded = imageStatus === 'loaded';
+    return (
+      <div className="mb-2 space-y-1.5">
+        {imageStatus === 'failed' ? (
+          renderUnavailable('Image', msg.mediaCaption || filename)
+        ) : (
+          // Until it loads, the image has no size of its own, so the box is held
+          // open for it. Collapsed to nothing, lazy images would all sit inside
+          // the viewport at once and load anyway, and each would shove the
+          // messages around it as it arrived.
+          <div
+            className={`relative group/media overflow-hidden rounded-md border border-mc-border bg-black/40 ${
+              isLoaded ? 'max-w-sm' : 'w-64 max-w-full aspect-[4/3]'
+            }`}
+          >
+            <img
+              src={mediaSrc}
+              alt={msg.mediaCaption || filename}
+              // Only what scrolls near is fetched: an image not yet on disk
+              // costs a wacli download, and a thread opens at its newest end.
+              loading="lazy"
+              decoding="async"
+              className={`w-full ${
+                isLoaded ? 'max-h-72' : 'h-full'
+              } object-cover cursor-pointer hover:scale-[1.02] transition-transform duration-200`}
+              onClick={() => setIsLightboxOpen(true)}
+              onLoad={() => setImageStatus('loaded')}
+              onError={() => setImageStatus('failed')}
+            />
+            <div className="absolute top-2 right-2 flex items-center gap-1 opacity-0 group-hover/media:opacity-100 transition-opacity bg-black/70 backdrop-blur-sm rounded px-1.5 py-1">
+              <button
+                onClick={() => setIsLightboxOpen(true)}
+                className="p-1 hover:text-mc-live text-mc-text transition-colors"
+                title="View full size"
+              >
+                <Maximize2 size={13} />
+              </button>
+              <a
+                href={downloadSrc}
+                download={filename}
+                className="p-1 hover:text-mc-live text-mc-text transition-colors"
+                title="Download image"
+              >
+                <Download size={13} />
+              </a>
+            </div>
+          </div>
+        )}
+
+        {/* Lightbox. Portalled to <body>: rendered in place it sat inside its
+            message row's stacking context (`relative z-0`), so every later
+            message, and the rail splitters, painted over the open image. */}
+        {isLightboxOpen && createPortal(
+          <div
+            className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex flex-col items-center justify-center p-4 select-none"
+            onClick={closeLightbox}
+          >
+            <div
+              ref={lightboxRef}
+              role="dialog"
+              aria-modal="true"
+              aria-label={`Image: ${filename}`}
+              className="relative max-w-4xl max-h-[90vh] flex flex-col items-center space-y-3"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between w-full text-xs font-mono text-mc-textMuted px-2">
+                <span className="truncate max-w-md">{filename}</span>
+                <div className="flex items-center gap-3">
+                  <a
+                    href={downloadSrc}
+                    download={filename}
+                    className="flex items-center gap-1 bg-mc-surface hover:bg-mc-surfaceHover border border-mc-border px-2.5 py-1 rounded text-mc-text hover:text-mc-live transition-colors"
+                  >
+                    <Download size={13} />
+                    <span>DOWNLOAD</span>
+                  </a>
+                  <button
+                    data-autofocus
+                    onClick={closeLightbox}
+                    aria-label="Close image viewer"
+                    className="p-1.5 rounded bg-mc-surface hover:bg-mc-surfaceHover border border-mc-border text-mc-text hover:text-mc-danger transition-colors"
+                  >
+                    <X size={16} />
+                  </button>
+                </div>
+              </div>
+              <img
+                src={mediaSrc}
+                alt={filename}
+                className="max-h-[80vh] max-w-full rounded shadow-2xl object-contain border border-mc-border/50"
+              />
+              {msg.mediaCaption && (
+                // Stays centred; `dir` is here for the bidi ordering inside the
+                // line, which centring does nothing for.
+                <div
+                  dir={detectTextDirection(msg.mediaCaption)}
+                  className="text-xs text-mc-text text-center max-w-xl px-4 py-2 bg-mc-surface/80 rounded border border-mc-border font-sans select-text cursor-text"
+                >
+                  {msg.mediaCaption}
+                </div>
+              )}
+            </div>
+          </div>,
+          document.body
+        )}
+      </div>
+    );
+  }
+
+  // 2. STICKER PREVIEW
+  // Deliberately bare compared to the image branch: stickers are 512x512 WebP
+  // with a transparent background (often animated), so a card background would
+  // show through the transparency and `object-cover` would crop the art.
+  if (mediaType === 'sticker') {
+    if (imageStatus === 'failed') {
+      return <div className="mb-2">{renderUnavailable('Sticker')}</div>;
+    }
+    return (
+      <div className="mb-2 relative inline-block group/sticker">
+        <img
+          src={mediaSrc}
+          alt={msg.mediaCaption || 'Sticker'}
+          className="w-32 h-32 object-contain"
+          loading="lazy"
+          onError={() => setImageStatus('failed')}
+        />
+        <a
+          href={downloadSrc}
+          download={filename}
+          className="absolute top-1 right-1 p-1 rounded bg-black/70 backdrop-blur-sm text-mc-text hover:text-mc-live opacity-0 group-hover/sticker:opacity-100 focus:opacity-100 transition-opacity"
+          title="Download sticker"
+        >
+          <Download size={12} />
+        </a>
+      </div>
+    );
+  }
+
+  // 3. AUDIO PREVIEW (Voice notes & audio recordings)
+  if (mediaType === 'audio') {
+    return (
+      <div className="mb-2 p-2.5 rounded-md bg-mc-bg/70 border border-mc-border flex flex-col gap-2 min-w-[240px] max-w-xs font-mono">
+        <audio
+          ref={audioRef}
+          src={mediaSrc}
+          onTimeUpdate={() => {
+            if (audioRef.current) {
+              setCurrentTime(audioRef.current.currentTime);
+            }
+          }}
+          onLoadedMetadata={() => {
+            if (audioRef.current) {
+              setDuration(audioRef.current.duration);
+            }
+          }}
+          onEnded={() => setIsPlaying(false)}
+          onError={() => {
+            setIsPlaying(false);
+          }}
+        />
+
+        <div className="flex items-center gap-2.5">
+          <button
+            onClick={togglePlayAudio}
+            disabled={isDownloading}
+            className="w-8 h-8 rounded-full bg-mc-live text-[#12151B] flex items-center justify-center hover:bg-mc-live/90 transition-transform active:scale-95 shrink-0"
+            title={isPlaying ? 'Pause voice note' : 'Play voice note'}
+          >
+            {isDownloading ? (
+              <Loader2 size={15} className="animate-spin" />
+            ) : isPlaying ? (
+              <Pause size={15} />
+            ) : (
+              <Play size={15} className="ml-0.5" />
+            )}
+          </button>
+
+          {/* Progress bar / waveform representation */}
+          <div className="flex-1 space-y-1">
+            <input
+              type="range"
+              min={0}
+              max={duration || 100}
+              value={currentTime}
+              onChange={(e) => {
+                const newTime = Number(e.target.value);
+                setCurrentTime(newTime);
+                if (audioRef.current) {
+                  audioRef.current.currentTime = newTime;
+                }
+              }}
+              className="w-full h-1 bg-mc-border rounded-lg appearance-none cursor-pointer accent-mc-live"
+            />
+            <div className="flex justify-between text-[10px] text-mc-textMuted">
+              <span>{formatTime(currentTime)}</span>
+              <span>{formatTime(duration)}</span>
+            </div>
+          </div>
+
+          {/* Speed & Download buttons */}
+          <div className="flex items-center gap-1">
+            <button
+              onClick={togglePlaybackRate}
+              className="text-[10px] px-1.5 py-0.5 rounded bg-mc-surface border border-mc-border text-mc-text hover:text-mc-live transition-colors"
+              title="Change playback speed"
+            >
+              {playbackRate}x
+            </button>
+            <a
+              href={downloadSrc}
+              download={filename}
+              className="p-1 text-mc-textMuted hover:text-mc-live transition-colors"
+              title="Download voice note"
+            >
+              <Download size={13} />
+            </a>
+          </div>
+        </div>
+
+        {downloadError && (
+          <div className="text-[10px] text-mc-danger flex items-center justify-between">
+            <span className="truncate">{downloadError}</span>
+            <button onClick={handleManualDownload} className="underline hover:text-mc-text">
+              Retry
+            </button>
+          </div>
+        )}
+        {expired && (
+          <div className="flex justify-end">
+            <AskPhoneButton onAsk={handleAskPhone} busy={isDownloading} />
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // 4. VIDEO PREVIEW
+  if (mediaType === 'video') {
+    return (
+      <div className="mb-2 space-y-1.5 max-w-sm">
+        <div className="rounded-md border border-mc-border overflow-hidden bg-black/60">
+          <video
+            controls
+            src={mediaSrc}
+            className="w-full max-h-72 object-contain"
+            preload="metadata"
+          />
+        </div>
+        <div className="flex items-center justify-between text-[11px] font-mono text-mc-textMuted px-1">
+          <span className="truncate">{filename}</span>
+          <a
+            href={downloadSrc}
+            download={filename}
+            className="flex items-center gap-1 text-mc-live hover:underline"
+          >
+            <Download size={12} />
+            <span>DOWNLOAD</span>
+          </a>
+        </div>
+      </div>
+    );
+  }
+
+  // 5. DOCUMENT & FILE DOWNLOADER
+  return (
+    <div className="mb-2 p-2.5 rounded-md bg-mc-bg/80 border border-mc-border flex items-center justify-between gap-3 font-mono text-xs max-w-sm">
+      <div className="flex items-center gap-2.5 min-w-0">
+        <div className="w-8 h-8 rounded bg-mc-surface border border-mc-border flex items-center justify-center text-mc-live shrink-0">
+          <FileText size={16} />
+        </div>
+        <div className="min-w-0">
+          <div className="text-mc-text font-semibold truncate text-[11px]" title={filename}>
+            {filename}
+          </div>
+          <div className="text-[10px] text-mc-textMuted uppercase">
+            {msg.mimeType || `${mediaType} document`}
+          </div>
+        </div>
+      </div>
+
+      <div className="flex items-center gap-1.5 shrink-0">
+        <a
+          href={downloadSrc}
+          download={filename}
+          className="flex items-center gap-1 px-2.5 py-1 rounded bg-mc-surface hover:bg-mc-surfaceHover border border-mc-border text-mc-live hover:text-mc-live text-[11px] font-bold transition-colors"
+          title="Download file"
+        >
+          <Download size={12} />
+          <span>GET</span>
+        </a>
+      </div>
+    </div>
+  );
+};

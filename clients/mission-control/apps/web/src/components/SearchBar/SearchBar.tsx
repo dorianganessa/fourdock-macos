@@ -1,0 +1,238 @@
+import React, { useState, useRef } from 'react';
+import { Search, X, MessageSquare } from 'lucide-react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { api } from '../../api/client.ts';
+import { chatFromMessage } from '../../lib/chatFromMessage.ts';
+import { chatWithUnreadCleared, markChatAsRead } from '../../lib/chatRead.ts';
+import { wacliReadQueryOptions } from '../../lib/queryOptions.ts';
+import { isWacliReadyForReads } from '../../lib/wacliReady.ts';
+import { detectTextDirection } from '../../lib/textDirection.ts';
+import { useAppStore } from '../../store/appStore.ts';
+import { useDebouncedValue } from '../../hooks/useDebouncedValue.ts';
+import { useHealth } from '../../hooks/useHealth.ts';
+import { useSleepMode } from '../../hooks/useSleepMode.ts';
+import { useModalDialog } from '../../hooks/useModalDialog.ts';
+import type { UnifiedChat, UnifiedMessage } from '../../types.ts';
+
+interface SearchBarProps {
+  onClose: () => void;
+}
+
+const SEARCH_DEBOUNCE_MS = 250;
+
+export const SearchBar: React.FC<SearchBarProps> = ({ onClose }) => {
+  const [query, setQuery] = useState('');
+  const [selectedIndex, setSelectedIndex] = useState(0);
+  const selectedChat = useAppStore((s) => s.selectedChat);
+  // Every chat by default. Scoped, the search is the open chat's alone, which
+  // wacli does itself rather than this list filtering a mixed top 50.
+  const [thisChatOnly, setThisChatOnly] = useState(false);
+  const scopeChat = thisChatOnly ? selectedChat : null;
+  // SearchBar is only mounted while open, so it is always open here.
+  const dialogRef = useModalDialog<HTMLDivElement>(true, onClose);
+  const setSelectedChat = useAppStore((s) => s.setSelectedChat);
+  const setHighlightedMessageId = useAppStore((s) => s.setHighlightedMessageId);
+  const queryClient = useQueryClient();
+  const resultsContainerRef = useRef<HTMLDivElement>(null);
+
+  const { data: health } = useHealth();
+
+  // Every distinct query key spawns a `wacli messages search` subprocess, so the
+  // key follows the typing rather than leading it.
+  const debouncedQuery = useDebouncedValue(query, SEARCH_DEBOUNCE_MS);
+  const settledQuery = debouncedQuery.trim();
+  const isTypingAhead = query.trim() !== settledQuery;
+
+  // Asleep, nothing reaches wacli: what is on screen stays as it was.
+  const { awake } = useSleepMode();
+  const readsReady = awake && isWacliReadyForReads(health);
+  const readQueryOpts = wacliReadQueryOptions(
+    readsReady && Boolean(settledQuery)
+  );
+
+  const { data: searchResults, isFetching } = useQuery({
+    queryKey: ['search', settledQuery, scopeChat?.jid ?? null],
+    queryFn: () =>
+      settledQuery
+        ? api.searchMessages({ q: settledQuery, limit: 50, chat: scopeChat?.jid })
+        : null,
+    ...readQueryOpts,
+  });
+
+  const results = searchResults?.results ?? [];
+  const isSearching = isFetching || isTypingAhead;
+
+  const handleQueryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setQuery(e.target.value);
+    setSelectedIndex(0);
+  };
+
+  const handleSelectResult = (msg: UnifiedMessage) => {
+    const chat = chatWithUnreadCleared(chatFromMessage(msg));
+    setSelectedChat(chat);
+    // A hit carries no unread state, so the rail's cached lists decide. A
+    // receipt costs the sync daemon seconds, and a send made meanwhile waits
+    // behind it, so a chat they all have as read gets none. One they do not
+    // hold may be unread, and still gets one.
+    const railCopies = queryClient
+      .getQueriesData<UnifiedChat[]>({ queryKey: ['chats'] })
+      .flatMap(([, chats]) => chats ?? [])
+      .filter((c) => c.jid === msg.chatJid);
+    if (railCopies.length === 0 || railCopies.some((c) => c.unread || c.unreadCount > 0)) {
+      void markChatAsRead(queryClient, msg.chatJid);
+    }
+    // With its time, so a hit older than the loaded thread still lands: the
+    // thread opens the history around it.
+    setHighlightedMessageId(msg.msgId, null, msg.ts);
+    try {
+      localStorage.setItem('wacli_selected_chat', msg.chatJid);
+    } catch {
+      // ignore
+    }
+    onClose();
+  };
+
+  /**
+   * Moves the highlight and brings it into view. It is not focus, which stays
+   * in the query box, so the browser will not scroll to it: arrowing past the
+   * last visible row used to leave the highlight off-screen. Scrolled from here
+   * rather than on every change of index, so hovering a half-visible row with
+   * the mouse does not shift the list under the pointer.
+   */
+  const moveSelection = (delta: number) => {
+    if (results.length === 0) return;
+    const next = (selectedIndex + delta + results.length) % results.length;
+    setSelectedIndex(next);
+    resultsContainerRef.current
+      ?.querySelector<HTMLElement>(`[data-result-index="${next}"]`)
+      // Optional call: jsdom has no scrollIntoView.
+      ?.scrollIntoView?.({ block: 'nearest' });
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      onClose();
+    } else if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      moveSelection(1);
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      moveSelection(-1);
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      if (results.length > 0 && results[selectedIndex]) {
+        handleSelectResult(results[selectedIndex]);
+      }
+    }
+  };
+
+  return (
+    <div
+      className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-start justify-center pt-20 p-4"
+      onClick={onClose}
+    >
+      <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Search all messages"
+        className="bg-mc-surface border border-mc-border rounded shadow-2xl w-full max-w-2xl flex flex-col max-h-[70vh]"
+        onClick={(e) => e.stopPropagation()}
+        onKeyDown={handleKeyDown}
+      >
+        {/* Input Bar */}
+        <div className="p-3 border-b border-mc-border flex items-center gap-2">
+          <Search size={16} className="text-mc-live shrink-0" />
+          <input
+            type="text"
+            autoFocus
+            data-autofocus
+            aria-label="Search query"
+            value={query}
+            onChange={handleQueryChange}
+            placeholder={
+              scopeChat
+                ? `Full-text search in ${scopeChat.name}...`
+                : 'Full-text search across all messages (FTS5)...'
+            }
+            className="flex-1 min-w-0 bg-transparent text-sm text-mc-text placeholder-mc-textMuted/60 focus:outline-none font-sans"
+          />
+          {isSearching && <span className="text-xs font-mono text-mc-live animate-pulse">searching...</span>}
+          {selectedChat && (
+            <button
+              type="button"
+              aria-pressed={thisChatOnly}
+              onClick={() => {
+                setThisChatOnly((only) => !only);
+                setSelectedIndex(0);
+              }}
+              className={`shrink-0 text-[11px] font-mono px-2 py-0.5 rounded border transition-colors ${
+                thisChatOnly
+                  ? 'border-mc-live/60 text-mc-live bg-mc-live/10'
+                  : 'border-mc-border text-mc-textMuted hover:text-mc-text'
+              }`}
+              title={`Search only ${selectedChat.name}`}
+            >
+              THIS CHAT
+            </button>
+          )}
+          <button
+            onClick={onClose}
+            className="p-1 text-mc-textMuted hover:text-mc-text"
+          >
+            <X size={16} />
+          </button>
+        </div>
+
+        {/* Results List */}
+        <div ref={resultsContainerRef} className="flex-1 overflow-y-auto p-2 divide-y divide-mc-border/40">
+          {!query.trim() ? (
+            <div className="p-8 text-center text-xs font-mono text-mc-textMuted">
+              Type a word, phrase, or keyword to search the local FTS5 SQLite index.
+            </div>
+          ) : results.length === 0 && !isSearching ? (
+            <div className="p-8 text-center text-xs font-mono text-mc-textMuted">
+              No matching messages found for "{settledQuery}"
+              {scopeChat ? ` in ${scopeChat.name}` : ''}.
+            </div>
+          ) : (
+            results.map((msg, idx) => {
+              const isSelected = idx === selectedIndex;
+              return (
+                <button
+                  key={msg.msgId}
+                  data-result-index={idx}
+                  onClick={() => handleSelectResult(msg)}
+                  onMouseEnter={() => setSelectedIndex(idx)}
+                  className={`w-full text-left p-3 rounded transition-colors flex flex-col gap-1 ${
+                    isSelected
+                      ? 'bg-mc-surfaceHover ring-1 ring-mc-live/50'
+                      : 'hover:bg-mc-surfaceHover'
+                  }`}
+                >
+                  <div className="flex items-center justify-between text-xs font-mono">
+                    <span className="font-semibold text-mc-live flex items-center gap-1">
+                      <MessageSquare size={12} />
+                      {msg.chatName || msg.chatJid}
+                    </span>
+                    <span className="text-mc-textMuted text-[10px]">
+                      {new Date(msg.ts).toLocaleDateString()} {new Date(msg.ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                  </div>
+                  {/* `text-start` because the result button sets `text-left`. */}
+                  <div
+                    dir={detectTextDirection(msg.snippet || msg.displayText || msg.text)}
+                    className="text-xs text-mc-text line-clamp-2 text-start"
+                  >
+                    {msg.snippet || msg.displayText || msg.text}
+                  </div>
+                </button>
+              );
+            })
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};

@@ -1,0 +1,414 @@
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import request from 'supertest';
+import fs from 'node:fs';
+import path from 'node:path';
+
+const execWacliMock = vi.hoisted(() => vi.fn());
+
+/**
+ * Uploads land in os.tmpdir(). Pointing it at a directory of this file's own,
+ * before the send routes are imported, lets a test see what an upload left
+ * behind without racing other files' uploads.
+ */
+const uploadDir = vi.hoisted(() => {
+  const nodeFs = process.getBuiltinModule('node:fs');
+  const nodeOs = process.getBuiltinModule('node:os');
+  const nodePath = process.getBuiltinModule('node:path');
+  const dir = nodeFs.mkdtempSync(nodePath.join(nodeOs.tmpdir(), 'wacli-uploads-'));
+  process.env.TMPDIR = dir;
+  return dir;
+});
+
+vi.mock('../wacli/commands.js', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../wacli/commands.js')>();
+  return { ...actual, execWacli: execWacliMock };
+});
+
+import { createApp } from '../index.js';
+import { POST_SEND_WAIT } from '../wacli/commands.js';
+import { WacliProcessManager } from '../wacli/process-manager.js';
+import { modeManager } from '../wacli/mode.js';
+import { scheduledFilesDir, scheduler } from '../wacli/scheduler.js';
+
+describe('Send Endpoints & Guardrails', () => {
+  const pm = new WacliProcessManager({ apiPort: 3002 });
+  const app = createApp(pm);
+
+  beforeEach(() => {
+    modeManager.setReadOnly(true);
+    execWacliMock.mockReset();
+    execWacliMock.mockResolvedValue({ id: 'msg-1' });
+  });
+
+  it('rejects send requests when read-only mode is active (403)', async () => {
+    modeManager.setReadOnly(true);
+
+    const res = await request(app)
+      .post('/api/send/text')
+      .send({
+        to: '15551234567@s.whatsapp.net',
+        message: 'Hello',
+        confirm: true,
+      });
+
+    expect(res.status).toBe(403);
+    expect(res.body.error).toContain('Safe read-only mode is active');
+  });
+
+  it('rejects send requests when confirm: true is missing (400)', async () => {
+    modeManager.setReadOnly(false);
+
+    const res = await request(app)
+      .post('/api/send/text')
+      .send({
+        to: '15551234567@s.whatsapp.net',
+        message: 'Hello',
+        // confirm omitted
+      });
+
+    expect(res.status).toBe(400);
+    expect(res.body.error).toContain('confirm: true');
+  });
+
+  /**
+   * wacli send holds its connection open for --post-send-wait after the message
+   * is on the wire, and its 2s default was two thirds of the latency of a send
+   * the operator sits watching. Dropping the flag again would put it straight
+   * back without anything failing, so the args are asserted rather than trusted.
+   */
+  it('passes an explicit --post-send-wait so a send does not idle on the default', async () => {
+    modeManager.setReadOnly(false);
+
+    const res = await request(app)
+      .post('/api/send/text')
+      .send({
+        to: '15551234567@s.whatsapp.net',
+        message: 'Hello',
+        confirm: true,
+      });
+
+    expect(res.status).toBe(200);
+    const args = execWacliMock.mock.calls[0][0] as string[];
+    expect(args).toContain('--post-send-wait');
+    expect(args[args.indexOf('--post-send-wait') + 1]).toBe(POST_SEND_WAIT);
+  });
+
+  it('rejects file send when no file is uploaded (400)', async () => {
+    modeManager.setReadOnly(false);
+
+    const res = await request(app)
+      .post('/api/send/file')
+      .field('to', '15551234567@s.whatsapp.net')
+      .field('confirm', 'true');
+
+    expect(res.status).toBe(400);
+    expect(res.body.error).toContain('No file attachment provided');
+  });
+
+  it('deletes the upload of a file send it refuses', async () => {
+    modeManager.setReadOnly(false);
+    const later = new Date(Date.now() + 86_400_000).toISOString();
+    const refusals: Array<[string, Record<string, string>]> = [
+      ['/api/send/file', { to: '15550100001@s.whatsapp.net' }],
+      ['/api/send/file', { confirm: 'true' }],
+      ['/api/send/schedule-file', { to: '15550100001@s.whatsapp.net', scheduledAt: later }],
+      ['/api/send/schedule-file', { to: '15550100001@s.whatsapp.net', confirm: 'true' }],
+    ];
+
+    for (const [route, fields] of refusals) {
+      const before = fs.readdirSync(uploadDir);
+      let req = request(app).post(route);
+      for (const [name, value] of Object.entries(fields)) req = req.field(name, value);
+      const res = await req.attach('file', Buffer.from('%PDF-1.7 private'), 'private.pdf');
+
+      expect(res.status).toBe(400);
+      expect(fs.readdirSync(uploadDir)).toEqual(before);
+    }
+    expect(execWacliMock).not.toHaveBeenCalled();
+  });
+
+  it('POST /api/send/schedule is blocked while read-only mode is active (403)', async () => {
+    modeManager.setReadOnly(true);
+
+    const res = await request(app)
+      .post('/api/send/schedule')
+      .send({
+        to: '15559876543@s.whatsapp.net',
+        message: 'Should not be queued',
+        scheduledAt: new Date(Date.now() + 3600000).toISOString(),
+        confirm: true,
+      });
+
+    expect(res.status).toBe(403);
+    expect(res.body.error).toContain('Safe read-only mode is active');
+  });
+
+  it('POST /api/send/schedule schedules a message and lists it', async () => {
+    modeManager.setReadOnly(false);
+    const scheduledAt = new Date(Date.now() + 3600000).toISOString();
+
+    const res = await request(app)
+      .post('/api/send/schedule')
+      .send({
+        to: '15559876543@s.whatsapp.net',
+        recipientName: 'Bob',
+        message: 'Reminder for meeting tomorrow',
+        scheduledAt,
+        confirm: true,
+      });
+
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+    expect(res.body.data.item.status).toBe('pending');
+    expect(res.body.data.item.message).toBe('Reminder for meeting tomorrow');
+
+    // List scheduled. A freshly queued message is pending, and pending is never
+    // paged away — that is the guarantee the tab depends on.
+    const listRes = await request(app).get('/api/send/scheduled?chat=15559876543@s.whatsapp.net');
+    expect(listRes.status).toBe(200);
+    expect(Array.isArray(listRes.body.data.pending)).toBe(true);
+    expect(
+      listRes.body.data.pending.some((i: { id: string }) => i.id === res.body.data.item.id)
+    ).toBe(true);
+
+    // Cancel scheduled
+    const cancelRes = await request(app).delete(`/api/send/scheduled/${res.body.data.item.id}`);
+    expect(cancelRes.status).toBe(200);
+    expect(cancelRes.body.data.cancelled).toBe(true);
+  });
+
+  /** Queues a pending message through the API and hands back its id. */
+  async function schedulePending(): Promise<string> {
+    modeManager.setReadOnly(false);
+    const res = await request(app)
+      .post('/api/send/schedule')
+      .send({
+        to: '15550001111@s.whatsapp.net',
+        message: 'Queued',
+        scheduledAt: new Date(Date.now() + 3600000).toISOString(),
+        confirm: true,
+      });
+    return res.body.data.item.id as string;
+  }
+
+  it('POST resend rejects a request without confirm: true (400)', async () => {
+    const id = await schedulePending();
+
+    const res = await request(app)
+      .post(`/api/send/scheduled/${id}/resend`)
+      .send({});
+
+    expect(res.status).toBe(400);
+    expect(res.body.error).toContain('confirm: true');
+  });
+
+  it('POST resend is blocked while safe read-only mode is active (403)', async () => {
+    const id = await schedulePending();
+    modeManager.setReadOnly(true);
+
+    const res = await request(app)
+      .post(`/api/send/scheduled/${id}/resend`)
+      .send({ confirm: true });
+
+    expect(res.status).toBe(403);
+    expect(res.body.error).toContain('Safe read-only mode is active');
+  });
+
+  it('POST resend refuses a message that has not failed (409)', async () => {
+    const id = await schedulePending();
+
+    const res = await request(app)
+      .post(`/api/send/scheduled/${id}/resend`)
+      .send({ confirm: true });
+
+    // The guard that makes a double send impossible, seen from the API.
+    expect(res.status).toBe(409);
+    expect(res.body.success).toBe(false);
+    expect(res.body.error).toContain('Only a failed message can be resent');
+  });
+
+  it('POST resend reports an unknown id rather than inventing one (409)', async () => {
+    modeManager.setReadOnly(false);
+
+    const res = await request(app)
+      .post('/api/send/scheduled/sched-does-not-exist/resend')
+      .send({ confirm: true });
+
+    expect(res.status).toBe(409);
+    expect(res.body.error).toContain('not found');
+  });
+
+  // A refusal is answered as one. This used to reply 200 with `success: true`
+  // and the reason tucked into `error`, which the client reads as success —
+  // so discarding a message that was never failed was reported as done.
+  it('POST discard refuses a pending message', async () => {
+    const id = await schedulePending();
+
+    const res = await request(app).post(`/api/send/scheduled/${id}/discard`);
+
+    expect(res.status).toBe(409);
+    expect(res.body.success).toBe(false);
+    expect(res.body.data.discarded).toBe(false);
+    expect(res.body.error).toContain('not in a failed state');
+  });
+
+  it('DELETE cancels a pending message', async () => {
+    const id = await schedulePending();
+
+    const res = await request(app).delete(`/api/send/scheduled/${id}`);
+
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+    expect(res.body.data.cancelled).toBe(true);
+    expect(res.body.error).toBeNull();
+  });
+
+  it('DELETE refuses to cancel the same message twice', async () => {
+    const id = await schedulePending();
+    await request(app).delete(`/api/send/scheduled/${id}`);
+
+    const res = await request(app).delete(`/api/send/scheduled/${id}`);
+
+    // Already cancelled is not cancelled again. Answering the second one as a
+    // success is what let the UI report a no-op as done.
+    expect(res.status).toBe(409);
+    expect(res.body.success).toBe(false);
+    expect(res.body.data.cancelled).toBe(false);
+    expect(res.body.error).toContain('already "cancelled"');
+  });
+
+  it('DELETE reports an unknown id rather than claiming a cancellation', async () => {
+    const res = await request(app).delete('/api/send/scheduled/sched-does-not-exist');
+
+    expect(res.status).toBe(409);
+    expect(res.body.success).toBe(false);
+    expect(res.body.error).toContain('not found');
+  });
+
+});
+
+describe('Send responses carry the ID the console needs to jump', () => {
+  const pm = new WacliProcessManager({ apiPort: 3002 });
+  const app = createApp(pm);
+
+  beforeEach(() => {
+    modeManager.setReadOnly(false);
+    execWacliMock.mockReset();
+  });
+
+  it('hoists wacli\'s message ID out of the raw result', async () => {
+    execWacliMock.mockResolvedValue({ sent: true, to: '15551234567@s.whatsapp.net', id: '3EB0A1B2C3' });
+
+    const res = await request(app)
+      .post('/api/send/text')
+      .send({ to: '15551234567@s.whatsapp.net', message: 'Hello', confirm: true });
+
+    expect(res.status).toBe(200);
+    // Buried in `details` this was never read, so the ACTIVITY rail had no ID
+    // to focus and could only reopen the conversation.
+    expect(res.body.data.messageId).toBe('3EB0A1B2C3');
+  });
+
+  it('reports no ID rather than a placeholder when wacli gave none', async () => {
+    execWacliMock.mockResolvedValue({ sent: true, to: '15551234567@s.whatsapp.net' });
+
+    const res = await request(app)
+      .post('/api/send/text')
+      .send({ to: '15551234567@s.whatsapp.net', message: 'Hello', confirm: true });
+
+    expect(res.status).toBe(200);
+    expect(res.body.data.sent).toBe(true);
+    expect(res.body.data.messageId).toBeNull();
+  });
+});
+
+describe('Cancelling a scheduled message', () => {
+  const app = createApp(new WacliProcessManager({ apiPort: 3002 }));
+
+  beforeEach(() => {
+    modeManager.setReadOnly(false);
+    execWacliMock.mockReset();
+    // The route works on the process-wide queue, so leave nothing else due.
+    for (const item of scheduler.getPage({ limit: 200 }).pending) {
+      scheduler.cancel(item.id);
+    }
+  });
+
+  it('answers 409 "already being sent" while the message is going out', async () => {
+    let release: () => void = () => {};
+    const sending = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    let started: () => void = () => {};
+    const dispatched = new Promise<void>((resolve) => {
+      started = resolve;
+    });
+    execWacliMock.mockImplementation(async () => {
+      started();
+      await sending;
+      return { id: 'wamid.TOO_LATE' };
+    });
+
+    const item = scheduler.schedule({
+      to: '15550100001@s.whatsapp.net',
+      message: 'Running late',
+      scheduledAt: new Date(Date.now() - 1000).toISOString(),
+    });
+    const tick = scheduler.checkDueMessages();
+    await dispatched;
+
+    const res = await request(app).delete(`/api/send/scheduled/${item.id}`);
+
+    expect(res.status).toBe(409);
+    expect(res.body).toMatchObject({ success: false, data: { cancelled: false } });
+    expect(res.body.error).toMatch(/already being sent/);
+
+    release();
+    await tick;
+    expect(execWacliMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('still cancels a message that is only waiting', async () => {
+    const item = scheduler.schedule({
+      to: '15550100001@s.whatsapp.net',
+      message: 'Tomorrow',
+      scheduledAt: new Date(Date.now() + 86_400_000).toISOString(),
+    });
+
+    const res = await request(app).delete(`/api/send/scheduled/${item.id}`);
+
+    expect(res.status).toBe(200);
+    expect(res.body.data).toEqual({ cancelled: true });
+    expect(execWacliMock).not.toHaveBeenCalled();
+  });
+});
+
+describe('Scheduling a file', () => {
+  const app = createApp(new WacliProcessManager({ apiPort: 3002 }));
+
+  beforeEach(() => {
+    modeManager.setReadOnly(false);
+    execWacliMock.mockReset();
+  });
+
+  it('keeps the file beside the database until it is due', async () => {
+    // It used to wait in the system temp directory, which the OS clears.
+    const res = await request(app)
+      .post('/api/send/schedule-file')
+      .field('to', '15550100001@s.whatsapp.net')
+      .field('caption', 'Here is the signed contract')
+      .field('scheduledAt', new Date(Date.now() + 86_400_000).toISOString())
+      .field('confirm', 'true')
+      .attach('file', Buffer.from('%PDF-1.7 signed contract'), 'contract.pdf');
+
+    expect(res.status).toBe(200);
+    const { id, filePath, fileName } = res.body.data.item;
+    expect(fileName).toBe('contract.pdf');
+    expect(path.dirname(filePath)).toBe(scheduledFilesDir());
+    expect(fs.readFileSync(filePath, 'utf8')).toBe('%PDF-1.7 signed contract');
+
+    // Cancelling it leaves nothing behind.
+    scheduler.cancel(id);
+    expect(fs.existsSync(filePath)).toBe(false);
+  });
+});

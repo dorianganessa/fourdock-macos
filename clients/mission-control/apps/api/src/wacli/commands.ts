@@ -1,0 +1,407 @@
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
+import { modeManager } from './mode.js';
+import { logger } from '../logger.js';
+import type { RawWacliResponse } from '../types.js';
+import { isStoreLockMessage, sleep, toStoreLockedError } from './store-lock.js';
+import { compactUrls } from './failures.js';
+
+const execFileAsync = promisify(execFile);
+
+export class WacliCommandError extends Error {
+  constructor(
+    message: string,
+    public exitCode?: number,
+    public rawOutput?: string,
+    public command?: string
+  ) {
+    super(message);
+    this.name = 'WacliCommandError';
+  }
+}
+
+export interface ExecWacliOptions {
+  allowMutation?: boolean;
+  timeoutMs?: number;
+  storeDir?: string;
+  account?: string;
+  /** Internal retries for transient store lock contention (default 3). */
+  lockRetryAttempts?: number;
+  /** Delay between lock retries in ms (default 400). */
+  lockRetryDelayMs?: number;
+}
+
+export interface WacliInstallStatus {
+  installed: boolean;
+  version: string | null;
+  binPath: string;
+  error: string | null;
+}
+
+/**
+ * `/api/health` is polled by every open pane, and each call used to spawn
+ * `wacli --version` on top of `wacli doctor`. The binary's version does not
+ * change while the app is running, so it is cached. A missing binary expires
+ * quickly, so installing wacli is noticed without a restart.
+ */
+const INSTALLED_TTL_MS = 60_000;
+const MISSING_TTL_MS = 5_000;
+
+/**
+ * A read the operator is waiting on should not take this long. Past it the
+ * command names itself in the log without anyone having to raise the level
+ * first — the rail feeling sluggish is otherwise a hunch with no evidence.
+ */
+const SLOW_COMMAND_MS = 1_000;
+
+/**
+ * `wacli send` holds its connection open for --post-send-wait after the message
+ * is on the wire (default 2s) so a retry receipt can be served. With the sync
+ * daemon up, sends are delegated to it over the store's .send.sock and that
+ * connection stays alive regardless, so the default is dead time on every send:
+ * it was the whole gap between a message acked at 1.8s and a POST /send/text
+ * that only returned at 3.4s.
+ *
+ * Short rather than 0, because the delegate socket is not always there. While
+ * an exclusive command holds the daemon down, or during a reconnect, the CLI
+ * dials its own connection, and hanging up the instant the send lands would
+ * leave an immediate retry receipt unanswered.
+ */
+export const POST_SEND_WAIT = process.env.WACLI_POST_SEND_WAIT ?? '500ms';
+
+/**
+ * The `--post-send-wait` for one attempt at a send.
+ *
+ * Handed to the daemon, the wait is pure delay: the daemon sits it out before
+ * answering, stays connected to serve retry receipts regardless, and runs
+ * nothing else it was handed meanwhile — so every send in a burst paid it
+ * again. Only a send the CLI makes on its own connection needs it. That is the
+ * fallback run with the daemon paused, and, on the handed-over attempt, a
+ * daemon that died between being judged connected and the CLI taking the lock.
+ * That window is milliseconds wide, and the cost inside it is one retry
+ * receipt that may go unanswered, so it is not worth half a second on every
+ * other send.
+ */
+export function postSendWaitArgs(handedOver: boolean): string[] {
+  return ['--post-send-wait', handedOver ? '0s' : POST_SEND_WAIT];
+}
+
+/** wacli's own duration spelling — `500ms`, `2s`, `1m` — in milliseconds. */
+function parseDurationMs(value: string): number {
+  const match = /^(\d+(?:\.\d+)?)(ms|s|m)$/.exec(value.trim());
+  if (!match) return 0;
+  const scale = match[2] === 'ms' ? 1 : match[2] === 's' ? 1_000 : 60_000;
+  return Number(match[1]) * scale;
+}
+
+/**
+ * How long this command may take before it is worth saying out loud.
+ *
+ * A send is not a read: it deliberately holds its connection open for
+ * --post-send-wait after the message is on the wire, so that wait is dead time
+ * the send is *supposed* to spend. Counting it against the read budget warned
+ * on every healthy send — a message acked in half a second logged as slow at
+ * 1030ms, which reads in the operator's log like a dispatch that went wrong.
+ */
+function slowThresholdFor(args: string[]): number {
+  const waitIdx = args.indexOf('--post-send-wait');
+  if (waitIdx === -1) return SLOW_COMMAND_MS;
+  return SLOW_COMMAND_MS + parseDurationMs(args[waitIdx + 1] ?? '');
+}
+
+/** Flags whose value is what the operator wrote to someone. */
+const MESSAGE_TEXT_FLAGS = new Set(['--message', '--caption']);
+
+/**
+ * The command line as the log and every error may show it.
+ *
+ * Which command ran, and with which options, is what makes a log line useful.
+ * The message itself is not: it went to the log on every slow send, and into
+ * the error of every failed one, which is stored with the scheduled message
+ * and the activity log as well. A log file is the first thing anyone pastes
+ * into a bug report.
+ */
+export function redactCommand(args: string[]): string[] {
+  return args.map((arg, index) =>
+    index > 0 && MESSAGE_TEXT_FLAGS.has(args[index - 1]) ? '<redacted>' : arg
+  );
+}
+
+let installCache: { status: WacliInstallStatus; bin: string; expiresAt: number } | null = null;
+
+export async function checkWacliInstalled(): Promise<WacliInstallStatus> {
+  const bin = process.env.WACLI_BIN ?? 'wacli';
+
+  if (installCache && installCache.bin === bin && Date.now() < installCache.expiresAt) {
+    return installCache.status;
+  }
+
+  const status = await probeWacliInstalled(bin);
+  installCache = {
+    status,
+    bin,
+    expiresAt: Date.now() + (status.installed ? INSTALLED_TTL_MS : MISSING_TTL_MS),
+  };
+  return status;
+}
+
+async function probeWacliInstalled(bin: string): Promise<WacliInstallStatus> {
+  try {
+    const { stdout, stderr } = await execFileAsync(bin, ['--version'], {
+      timeout: 5000,
+    });
+    const versionOutput = (stdout.trim() || stderr.trim()).split('\n')[0] || 'unknown';
+    return {
+      installed: true,
+      version: versionOutput,
+      binPath: bin,
+      error: null,
+    };
+  } catch (err: unknown) {
+    const execErr = err as { code?: string | number; message?: string };
+    const isNotFound =
+      execErr.code === 'ENOENT' ||
+      (typeof execErr.message === 'string' &&
+        (execErr.message.includes('ENOENT') || execErr.message.includes('not found')));
+
+    return {
+      installed: false,
+      version: null,
+      binPath: bin,
+      error: isNotFound
+        ? `wacli binary '${bin}' was not found in PATH.`
+        : (execErr.message || 'Failed to execute wacli binary'),
+    };
+  }
+}
+
+function classifyCommandError(
+  err: unknown,
+  commandLabel: string,
+  timeoutMs?: number,
+  /** Takes the message text back out of whatever Node put the argv into. */
+  scrub: (text: string) => string = (text) => text
+): WacliCommandError {
+  if (err instanceof WacliCommandError) {
+    return err;
+  }
+  const execErr = err as {
+    code?: number | string;
+    killed?: boolean;
+    signal?: string;
+    message?: string;
+    stdout?: string;
+    stderr?: string;
+  };
+  const rawOut = (execErr.stdout || '') + (execErr.stderr || '');
+  const exitCode = typeof execErr.code === 'number' ? execErr.code : undefined;
+
+  // `rawOutput` keeps whatever wacli actually printed; the message is compacted
+  // because it is what gets logged and classified, and a 250-character media URL
+  // inside it pushes the real cause past the log's per-field cap.
+  if (rawOut) {
+    try {
+      const parsed = JSON.parse(rawOut.trim()) as RawWacliResponse<unknown>;
+      if (parsed.error) {
+        return new WacliCommandError(compactUrls(parsed.error), exitCode, rawOut, commandLabel);
+      }
+    } catch (pErr) {
+      if (pErr instanceof WacliCommandError) {
+        return pErr;
+      }
+    }
+  }
+
+  // execFile kills the child once `timeout` elapses, and the error it raises
+  // then says only `Command failed: <cmd>` — the process was stopped before it
+  // could print a reason, so there is nothing in the output to classify. Naming
+  // it here is the difference between a log line that says what happened and
+  // one that says a command failed, somehow, after thirty seconds.
+  if (execErr.killed || execErr.code === 'ETIMEDOUT') {
+    const budget = timeoutMs ? ` after ${timeoutMs}ms` : '';
+    const signal = execErr.signal ? ` (killed with ${execErr.signal})` : '';
+    return new WacliCommandError(
+      `Command timed out${budget}${signal}: ${commandLabel}`,
+      exitCode,
+      rawOut,
+      commandLabel
+    );
+  }
+
+  // A failed execFile says `Command failed: <the whole argv>`, message text and
+  // all.
+  return new WacliCommandError(
+    compactUrls(scrub(execErr.message || 'Unknown execution error')),
+    exitCode,
+    rawOut,
+    commandLabel
+  );
+}
+
+async function execWacliOnce<T>(
+  args: string[],
+  options: ExecWacliOptions = {}
+): Promise<T> {
+  const bin = process.env.WACLI_BIN ?? 'wacli';
+
+  // Everything after a `--` is an operand however it is spelled, which is how a
+  // search for "-x" or "--help" reaches wacli as text rather than as an option.
+  // The flags below go in front of it: appended after, they would be read as
+  // part of the operand. And "already provided" is judged on the options side
+  // only, so a search for the word `--store` cannot stand in for the store.
+  const endOfOptions = args.indexOf('--');
+  const fullArgs = endOfOptions === -1 ? [...args] : args.slice(0, endOfOptions);
+  const operands = endOfOptions === -1 ? [] : args.slice(endOfOptions);
+
+  // Append store / account if configured and not already provided
+  const settings = modeManager.getSettings();
+  const storeDir = options.storeDir ?? settings.storeDir ?? process.env.WACLI_STORE_DIR;
+  const account = options.account ?? settings.account ?? process.env.WACLI_ACCOUNT;
+
+  // Independent flags, not alternatives: a store directory says which database
+  // to open, an account says which of the sessions inside it to act as. Chained
+  // with `else if`, configuring a store silently dropped the account and every
+  // command ran as whichever session wacli picked by default.
+  if (storeDir && !fullArgs.includes('--store')) {
+    fullArgs.push('--store', storeDir);
+  }
+
+  if (account && !fullArgs.includes('--account')) {
+    fullArgs.push('--account', account);
+  }
+
+  // Always ensure --json is passed if not present
+  if (!fullArgs.includes('--json')) {
+    fullArgs.push('--json');
+  }
+
+  // Read-only safety guard:
+  // Inject WACLI_READONLY=1 unless allowMutation is explicitly true
+  const env: NodeJS.ProcessEnv = {
+    ...process.env,
+  };
+
+  if (!options.allowMutation || modeManager.isReadOnly()) {
+    env.WACLI_READONLY = '1';
+  }
+
+  const timeout = options.timeoutMs ?? 30000;
+
+  // wacli's own --timeout defaults to five minutes, so our execFile timer always
+  // won and killed it with SIGTERM: no JSON error to report, and a command
+  // stopped mid-flight rather than unwound. A deadline inside ours lets wacli
+  // give up on its own terms, print a reason, and release the store lock.
+  if (!fullArgs.includes('--timeout')) {
+    fullArgs.push('--timeout', `${Math.max(1, Math.round((timeout * 0.8) / 1000))}s`);
+  }
+
+  fullArgs.push(...operands);
+
+  const cmd = redactCommand(args).join(' ');
+  const commandLabel = `${bin} ${cmd}`;
+  const fullLine = [bin, ...fullArgs].join(' ');
+  const shownLine = [bin, ...redactCommand(fullArgs)].join(' ');
+  const scrub = (text: string) => text.split(fullLine).join(shownLine);
+  const startedAt = Date.now();
+
+  try {
+    const { stdout, stderr } = await execFileAsync(bin, fullArgs, {
+      env,
+      timeout,
+      maxBuffer: 10 * 1024 * 1024, // 10MB
+    });
+
+    const durationMs = Date.now() - startedAt;
+    const output = stdout.trim() || stderr.trim();
+
+    // Every read spawns a subprocess against SQLite, so this is where the app's
+    // latency actually goes. At DEBUG it is the trace that names the slow read;
+    // past the threshold it is worth saying out loud without being asked.
+    if (durationMs >= slowThresholdFor(args)) {
+      logger.warn('api', 'wacli command was slow', { cmd, durationMs, bytes: output.length });
+    } else {
+      logger.debug('api', 'wacli command completed', { cmd, durationMs, bytes: output.length });
+    }
+
+    if (!output) {
+      throw new WacliCommandError('Empty output from wacli command', undefined, undefined, commandLabel);
+    }
+
+    try {
+      const parsed = JSON.parse(output) as RawWacliResponse<T>;
+      if (!parsed.success) {
+        throw new WacliCommandError(
+          parsed.error || 'wacli returned unsuccessful response',
+          undefined,
+          output,
+          commandLabel
+        );
+      }
+      return parsed.data as T;
+    } catch (parseErr) {
+      if (parseErr instanceof WacliCommandError) {
+        throw parseErr;
+      }
+      throw new WacliCommandError(
+        `Failed to parse wacli JSON output: ${output.slice(0, 200)}`,
+        undefined,
+        output,
+        commandLabel
+      );
+    }
+  } catch (err: unknown) {
+    const cmdErr = classifyCommandError(err, commandLabel, timeout, scrub);
+
+    // Only the caller knows whether a failure is expected — expired media, a
+    // chat with no rows — so the severity is theirs to choose. Logging it as an
+    // ERROR here too is what used to write every failure to the log twice, once
+    // at a severity that made routine outcomes look like incidents.
+    logger.debug('api', 'wacli command failed', {
+      cmd,
+      durationMs: Date.now() - startedAt,
+      exitCode: cmdErr.exitCode,
+      err: cmdErr,
+    });
+
+    throw cmdErr;
+  }
+}
+
+export async function execWacli<T>(
+  args: string[],
+  options: ExecWacliOptions = {}
+): Promise<T> {
+  const maxAttempts = options.lockRetryAttempts ?? 3;
+  const retryDelayMs = options.lockRetryDelayMs ?? 400;
+  const cmd = redactCommand(args).join(' ');
+  const commandLabel = `${process.env.WACLI_BIN ?? 'wacli'} ${cmd}`;
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      return await execWacliOnce<T>(args, options);
+    } catch (err: unknown) {
+      const cmdErr = classifyCommandError(err, commandLabel);
+      const isLock = isStoreLockMessage(cmdErr.message);
+      const isLastAttempt = attempt >= maxAttempts;
+
+      if (isLock && !isLastAttempt) {
+        logger.warn('api', 'Store locked; retrying', {
+          cmd,
+          attempt,
+          maxAttempts,
+          retryInMs: retryDelayMs,
+        });
+        await sleep(retryDelayMs);
+        continue;
+      }
+
+      if (isLock) {
+        throw toStoreLockedError(cmdErr.message, commandLabel);
+      }
+
+      throw cmdErr;
+    }
+  }
+
+  throw new WacliCommandError('Unexpected execWacli retry exhaustion', undefined, undefined, commandLabel);
+}

@@ -1,0 +1,248 @@
+export interface UnifiedChat {
+  jid: string;
+  kind: 'dm' | 'group' | 'broadcast' | 'newsletter' | 'unknown';
+  name: string;
+  lastMessageTs: string | null;
+  /** Preview text for the most recent message in this chat, or null if unknown. */
+  lastMessage: string | null;
+  /** True when the previewed message was sent by the operator. */
+  lastMessageFromMe: boolean;
+  archived: boolean;
+  pinned: boolean;
+  mutedUntil: number;
+  unread: boolean;
+  unreadCount: number;
+}
+
+export interface UnifiedMessage {
+  chatJid: string;
+  chatName: string;
+  msgId: string;
+  senderJid: string;
+  senderName: string;
+  ts: string;
+  fromMe: boolean;
+  text: string;
+  displayText: string;
+  isForwarded: boolean;
+  reactionToId: string | null;
+  reactionEmoji: string | null;
+  mediaType: string | null;
+  mediaCaption: string | null;
+  filename: string | null;
+  mimeType: string | null;
+  localPath: string | null;
+  /** WhatsApp's own star, as synced by wacli. Read-only: wacli cannot write it. */
+  starred: boolean;
+  /** Mission Control's local bookmark. Stored on this machine, never sent to WhatsApp. */
+  bookmarked: boolean;
+  edited: boolean;
+  revoked: boolean;
+  snippet?: string | null;
+  /** `pending` is local only: a send confirmed here that wacli has not answered yet. */
+  deliveryStatus?: 'pending' | 'sent' | 'delivered' | 'read' | 'played';
+  /**
+   * Recipients that reported this outgoing message delivered, and how many of
+   * those read it, as wacli stored them. Mirrors `apps/api/src/types.ts`.
+   */
+  deliveredTo?: number;
+  readBy?: number;
+  /** The message this one replies to, when it is a reply. */
+  quotedMsgId?: string | null;
+  quotedSenderJid?: string | null;
+  /**
+   * The quoted text as the reply itself carries it, so a quote can be shown
+   * even when the archive never received the message it quotes.
+   */
+  quotedText?: string | null;
+}
+
+/**
+ * How far back the local archive actually reaches for one chat. Mirrors
+ * `ChatCoverage` in `apps/api/src/types.ts`.
+ */
+export interface ChatCoverage {
+  chatJid: string;
+  name: string;
+  kind: string;
+  messageCount: number;
+  oldestTs: string | null;
+  newestTs: string | null;
+  lastMessageTs: string | null;
+  status: string;
+}
+
+export interface ConversationExport {
+  chatJid: string;
+  chatName: string;
+  exportedAt: string;
+  count: number;
+  /** True when the cap was hit, so the export is not the whole conversation. */
+  truncated: boolean;
+  messages: UnifiedMessage[];
+}
+
+/** Mirrors `UnifiedContact` in `apps/api/src/types.ts`. */
+export interface UnifiedContact {
+  jid: string;
+  phone: string;
+  name: string;
+  alias: string;
+  systemName: string;
+  updatedAt: string | null;
+  /** Local to this machine; never sent to WhatsApp. */
+  tags: string[];
+  known?: boolean;
+}
+
+export interface UnifiedGroup {
+  jid: string;
+  name: string;
+  ownerJid: string;
+  createdAt: string | null;
+  leftAt: string | null;
+  updatedAt: string | null;
+}
+
+export interface UnifiedDoctor {
+  storeDir: string;
+  lockHeld: boolean;
+  /** PID named by the store LOCK file, straight from `wacli doctor`. */
+  lockOwnerPid: number | null;
+  authenticated: boolean;
+  linkedJid: string | null;
+  connected: boolean;
+  connectionState: string;
+  ftsEnabled: boolean;
+  store: {
+    messages: number;
+    chats: number;
+    contacts: number;
+    groups: number;
+    lastSyncAt: string | null;
+    lastActivityAt: string | null;
+  };
+}
+
+export interface MissionControlStatus {
+  readOnly: boolean;
+  processState: 'stopped' | 'starting' | 'running' | 'paused' | 'restarting' | 'logged_out' | 'failed';
+  processPid: number | null;
+  heartbeatAgeSeconds: number | null;
+  lastError: string | null;
+  reconnectAttempts: number;
+  doctor: UnifiedDoctor | null;
+  wacliInstalled: boolean;
+  wacliWorking: boolean;
+  wacliVersion: string | null;
+  wacliBinaryPath: string | null;
+  statusSummary:
+    | 'ok'
+    | 'not_installed'
+    | 'not_authenticated'
+    | 'error'
+    | 'daemon_error'
+    | 'sync_starting'
+    | 'store_locked_external';
+  statusMessage: string | null;
+  storeLockHeld: boolean;
+  storeLockHolderPid: number | null;
+  /** Set when a newer wacli release exists than the installed one; see update-check.ts. */
+  wacliUpdate: { latestVersion: string; releaseUrl: string; upgradeCommand: string | null } | null;
+}
+
+export interface ScheduledMessage {
+  id: string;
+  to: string;
+  recipientName?: string;
+  message: string;
+  replyTo?: string;
+  filePath?: string;
+  fileName?: string;
+  mimeType?: string;
+  scheduledAt: string;
+  createdAt: string;
+  status: 'pending' | 'sending' | 'sent' | 'cancelled' | 'failed';
+  error?: string;
+  sentMessageId?: string;
+  /** How many times the operator has manually resent this after a failure. */
+  resendCount?: number;
+  /** When the last manual resend was requested. */
+  lastAttemptAt?: string;
+  /** Server-derived: the attachment is gone, so a resend goes out as text. */
+  attachmentMissing?: boolean;
+}
+
+/**
+ * Sleep mode, as the server reports it: the daemon stopped and only scheduled
+ * messages going out. The server owns it, so every tab shows the same thing.
+ */
+export interface SleepState {
+  sleeping: boolean;
+  /** When sleep began, ISO 8601. Null while awake. */
+  since: string | null;
+}
+
+export type MissionControlEvent =
+  | { type: 'message.new'; data: UnifiedMessage; ts: string }
+  | { type: 'message.receipt'; data: { chatJid: string; messageIds: string[]; status: 'delivered' | 'read' | 'played'; sender: string; isFromMe: boolean }; ts: string }
+  | { type: 'chat.presence'; data: { chatJid: string; senderJid: string; state: 'composing' | 'paused'; media: 'audio' | '' }; ts: string }
+  | { type: 'chat.update'; data: UnifiedChat; ts: string }
+  | { type: 'scheduled.update'; data: ScheduledMessage; ts: string }
+  | { type: 'sync.progress'; data: { phase: string; detail?: string }; ts: string }
+  | { type: 'connection.status'; data: { state: MissionControlStatus['processState'] | 'connected' | 'disconnected'; reason?: string }; ts: string }
+  | { type: 'sleep.changed'; data: SleepState; ts: string };
+
+export interface SendLogEntry {
+  id: string;
+  timestamp: string;
+  to: string;
+  chatName?: string;
+  message: string;
+  status: 'pending' | 'success' | 'error';
+  error?: string;
+  /**
+   * WhatsApp's id for the message this send produced, once the server reports
+   * one. It is what lets an ACTIVITY row focus the message it logged instead of
+   * only opening the conversation.
+   */
+  messageId?: string;
+}
+
+/**
+ * One page of the send audit stream, newest first.
+ *
+ * `nextCursor` is a timestamp and id rather than an offset: a send landing
+ * while the operator scrolls shifts every offset by one, and they would read
+ * the same row twice. Null means the last row is already on the page.
+ */
+export interface ActivityPage {
+  items: SendLogEntry[];
+  nextCursor: string | null;
+  total: number;
+}
+
+/**
+ * The scheduled queue as the strip shows it.
+ *
+ * `pending` is always complete — a queue that hides what is about to go out
+ * because it fell past row ten is a queue the operator cannot trust. Only
+ * `history`, the resolved tail, is paged.
+ */
+export interface ScheduledPage {
+  pending: ScheduledMessage[];
+  history: ScheduledMessage[];
+  nextCursor: string | null;
+  totalPending: number;
+  totalHistory: number;
+}
+
+export interface BookmarkEntry {
+  msgId: string;
+  chatJid: string;
+  createdAt: string;
+  chatName?: string;
+  senderName?: string;
+  text?: string;
+  ts?: string;
+}

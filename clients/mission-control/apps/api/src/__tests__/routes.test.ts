@@ -1,0 +1,285 @@
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import request from 'supertest';
+import { createApp } from '../index.js';
+import { resetChatPreviewCache } from '../routes/chats.js';
+import { WacliProcessManager } from '../wacli/process-manager.js';
+import { modeManager } from '../wacli/mode.js';
+
+vi.mock('../wacli/commands.js', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../wacli/commands.js')>();
+  return {
+    ...actual,
+    execWacli: vi.fn(async (args: string[]) => {
+      const cmd = args.join(' ');
+      if (cmd.startsWith('chats list')) {
+        return [
+          {
+            jid: '15551234567@s.whatsapp.net',
+            name: 'Alice',
+            last_message_ts: '2026-08-31T01:00:00Z',
+            unread_count: 2,
+            archived: false,
+            pinned: true,
+          },
+        ];
+      }
+      if (cmd.startsWith('chats mark-read')) {
+        return null;
+      }
+      if (cmd.startsWith('messages list')) {
+        return {
+          fts: false,
+          messages: [
+            {
+              ChatJID: '15551234567@s.whatsapp.net',
+              MsgID: 'MSG-001',
+              SenderJID: '15551234567@s.whatsapp.net',
+              Timestamp: '2026-08-31T12:00:00Z',
+              FromMe: false,
+              Text: 'Hello from mock wacli',
+            },
+          ],
+        };
+      }
+      if (cmd.startsWith('messages show')) {
+        if (args.includes('MSG-QUOTED')) {
+          return {
+            ChatJID: '15551234567@s.whatsapp.net',
+            MsgID: 'MSG-QUOTED',
+            Timestamp: '2026-07-01T09:30:00Z',
+            FromMe: true,
+            Text: 'The message being replied to',
+            DeliveredTo: 1,
+            ReadBy: 1,
+          };
+        }
+        throw new actual.WacliCommandError('sql: no rows in result set');
+      }
+      if (cmd.startsWith('messages search')) {
+        return {
+          fts: true,
+          messages: [
+            {
+              ChatJID: '15551234567@s.whatsapp.net',
+              MsgID: 'MSG-SEARCH-1',
+              Timestamp: '2026-08-31T12:00:00Z',
+              FromMe: false,
+              Text: 'Search result mock',
+            },
+          ],
+        };
+      }
+      return [];
+    }),
+  };
+});
+
+describe('API Read Endpoints', () => {
+  const pm = new WacliProcessManager({ apiPort: 3002 });
+  const app = createApp(pm);
+
+  // Chat previews are cached for a few seconds, which is shorter than a browser
+  // burst but longer than this suite takes to run.
+  beforeEach(() => {
+    resetChatPreviewCache();
+  });
+
+  it('GET /api/chats returns chat list array', async () => {
+    const res = await request(app).get('/api/chats?limit=5');
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+    expect(Array.isArray(res.body.data)).toBe(true);
+    expect(res.body.data.length).toBe(1);
+    expect(res.body.data[0].name).toBe('Alice');
+  });
+
+  it('POST /api/chats/mark-read marks a chat as read', async () => {
+    modeManager.setReadOnly(false);
+
+    const res = await request(app)
+      .post('/api/chats/mark-read')
+      .send({ chat: '15551234567@s.whatsapp.net' });
+
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+    expect(res.body.data.unread).toBe(false);
+    expect(res.body.data.unreadCount).toBe(0);
+  });
+
+  it('GET /api/search with empty query returns empty results', async () => {
+    const res = await request(app).get('/api/search?q=');
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+    expect(res.body.data.results).toEqual([]);
+  });
+
+  it('GET /api/search with valid query returns matching results', async () => {
+    const res = await request(app).get('/api/search?q=hello');
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+    expect(res.body.data.results.length).toBe(1);
+    expect(res.body.data.results[0].msgId).toBe('MSG-SEARCH-1');
+  });
+
+  // A query is text however it starts. Passed as a bare operand, "-x" reached
+  // wacli as an unknown option and "--help" as a request for its usage, so
+  // either search answered 500 instead of running.
+  it('GET /api/search hands wacli the query behind "--", after every option', async () => {
+    const { execWacli } = await import('../wacli/commands.js');
+    const mocked = vi.mocked(execWacli);
+    mocked.mockClear();
+
+    const res = await request(app).get('/api/search?q=--help&limit=5');
+
+    expect(res.status).toBe(200);
+    const searchArgs = mocked.mock.calls
+      .map(([args]) => args)
+      .find((args) => args[0] === 'messages' && args[1] === 'search');
+    expect(searchArgs?.slice(-2)).toEqual(['--', '--help']);
+    expect(searchArgs?.indexOf('--limit')).toBeLessThan(searchArgs!.indexOf('--'));
+  });
+
+  it('GET /api/messages returns messages payload', async () => {
+    const res = await request(app).get('/api/messages?limit=5');
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+    expect(res.body.data).toHaveProperty('messages');
+    expect(Array.isArray(res.body.data.messages)).toBe(true);
+    expect(res.body.data.messages.length).toBe(1);
+    expect(res.body.data.messages[0].msgId).toBe('MSG-001');
+  });
+
+  it('GET /api/messages/show returns one message, normalized', async () => {
+    const res = await request(app).get(
+      '/api/messages/show?chat=15551234567@s.whatsapp.net&id=MSG-QUOTED'
+    );
+    expect(res.status).toBe(200);
+    expect(res.body.data).toMatchObject({
+      msgId: 'MSG-QUOTED',
+      ts: '2026-07-01T09:30:00Z',
+      deliveryStatus: 'read',
+    });
+  });
+
+  it('GET /api/messages/show answers 404 for a message the archive does not hold', async () => {
+    const res = await request(app).get(
+      '/api/messages/show?chat=15551234567@s.whatsapp.net&id=MSG-NEVER-SYNCED'
+    );
+    expect(res.status).toBe(404);
+    expect(res.body.success).toBe(false);
+    expect(res.body.error).toMatch(/not in the local archive/);
+  });
+
+  it('GET /api/messages/show requires both chat and id', async () => {
+    const res = await request(app).get('/api/messages/show?chat=15551234567@s.whatsapp.net');
+    expect(res.status).toBe(400);
+  });
+
+  it('POST /api/messages/bookmark records a bookmark the message list reports back', async () => {
+    const res = await request(app)
+      .post('/api/messages/bookmark')
+      .send({
+        chat: '15551234567@s.whatsapp.net',
+        id: 'MSG-001',
+        bookmarked: true,
+      });
+
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+    expect(res.body.data.bookmarked).toBe(true);
+    expect(res.body.data.id).toBe('MSG-001');
+
+    // The old star endpoint kept a process-local map that nothing read back on
+    // a fresh request. A bookmark has to survive the round trip to be real.
+    const listed = await request(app).get('/api/messages?limit=5');
+    expect(listed.body.data.messages[0].msgId).toBe('MSG-001');
+    expect(listed.body.data.messages[0].bookmarked).toBe(true);
+
+    const cleared = await request(app)
+      .post('/api/messages/bookmark')
+      .send({ chat: '15551234567@s.whatsapp.net', id: 'MSG-001', bookmarked: false });
+    expect(cleared.body.data.bookmarked).toBe(false);
+
+    const relisted = await request(app).get('/api/messages?limit=5');
+    expect(relisted.body.data.messages[0].bookmarked).toBe(false);
+  });
+
+  it('GET /api/messages/bookmarks lists saved bookmarks and GET /api/search marks bookmarked hits', async () => {
+    await request(app)
+      .post('/api/messages/bookmark')
+      .send({
+        chat: '15551234567@s.whatsapp.net',
+        id: 'MSG-SEARCH-1',
+        bookmarked: true,
+        chatName: 'Alice',
+        senderName: 'Alice',
+        text: 'Search result mock',
+        ts: '2026-08-31T12:00:00Z',
+      });
+
+    const bookmarksRes = await request(app).get('/api/messages/bookmarks');
+    expect(bookmarksRes.status).toBe(200);
+    expect(bookmarksRes.body.success).toBe(true);
+    expect(bookmarksRes.body.data).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          msgId: 'MSG-SEARCH-1',
+          chatJid: '15551234567@s.whatsapp.net',
+          chatName: 'Alice',
+          text: 'Search result mock',
+          ts: '2026-08-31T12:00:00Z',
+        }),
+      ])
+    );
+
+    const searchRes = await request(app).get('/api/search?q=hello');
+    expect(searchRes.status).toBe(200);
+    expect(searchRes.body.data.results[0].msgId).toBe('MSG-SEARCH-1');
+    expect(searchRes.body.data.results[0].bookmarked).toBe(true);
+
+    // Clean up
+    await request(app)
+      .post('/api/messages/bookmark')
+      .send({ chat: '15551234567@s.whatsapp.net', id: 'MSG-SEARCH-1', bookmarked: false });
+  });
+
+  it('GET /api/chats carries a last-message preview instead of only a timestamp', async () => {
+    const res = await request(app).get('/api/chats');
+
+    expect(res.status).toBe(200);
+    const alice = res.body.data.find(
+      (c: { jid: string }) => c.jid === '15551234567@s.whatsapp.net'
+    );
+    expect(alice).toBeDefined();
+    expect(alice.lastMessage).toBe('Hello from mock wacli');
+    expect(alice.lastMessageFromMe).toBe(false);
+  });
+
+  it('GET /api/chats still returns chats when previews cannot be built', async () => {
+    const { execWacli } = await import('../wacli/commands.js');
+    const mocked = vi.mocked(execWacli);
+    const original = mocked.getMockImplementation()!;
+
+    mocked.mockImplementation(async (args: string[]) => {
+      if (args.join(' ').startsWith('messages list')) {
+        throw new Error('store is locked by another process');
+      }
+      return original(args);
+    });
+
+    try {
+      const res = await request(app).get('/api/chats');
+      expect(res.status).toBe(200);
+      expect(res.body.data).toHaveLength(1);
+      expect(res.body.data[0].lastMessage).toBeNull();
+    } finally {
+      mocked.mockImplementation(original);
+    }
+  });
+
+  it('POST /api/daemon/restart operates on the process manager', async () => {
+    const resRestart = await request(app).post('/api/daemon/restart');
+    expect(resRestart.status).toBe(200);
+    expect(resRestart.body.success).toBe(true);
+  });
+});

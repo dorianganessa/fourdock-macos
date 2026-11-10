@@ -1,0 +1,1127 @@
+import React, { useCallback, useMemo, useRef, useEffect, useLayoutEffect, useState } from 'react';
+import {
+  Reply,
+  ChevronUp,
+  ChevronDown,
+  ArrowDownToLine,
+  History,
+  Clock,
+  CloudDownload,
+  Info,
+  Loader2,
+  Trash2,
+  AlertOctagon,
+  AlertTriangle,
+  Terminal,
+} from 'lucide-react';
+import {
+  useQuery,
+  useInfiniteQuery,
+  useMutation,
+  useQueryClient,
+  keepPreviousData,
+} from '@tanstack/react-query';
+import { api, ApiClientError } from '../../api/client.ts';
+import { POLL_MESSAGES_MS, POLL_SCHEDULED_MS, wacliReadQueryOptions } from '../../lib/queryOptions.ts';
+import { isWacliReadyForReads } from '../../lib/wacliReady.ts';
+import { useHealth } from '../../hooks/useHealth.ts';
+import { ensureAwake, useSleepMode } from '../../hooks/useSleepMode.ts';
+import { useUiCommand } from '../../hooks/useUiCommand.ts';
+import { useAppStore } from '../../store/appStore.ts';
+import { resolveJumpTarget } from '../../lib/messageJump.ts';
+import { distanceFromBottom, shouldFollowNewest } from '../../lib/threadScroll.ts';
+import { localDayKey } from '../../lib/messageDates.ts';
+import {
+  flattenMessagePages,
+  hasMessage,
+  newerCursor,
+  newerPage,
+  olderCursor,
+  patchMessages,
+  shouldPollThread,
+  windowPage,
+  type MessagePage,
+  type MessagePages,
+  type WindowPageParam,
+} from '../../lib/messagePages.ts';
+import { ExportMenu } from './ExportMenu.tsx';
+import { DayDivider } from './DayDivider.tsx';
+import { MessageRow, type ThreadReaction } from './MessageRow.tsx';
+import type { UnifiedMessage } from '../../types.ts';
+
+/** Shared by every row without reactions, so none of them looks changed. */
+const NO_REACTIONS: ThreadReaction[] = [];
+
+/**
+ * WhatsApp allows one reaction per person per message. Our own reactions fold
+ * under a fixed key because an outbound row carries no sender JID.
+ */
+const MY_REACTION_KEY = '@me';
+
+/** A reaction sent from here that the local archive has not caught up with. */
+interface PendingReaction {
+  /** What we sent. */
+  emoji: string;
+  /**
+   * What the archive said our reaction to that message was at the moment we
+   * clicked. The stand-in stops applying as soon as the archive says something
+   * else — which is how it retires itself, with no timer and no bookkeeping.
+   */
+  was: string;
+}
+
+/** Stable empty map, so switching chats does not churn the fold's dependencies. */
+const NO_PENDING_REACTIONS: Record<string, PendingReaction> = {};
+
+/** How many messages the thread opens with, and each "load older" step adds. */
+const MESSAGE_PAGE_SIZE = 200;
+
+/** How many messages a history window opens with on either side of its moment. */
+const WINDOW_SIDE = 100;
+
+/** A second on. wacli's `--before` is strict and counts whole seconds. */
+function secondAfter(ts: string): string {
+  return new Date(new Date(ts).getTime() + 1000).toISOString();
+}
+
+/** One page of a history window: around its moment, or on back or forward. */
+async function fetchWindowPage(chat: string, param: WindowPageParam): Promise<MessagePage> {
+  if ('before' in param) {
+    return api.getMessages({ chat, limit: MESSAGE_PAGE_SIZE, before: param.before });
+  }
+  if ('after' in param) {
+    // Oldest first. Newest first, the page would be the newest messages in
+    // the chat rather than the ones that follow the window.
+    return newerPage(
+      await api.getMessages({ chat, limit: MESSAGE_PAGE_SIZE, after: param.after, asc: true })
+    );
+  }
+  const [older, newer] = await Promise.all([
+    // Up to and including the moment itself.
+    api.getMessages({ chat, limit: WINDOW_SIDE, before: secondAfter(param.around) }),
+    api.getMessages({ chat, limit: WINDOW_SIDE, after: param.around, asc: true }),
+  ]);
+  return windowPage(older, newer);
+}
+
+const HIGHLIGHT_TTL_MS = 5000;
+
+/** Longer, because a missed target comes with a notice worth reading. */
+const HIGHLIGHT_MISS_TTL_MS = 12000;
+
+/**
+ * Coverage changes only when sync or a backfill moves the archive boundary, so
+ * it is fetched on chat open and left alone — not polled.
+ */
+const COVERAGE_STALE_MS = 5 * 60_000;
+
+/** How many older messages one "ask the phone" request tries to pull back. */
+const BACKFILL_BATCH = 200;
+
+function archiveDate(ts: string | null): string | null {
+  if (!ts) return null;
+  const date = new Date(ts);
+  if (Number.isNaN(date.getTime())) return null;
+  return date.toLocaleDateString([], { year: 'numeric', month: 'short', day: 'numeric' });
+}
+
+export const ThreadView: React.FC = () => {
+  const selectedChat = useAppStore((s) => s.selectedChat);
+  const setReplyingTo = useAppStore((s) => s.setReplyingTo);
+  // This chat's typing state, and nothing else. Subscribed to the whole map,
+  // the thread was redrawn for every typing indicator in every other chat.
+  const isTyping = useAppStore((s) =>
+    s.selectedChat ? s.presenceMap[s.selectedChat.jid]?.state === 'composing' : false
+  );
+  const highlightedMessageId = useAppStore((s) => s.highlightedMessageId);
+  const highlightedMessageHint = useAppStore((s) => s.highlightedMessageHint);
+  const highlightedMessageAt = useAppStore((s) => s.highlightedMessageAt);
+  const setHighlightedMessageId = useAppStore((s) => s.setHighlightedMessageId);
+  const setActiveModal = useAppStore((s) => s.setActiveModal);
+  const triggerFocusComposer = useAppStore((s) => s.triggerFocusComposer);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [activeReactionMsgId, setActiveReactionMsgId] = useState<string | null>(null);
+  const [copiedMsgId, setCopiedMsgId] = useState<string | null>(null);
+
+  /**
+   * History around a message older than the live pages reach, opened for a
+   * jump to it, in the chat it was opened for.
+   */
+  const [historyWindow, setHistoryWindow] = useState<{
+    jid: string;
+    msgId: string;
+    at: string;
+  } | null>(null);
+
+  // Reactions sent from here, held on screen until the archive catches up, and
+  // keyed by the message reacted to — all one reaction of ours can be. Sending
+  // one costs a wacli spawn, the store lock, the send itself and a post-send
+  // wait, and the row only reaches the thread on the poll after that, which is
+  // why a click used to sit there doing nothing for most of a minute.
+  //
+  // Which chat it was decided for is part of the state, the same way the
+  // history window is: reading it back through the current selection is what
+  // scopes it to one conversation without an effect to keep the two in step.
+  const [reactionState, setReactionState] = useState<{
+    jid: string | null;
+    pending: Record<string, PendingReaction>;
+    error: string | null;
+  }>({ jid: null, pending: NO_PENDING_REACTIONS, error: null });
+
+  const reactionsAreForThisChat = reactionState.jid === (selectedChat?.jid ?? null);
+  const pendingReactions = reactionsAreForThisChat ? reactionState.pending : NO_PENDING_REACTIONS;
+  const reactionError = reactionsAreForThisChat ? reactionState.error : null;
+
+  const dismissReactionError = () =>
+    setReactionState((prev) => (prev.error ? { ...prev, error: null } : prev));
+
+  // A jump we actually performed. Clearing the highlight afterwards must not
+  // fall through to the scroll-to-newest branch: that yanked the operator away
+  // from the message they had just been sent to, seconds after arriving.
+  const jumpedToRef = useRef<string | null>(null);
+
+  const queryClient = useQueryClient();
+
+  const { data: health } = useHealth();
+
+  // Asleep, nothing reaches wacli: what is on screen stays as it was.
+  const { awake } = useSleepMode();
+  const readsReady = awake && isWacliReadyForReads(health);
+  const readQueryOpts = wacliReadQueryOptions(
+    readsReady && Boolean(selectedChat?.jid)
+  );
+
+  // One page per "load older", walked back with a `before` cursor, rather than
+  // one ever-widening `limit`. Re-reading the whole thread to reach 200 more
+  // messages is what made the sixth step cost a 1200-message subprocess — and
+  // then cost it again on every poll.
+  const liveThread = useInfiniteQuery<MessagePage, ApiClientError, MessagePages, unknown[], string | undefined>({
+    queryKey: ['messages', selectedChat?.jid],
+    queryFn: ({ pageParam }) =>
+      selectedChat
+        ? api.getMessages({
+            chat: selectedChat.jid,
+            limit: MESSAGE_PAGE_SIZE,
+            before: pageParam,
+          })
+        : Promise.resolve({ messages: [], hasMore: false }),
+    initialPageParam: undefined,
+    getNextPageParam: (lastPage) => (lastPage.hasMore ? olderCursor(lastPage) : undefined),
+    refetchInterval: (query) =>
+      shouldPollThread(query.state.data?.pages.length ?? 1) ? POLL_MESSAGES_MS : false,
+    // Keep the previous conversation on screen while the next one loads, so
+    // switching chats does not blank the pane.
+    placeholderData: keepPreviousData,
+    ...readQueryOpts,
+  });
+
+  // The window this chat is reading, if any. One left open in another chat
+  // is closed below, before anything reads it.
+  const windowAt = historyWindow?.jid === selectedChat?.jid ? (historyWindow?.at ?? null) : null;
+
+  // History around one moment, and from there back or forward on demand. Not
+  // polled: it is settled history, and the live thread goes on following the
+  // newest message underneath it.
+  const windowThread = useInfiniteQuery<MessagePage, ApiClientError, MessagePages, unknown[], WindowPageParam>({
+    queryKey: ['messages', selectedChat?.jid, 'around', windowAt],
+    queryFn: ({ pageParam }) => fetchWindowPage(selectedChat!.jid, pageParam),
+    initialPageParam: { around: windowAt ?? '' },
+    getNextPageParam: (lastPage) => {
+      const before = lastPage.hasMore ? olderCursor(lastPage) : undefined;
+      return before ? { before } : undefined;
+    },
+    getPreviousPageParam: (firstPage) => {
+      const after = firstPage.hasNewer ? newerCursor(firstPage) : undefined;
+      return after ? { after } : undefined;
+    },
+    ...wacliReadQueryOptions(readsReady && Boolean(selectedChat?.jid && windowAt)),
+  });
+
+  // Opened in one chat, a window has nothing to say about the next: a chat
+  // always opens on its newest messages.
+  if (historyWindow && historyWindow.jid !== selectedChat?.jid) {
+    setHistoryWindow(null);
+  }
+
+  // A jump to a message the live pages do not hold opens a window around it,
+  // however far back it is: two reads of the archive, where paging back to it
+  // could take dozens. Judged once the live pages have settled, so a switch to
+  // the hit's chat is not measured against the previous chat's messages.
+  const liveData = liveThread.data;
+  if (
+    selectedChat &&
+    highlightedMessageId &&
+    highlightedMessageAt &&
+    liveData &&
+    !liveThread.isFetching &&
+    !liveThread.isPlaceholderData
+  ) {
+    const inLive = hasMessage(liveData, highlightedMessageId);
+    const openFor = windowAt ? historyWindow?.msgId : null;
+    if (!inLive && openFor !== highlightedMessageId) {
+      setHistoryWindow({ jid: selectedChat.jid, msgId: highlightedMessageId, at: highlightedMessageAt });
+    } else if (inLive && windowAt) {
+      setHistoryWindow(null);
+    }
+  }
+
+  // Whichever the thread is showing. Everything below reads this one.
+  const {
+    data: messagePages,
+    isLoading,
+    isFetching,
+    isPlaceholderData,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = windowAt ? windowThread : liveThread;
+
+  const canLoadOlder = Boolean(hasNextPage);
+
+  /**
+   * How far the reading position sat from the bottom when a "load older" began,
+   * or null when no such fetch is outstanding.
+   *
+   * Prepending history grows the scrollable area upwards. Measuring from the
+   * bottom rather than the top is what survives that growth: re-applying it
+   * afterwards leaves the line the operator was reading exactly where it was,
+   * instead of dropping them back at the newest message.
+   */
+  const olderAnchorRef = useRef<number | null>(null);
+
+  /** Set for the one commit that restores an anchor, so auto-scroll stands down. */
+  const restoredOlderRef = useRef(false);
+
+  /**
+   * How far the reading position sat above the bottom when the operator last
+   * moved it. Recorded on scroll rather than measured in the effect, because by
+   * then the new message is already laid out and the distance it would report
+   * is one the operator never chose.
+   */
+  const distanceFromBottomRef = useRef(0);
+
+  /** Which conversation that distance belongs to, so opening another resets it. */
+  const followedChatRef = useRef<string | null>(null);
+
+  const handleThreadScroll = () => {
+    if (scrollRef.current) {
+      distanceFromBottomRef.current = distanceFromBottom(scrollRef.current);
+    }
+  };
+
+  const loadOlderMessages = () => {
+    if (!hasNextPage || isFetchingNextPage) return;
+    const el = scrollRef.current;
+    olderAnchorRef.current = el ? el.scrollHeight - el.scrollTop : null;
+    // Paging bypasses `enabled`, so it wakes a sleeping app itself rather than
+    // asking a server that would refuse it.
+    void ensureAwake(queryClient, 'load older').then(() => fetchNextPage());
+  };
+
+  // Forward from a window, at the bottom of the thread. Nothing to hold in
+  // place: what lands goes below the reading position, not above it.
+  const loadNewerMessages = () => {
+    if (!windowThread.hasPreviousPage || windowThread.isFetchingPreviousPage) return;
+    void ensureAwake(queryClient, 'load newer').then(() => windowThread.fetchPreviousPage());
+  };
+
+  /** Leaves any history window for the live thread, at its newest message. */
+  const backToLatest = () => {
+    setHistoryWindow(null);
+    // Still set, the jump would open the window straight back up.
+    setHighlightedMessageId(null);
+    // An ask to go to the newest message is also an ask to follow it again,
+    // not to stay where the jump put us.
+    jumpedToRef.current = null;
+    distanceFromBottomRef.current = 0;
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  };
+
+  useLayoutEffect(() => {
+    const anchor = olderAnchorRef.current;
+    if (anchor === null) return;
+    olderAnchorRef.current = null;
+    restoredOlderRef.current = true;
+    const el = scrollRef.current;
+    if (el) el.scrollTop = el.scrollHeight - anchor;
+  }, [messagePages]);
+
+  // How far back the local archive reaches. Paging the thread stops at whatever
+  // sync happened to pull; this is what tells the operator whether the wall they
+  // hit is the end of the conversation or just the end of what was synced.
+  const { data: coverageRows } = useQuery({
+    queryKey: ['coverage', selectedChat?.jid],
+    queryFn: () =>
+      selectedChat ? api.getHistoryCoverage({ chat: selectedChat.jid }) : Promise.resolve([]),
+    staleTime: COVERAGE_STALE_MS,
+    ...wacliReadQueryOptions(readsReady && Boolean(selectedChat?.jid)),
+  });
+
+  const coverage = coverageRows?.[0] ?? null;
+  const archiveStart = archiveDate(coverage?.oldestTs ?? null);
+
+  const backfillMutation = useMutation({
+    mutationFn: (chatJid: string) => api.backfillHistory({ chat: chatJid, count: BACKFILL_BATCH }),
+    onSuccess: (_result, chatJid) => {
+      queryClient.invalidateQueries({ queryKey: ['messages', chatJid] });
+      queryClient.invalidateQueries({ queryKey: ['coverage', chatJid] });
+    },
+  });
+
+  // Scheduled messages for current chat. The queue answers with its pending
+  // messages already separated, so there is nothing to filter here.
+  const { data: scheduledForChat } = useQuery({
+    queryKey: ['scheduled', selectedChat?.jid],
+    queryFn: () => api.getScheduled({ chat: selectedChat!.jid }),
+    enabled: Boolean(selectedChat?.jid),
+    refetchInterval: POLL_SCHEDULED_MS,
+  });
+
+  const pendingScheduled = scheduledForChat?.pending ?? [];
+
+  // A cancel is refused once the message is already going out. The banner has
+  // to say so, or the click looks like it worked while the message is sent.
+  // Kept per chat, like the reaction error, so it does not follow the operator.
+  const [cancelRefusal, setCancelRefusal] = useState<{ jid: string; error: string } | null>(null);
+
+  const cancelScheduledMutation = useMutation({
+    mutationFn: ({ id }: { id: string; chat: string }) => api.cancelScheduled(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['scheduled'] });
+    },
+    onError: (err, { chat }) => {
+      setCancelRefusal({ jid: chat, error: err instanceof Error ? err.message : String(err) });
+      queryClient.invalidateQueries({ queryKey: ['scheduled'] });
+    },
+  });
+
+  // Local bookmark toggle. This is Mission Control's own flag, not WhatsApp's
+  // star: wacli can read a synced star but has no command to set one, so a
+  // "star" button here could never reach the phone.
+  const bookmarkMutation = useMutation({
+    mutationFn: (params: {
+      chat: string;
+      id: string;
+      bookmarked: boolean;
+      chatName?: string;
+      senderName?: string;
+      text?: string;
+      ts?: string;
+    }) => api.bookmarkMessage(params),
+    onMutate: async ({ chat, id, bookmarked }) => {
+      await queryClient.cancelQueries({ queryKey: ['messages', chat] });
+      queryClient.setQueriesData<MessagePages>({ queryKey: ['messages', chat] }, (old) =>
+        patchMessages(
+          old,
+          (m) => m.msgId === id,
+          (m) => ({ ...m, bookmarked })
+        )
+      );
+    },
+    onError: (_err, { chat }) => {
+      void queryClient.invalidateQueries({ queryKey: ['messages', chat] });
+    },
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: ['bookmarks'] });
+    },
+  });
+
+  // Reaction folding: map reactions onto target messages. Folding by reactor
+  // rather than appending is what lets an optimistic reaction sit in the same
+  // slot the archive's own row will occupy, instead of doubling the emoji up
+  // the moment the real one arrives.
+  const loadedMessages = useMemo(() => flattenMessagePages(messagePages), [messagePages]);
+
+  const { messages, reactionsMap, myArchivedReactions } = useMemo(() => {
+    const rawMessages = loadedMessages;
+    const byTarget = new Map<string, Map<string, ThreadReaction & { at: number }>>();
+    const visibleMsgs: UnifiedMessage[] = [];
+
+    for (const msg of rawMessages) {
+      if (msg.reactionToId) {
+        const reactor = msg.fromMe ? MY_REACTION_KEY : msg.senderJid || msg.senderName || msg.msgId;
+        const parsed = new Date(msg.ts).getTime();
+        const at = Number.isNaN(parsed) ? 0 : parsed;
+        const perTarget = byTarget.get(msg.reactionToId) ?? new Map();
+        const seen = perTarget.get(reactor);
+        // An empty emoji is a reaction being taken back, so it has to be able
+        // to win too — it is only dropped once the newest one per reactor is known.
+        if (!seen || at >= seen.at) {
+          perTarget.set(reactor, {
+            emoji: msg.reactionEmoji ?? '',
+            fromMe: msg.fromMe,
+            sender: msg.senderName || msg.senderJid,
+            at,
+          });
+        }
+        byTarget.set(msg.reactionToId, perTarget);
+      } else {
+        visibleMsgs.push(msg);
+      }
+    }
+
+    // What the archive currently believes we reacted with, before our own
+    // unconfirmed clicks are laid over it. That is the comparison that retires
+    // a pending reaction.
+    const mine = new Map<string, string>();
+    for (const [target, perTarget] of byTarget) {
+      mine.set(target, perTarget.get(MY_REACTION_KEY)?.emoji ?? '');
+    }
+
+    for (const [target, pending] of Object.entries(pendingReactions)) {
+      // The archive has moved on: it has either caught up with this reaction or
+      // learned of a newer one from another device. Either way it is now the
+      // better answer, and the stand-in steps aside.
+      if ((mine.get(target) ?? '') !== pending.was) continue;
+      const perTarget = byTarget.get(target) ?? new Map();
+      perTarget.set(MY_REACTION_KEY, {
+        emoji: pending.emoji,
+        fromMe: true,
+        sender: 'Me',
+        at: Number.MAX_SAFE_INTEGER,
+      });
+      byTarget.set(target, perTarget);
+    }
+
+    const rxMap = new Map<string, ThreadReaction[]>();
+    for (const [target, perTarget] of byTarget) {
+      const folded = [...perTarget.values()]
+        .filter((rx) => rx.emoji)
+        .map(({ emoji, fromMe, sender }) => ({ emoji, fromMe, sender }));
+      if (folded.length > 0) {
+        rxMap.set(target, folded);
+      }
+    }
+
+    // Sort chronologically ascending for display
+    visibleMsgs.sort((a, b) => new Date(a.ts).getTime() - new Date(b.ts).getTime());
+    return { messages: visibleMsgs, reactionsMap: rxMap, myArchivedReactions: mine };
+  }, [loadedMessages, pendingReactions]);
+
+  // What a reply quotes, when it is loaded. Each entry is the same object as
+  // the message itself, so a row's `quoted` prop only changes with the quote.
+  const messagesById = useMemo(
+    () => new Map(messages.map((msg) => [msg.msgId, msg])),
+    [messages]
+  );
+
+  // The first message of each local day, which is where a divider goes.
+  const dayStarts = useMemo(() => {
+    const starts = new Set<string>();
+    let previous: string | null = null;
+    for (const msg of messages) {
+      const day = localDayKey(msg.ts);
+      if (day !== previous) starts.add(msg.msgId);
+      previous = day;
+    }
+    return starts;
+  }, [messages]);
+
+  // A jump target that is not in the loaded window — an old search hit, or a
+  // send-log entry whose optimistic id has since been replaced by a real one.
+  // Which message the jump actually lands on. An id is honoured when the thread
+  // holds it; otherwise the hint recognises the message from what was sent.
+  // Resolved here rather than written back to the store, so the thread stays a
+  // pure reading of what is loaded.
+  const jumpRequested = Boolean(highlightedMessageId || highlightedMessageHint);
+  const focusedMessageId = useMemo(
+    () => resolveJumpTarget(messages, highlightedMessageId, highlightedMessageHint),
+    [messages, highlightedMessageId, highlightedMessageHint]
+  );
+
+  // `isPlaceholderData` carries as much weight as `isFetching`: while a chat
+  // switch is in flight the thread on screen is still the previous
+  // conversation's, and measuring the target against it accused the archive of
+  // losing a message it had never been asked to hold.
+  const highlightMissed =
+    jumpRequested &&
+    !isFetching &&
+    !isPlaceholderData &&
+    messages.length > 0 &&
+    !focusedMessageId;
+
+  // Auto-scroll to the newest message, unless we are navigating to a specific one.
+  useEffect(() => {
+    // Older history just landed and the layout pass has already put the reading
+    // position back. Scrolling to the newest message now is exactly what "load
+    // older" is asking not to happen.
+    if (restoredOlderRef.current) {
+      restoredOlderRef.current = false;
+      return;
+    }
+
+    if (!jumpRequested) {
+      // The highlight we just honoured has expired. Scrolling to the newest
+      // message here is what made a jump look like it never worked: the
+      // operator landed on the message, then five seconds later the thread
+      // threw them back to the bottom.
+      if (jumpedToRef.current) {
+        jumpedToRef.current = null;
+        return;
+      }
+
+      // A conversation just opened always shows its newest message.
+      const openedAnotherChat = followedChatRef.current !== (selectedChat?.jid ?? null);
+      followedChatRef.current = selectedChat?.jid ?? null;
+      if (openedAnotherChat) {
+        distanceFromBottomRef.current = 0;
+      }
+
+      // A window onto older history is read at the operator's own pace, not
+      // followed: loading newer messages into it must not throw them to its end.
+      if (windowAt) {
+        return;
+      }
+
+      // Following the live edge, or reading back through history? Judged on
+      // where the operator was before this message was laid out — see
+      // lib/threadScroll.
+      if (!shouldFollowNewest(distanceFromBottomRef.current)) {
+        return;
+      }
+
+      if (scrollRef.current) {
+        scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+        distanceFromBottomRef.current = 0;
+      }
+      return;
+    }
+
+    const el = focusedMessageId ? document.getElementById(`msg-${focusedMessageId}`) : null;
+    if (el) {
+      jumpedToRef.current = focusedMessageId;
+      const raf = requestAnimationFrame(() => {
+        // Straight there in a window. It replaced the thread outright, so
+        // there is no reading position to glide from, and gliding across
+        // thousands of pixels spent the highlight before it arrived.
+        el.scrollIntoView({ behavior: windowAt ? 'auto' : 'smooth', block: 'center' });
+      });
+      const timer = setTimeout(() => setHighlightedMessageId(null), HIGHLIGHT_TTL_MS);
+      return () => {
+        cancelAnimationFrame(raf);
+        clearTimeout(timer);
+      };
+    }
+
+    // Put the notice and the "load older" control in view; leaving them above
+    // the fold would look like the jump silently did nothing.
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = 0;
+    }
+
+    // Give up eventually, but always clear the id. Leaving it set used to
+    // disable the auto-scroll branch above for the rest of the session, because
+    // only the found path ever reset it.
+    const timer = setTimeout(() => setHighlightedMessageId(null), HIGHLIGHT_MISS_TTL_MS);
+    return () => clearTimeout(timer);
+  }, [selectedChat?.jid, messages, jumpRequested, focusedMessageId, setHighlightedMessageId, windowAt]);
+
+  const reactMutation = useMutation({
+    mutationFn: ({ msg, emoji }: { msg: UnifiedMessage; emoji: string }) =>
+      api.sendReact({
+        to: selectedChat!.jid,
+        id: msg.msgId,
+        reaction: emoji,
+        sender: msg.senderJid || undefined,
+        confirm: true,
+      }),
+    onError: (err, { msg }) => {
+      // Showing the emoji before the send lands is only honest if a refusal
+      // takes it away again and says why.
+      setReactionState((prev) => {
+        const { [msg.msgId]: _rolledBack, ...rest } = prev.pending;
+        return {
+          ...prev,
+          pending: rest,
+          error: err instanceof Error ? err.message : 'The reaction did not go out.',
+        };
+      });
+    },
+    onSuccess: (_data, { msg }) => {
+      // Ask for the archive's own row now rather than waiting out the poll, so
+      // the optimistic emoji is a stand-in for a second or two, not half a minute.
+      void queryClient.invalidateQueries({
+        queryKey: ['messages', msg.chatJid || selectedChat?.jid],
+      });
+    },
+  });
+
+  const handleReact = (msg: UnifiedMessage, emoji: string) => {
+    if (!selectedChat) return;
+    setActiveReactionMsgId(null);
+    setReactionState({
+      jid: selectedChat.jid,
+      // What the archive says right now is the mark this stand-in watches for.
+      pending: {
+        ...pendingReactions,
+        [msg.msgId]: { emoji, was: myArchivedReactions.get(msg.msgId) ?? '' },
+      },
+      error: null,
+    });
+    reactMutation.mutate({ msg, emoji });
+  };
+
+  // Everything a row is handed stays the same object while its message does,
+  // which is what lets MessageRow skip the redraw. `handleReact` closes over
+  // state that changes with every message, so rows reach it through a ref.
+  const handleReactRef = useRef(handleReact);
+  useEffect(() => {
+    handleReactRef.current = handleReact;
+  });
+  const onReact = useCallback(
+    (msg: UnifiedMessage, emoji: string) => handleReactRef.current(msg, emoji),
+    []
+  );
+
+  const selectedJid = selectedChat?.jid;
+
+  const onReply = useCallback(
+    (msg: UnifiedMessage) => {
+      if (selectedJid) setReplyingTo(selectedJid, msg);
+    },
+    [selectedJid, setReplyingTo]
+  );
+
+  // A quoted message is jumped to the way a search hit is: by id, with its time
+  // to open a window around it when the live pages do not reach back that far.
+  const onJumpToMessage = useCallback(
+    (msgId: string, at: string) => setHighlightedMessageId(msgId, null, at),
+    [setHighlightedMessageId]
+  );
+
+  const handleCopyText = useCallback(async (msg: UnifiedMessage) => {
+    const content = msg.displayText || msg.text || msg.mediaCaption || '';
+    if (!content) return;
+
+    try {
+      await navigator.clipboard.writeText(content);
+      setCopiedMsgId(msg.msgId);
+      setTimeout(() => setCopiedMsgId((prev) => (prev === msg.msgId ? null : prev)), 2000);
+    } catch {
+      // fallback
+    }
+  }, []);
+
+  const { mutate: bookmark } = bookmarkMutation;
+  const selectedChatName = selectedChat?.name;
+  const handleToggleBookmark = useCallback(
+    (msg: UnifiedMessage) => {
+      if (!selectedJid) return;
+      const snippet = msg.displayText || msg.text || msg.mediaCaption || msg.filename || undefined;
+      bookmark({
+        chat: selectedJid,
+        id: msg.msgId,
+        bookmarked: !msg.bookmarked,
+        chatName: selectedChatName || msg.chatName || undefined,
+        senderName: msg.fromMe ? 'Me' : msg.senderName || msg.senderJid || undefined,
+        text: snippet,
+        ts: msg.ts || undefined,
+      });
+    },
+    [selectedJid, selectedChatName, bookmark]
+  );
+
+  const toggleReactionDrawer = useCallback(
+    (msgId: string) => setActiveReactionMsgId((current) => (current === msgId ? null : msgId)),
+    []
+  );
+  const closeReactionDrawer = useCallback(() => setActiveReactionMsgId(null), []);
+
+  // Shortcuts that need the loaded thread. The key handler at the app root
+  // publishes a command; the pane holding the messages is what acts on it.
+  useUiCommand('thread:reply-latest', () => {
+    if (!selectedChat || messages.length === 0) return;
+    // The newest message from someone else: quoting your own last line back
+    // into the thread is almost never what "reply" is reaching for.
+    const target =
+      [...messages].reverse().find((m) => !m.fromMe) ?? messages[messages.length - 1];
+    setReplyingTo(selectedChat.jid, target);
+    triggerFocusComposer();
+  });
+
+  useUiCommand('thread:load-older', () => {
+    if (!canLoadOlder || isFetchingNextPage) return;
+    loadOlderMessages();
+  });
+
+  useUiCommand('thread:jump-newest', () => backToLatest());
+
+  if (!selectedChat) {
+    if (health?.wacliInstalled === false) {
+      return (
+        <section
+          aria-label="Conversation Thread"
+          className="flex-1 flex flex-col items-center justify-center bg-mc-bg text-mc-text select-none p-6"
+        >
+          <div className="text-center space-y-4 max-w-md">
+            <div className="w-12 h-12 rounded-full bg-mc-danger/10 border border-mc-danger/40 text-mc-danger flex items-center justify-center mx-auto">
+              <AlertOctagon size={24} />
+            </div>
+            <div className="space-y-1">
+              <div className="font-mono text-xs tracking-widest uppercase text-mc-danger font-bold">
+                wacli CLI Not Installed
+              </div>
+              <div className="text-sm font-semibold text-mc-text">
+                Command-line tool required
+              </div>
+              <p className="text-xs text-mc-textMuted font-sans">
+                Mission Control connects to WhatsApp through the <code className="text-mc-danger font-mono font-semibold">wacli</code> CLI. Please install it on your system to view and manage messages.
+              </p>
+            </div>
+            <div className="bg-mc-surface border border-mc-border rounded p-3 text-left space-y-1.5 font-mono text-xs">
+              <div className="text-[11px] text-mc-textMuted flex items-center gap-1">
+                <Terminal size={12} /> Install command:
+              </div>
+              <code className="text-mc-live text-xs block select-all">
+                brew install openclaw/tap/wacli
+              </code>
+            </div>
+          </div>
+        </section>
+      );
+    }
+
+    if (health?.statusSummary === 'not_authenticated' || (health?.doctor && !health.doctor.authenticated)) {
+      return (
+        <section
+          aria-label="Conversation Thread"
+          className="flex-1 flex flex-col items-center justify-center bg-mc-bg text-mc-text select-none p-6"
+        >
+          <div className="text-center space-y-4 max-w-md">
+            <div className="w-12 h-12 rounded-full bg-mc-safe/10 border border-mc-safe/40 text-mc-safe flex items-center justify-center mx-auto">
+              <AlertTriangle size={24} />
+            </div>
+            <div className="space-y-1">
+              <div className="font-mono text-xs tracking-widest uppercase text-mc-safe font-bold">
+                WhatsApp Account Not Paired
+              </div>
+              <div className="text-sm font-semibold text-mc-text">
+                Pair your device to get started
+              </div>
+              <p className="text-xs text-mc-textMuted font-sans">
+                Run the authentication command in your terminal and scan the QR code with WhatsApp on your phone:
+              </p>
+            </div>
+            <div className="bg-mc-surface border border-mc-border rounded p-3 text-left space-y-1.5 font-mono text-xs">
+              <div className="text-[11px] text-mc-textMuted flex items-center gap-1">
+                <Terminal size={12} /> Terminal command:
+              </div>
+              <code className="text-mc-live text-xs block select-all">
+                wacli auth
+              </code>
+            </div>
+          </div>
+        </section>
+      );
+    }
+
+    return (
+      <section
+        aria-label="Conversation Thread"
+        className="flex-1 flex flex-col items-center justify-center bg-mc-bg text-mc-textMuted select-none"
+      >
+        <div className="text-center space-y-2">
+          <div className="font-mono text-xs tracking-widest uppercase">wacli Mission Control</div>
+          <div className="text-sm">Select a chat from the rail to view messages.</div>
+        </div>
+      </section>
+    );
+  }
+
+  return (
+    <section aria-label="Conversation Thread" className="flex-1 flex flex-col bg-mc-bg min-h-0 min-w-0 relative overflow-hidden">
+      {/* Header */}
+      <div className="h-14 border-b border-mc-border bg-mc-surface/80 backdrop-blur px-4 flex items-center justify-between shrink-0">
+        <div className="min-w-0">
+          <div className="flex items-center gap-2">
+            <h2 className="font-semibold text-sm text-mc-text truncate">{selectedChat.name}</h2>
+            <span className="text-[10px] font-mono uppercase px-1.5 py-0.2 rounded bg-mc-border/50 text-mc-textMuted">
+              {selectedChat.kind}
+            </span>
+          </div>
+          <div className="text-xs font-mono text-mc-textMuted truncate flex items-center gap-2">
+            <span>{selectedChat.jid}</span>
+            {isTyping && <span className="text-mc-live animate-pulse">● typing...</span>}
+          </div>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          {coverage && coverage.messageCount > 0 && (
+            <span
+              className="hidden sm:block text-[10px] font-mono text-mc-textMuted"
+              title="How far back this machine's local archive reaches for this chat"
+            >
+              ARCHIVE {archiveStart ?? '?'} · {coverage.messageCount.toLocaleString()} MSG
+            </span>
+          )}
+          <ExportMenu chatJid={selectedChat.jid} chatName={selectedChat.name} />
+          <button
+            onClick={() => setActiveModal('chat-info')}
+            title="Contact details, local alias, and tags"
+            aria-label="Chat info"
+            className="flex items-center gap-1.5 text-[11px] font-mono px-2 py-1 rounded border border-mc-border text-mc-textMuted hover:text-mc-live hover:border-mc-live/50 hover:bg-mc-surfaceHover transition-colors"
+          >
+            <Info size={12} />
+            <span>INFO</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Scheduled Messages Banner for this chat (Send Later FR) */}
+      {pendingScheduled.length > 0 && (
+        <div className="bg-mc-surface border-b border-mc-border/80 px-3 py-2 text-xs font-mono text-mc-text space-y-1">
+          <div className="flex items-center gap-2">
+            <Clock size={14} className="text-mc-live shrink-0 animate-pulse" />
+            <span className="text-mc-live font-semibold">SCHEDULED ({pendingScheduled.length})</span>
+          </div>
+          {/* Capped and scrollable, so a long queue cannot push the thread off screen. */}
+          <ul className="max-h-28 overflow-y-auto space-y-1">
+            {pendingScheduled.map((item) => {
+              const label = item.message || item.fileName || '';
+              return (
+                <li key={item.id} className="flex items-center justify-between gap-2 pl-6">
+                  <span className="truncate text-mc-textMuted text-[11px]">
+                    {label} (due{' '}
+                    {new Date(item.scheduledAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })})
+                  </span>
+                  {/* Already handed to wacli: there is nothing left to cancel. */}
+                  {item.status === 'sending' ? (
+                    <span className="text-[10px] text-mc-live font-semibold shrink-0">SENDING NOW</span>
+                  ) : (
+                    <button
+                      onClick={() => cancelScheduledMutation.mutate({ id: item.id, chat: item.to })}
+                      className="flex items-center gap-1 text-[10px] text-mc-danger hover:text-mc-danger/80 border border-mc-danger/40 hover:border-mc-danger px-1.5 py-0.5 rounded transition-colors shrink-0"
+                      title={`Cancel scheduled message: ${label}`}
+                    >
+                      <Trash2 size={11} />
+                      <span>CANCEL</span>
+                    </button>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      )}
+
+      {cancelRefusal && cancelRefusal.jid === selectedChat?.jid && (
+        <div
+          role="alert"
+          className="bg-mc-surface border-b border-mc-danger/40 px-3 py-1.5 flex items-center gap-2 text-[11px] font-mono text-mc-danger"
+        >
+          <AlertTriangle size={13} className="shrink-0" />
+          <span className="flex-1 break-words">Not cancelled: {cancelRefusal.error}</span>
+          <button
+            onClick={() => setCancelRefusal(null)}
+            className="shrink-0 px-1.5 py-0.5 rounded border border-mc-danger/40 hover:bg-mc-surfaceHover transition-colors"
+          >
+            DISMISS
+          </button>
+        </div>
+      )}
+
+      {/* Outside the list, so it stays in view however far the window is
+          scrolled: the thread below is not the live one. */}
+      {windowAt && (
+        <div className="px-4 py-1.5 border-b border-mc-border bg-mc-surface flex items-center justify-between gap-3 text-[11px] font-mono text-mc-textMuted shrink-0">
+          <span className="flex items-center gap-1.5 min-w-0">
+            <History size={12} className="shrink-0 text-mc-live" />
+            <span className="truncate">Reading history from {archiveDate(windowAt) ?? 'an earlier date'}</span>
+          </span>
+          <button
+            onClick={backToLatest}
+            className="shrink-0 flex items-center gap-1.5 px-2 py-0.5 rounded border border-mc-border hover:text-mc-live hover:border-mc-live/50 hover:bg-mc-surfaceHover transition-colors"
+            title="Back to the newest messages in this chat"
+          >
+            <ArrowDownToLine size={12} />
+            <span>BACK TO LATEST</span>
+          </button>
+        </div>
+      )}
+
+      {/* Message List */}
+      <div
+        ref={scrollRef}
+        onScroll={handleThreadScroll}
+        className="flex-1 overflow-y-auto p-4 space-y-3"
+      >
+        {/* Older history. wacli keeps the full archive locally; the thread just
+            has to ask for more of it. */}
+        {reactionError && (
+          <div
+            role="alert"
+            className="mb-1 p-2 rounded bg-mc-surface border border-mc-danger/40 text-[11px] font-mono text-mc-danger flex items-center gap-2"
+          >
+            <AlertTriangle size={13} className="shrink-0" />
+            <span className="flex-1 break-words">Reaction not sent: {reactionError}</span>
+            <button
+              onClick={dismissReactionError}
+              className="shrink-0 px-1.5 py-0.5 rounded border border-mc-danger/40 hover:bg-mc-surfaceHover transition-colors"
+            >
+              DISMISS
+            </button>
+          </div>
+        )}
+
+        {highlightMissed && (
+          <div className="mb-1 p-2 rounded bg-mc-surface border border-mc-safe/40 text-[11px] font-mono text-mc-safe flex items-center gap-2">
+            <AlertTriangle size={13} className="shrink-0" />
+            <span>
+              {canLoadOlder
+                ? 'That message is older than the history loaded here — load older messages to reach it.'
+                : 'That message is not in the local archive for this chat.'}
+            </span>
+          </div>
+        )}
+
+        {/* The local archive has run out. wacli can ask the primary device for
+            more, which is the only way past this wall. */}
+        {!canLoadOlder && messages.length > 0 && (
+          <div className="flex flex-col items-center gap-1.5 pb-2">
+            <span className="text-[10px] font-mono text-mc-textMuted text-center">
+              {archiveStart
+                ? `Local archive for this chat starts ${archiveStart}.`
+                : 'Start of the local archive for this chat.'}
+            </span>
+            <button
+              onClick={() => backfillMutation.mutate(selectedChat.jid)}
+              disabled={backfillMutation.isPending || Boolean(health?.readOnly)}
+              className="flex items-center gap-1.5 text-[11px] font-mono px-2.5 py-1 rounded border border-mc-border text-mc-textMuted hover:text-mc-live hover:border-mc-live/50 hover:bg-mc-surfaceHover transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              title={
+                health?.readOnly
+                  ? 'Safe read-only mode is active: a backfill writes the local store, so it is disabled.'
+                  : 'Ask your phone for older messages in this chat and add them to the local archive'
+              }
+            >
+              {backfillMutation.isPending ? (
+                <>
+                  <Loader2 size={12} className="animate-spin" />
+                  <span>ASKING YOUR PHONE...</span>
+                </>
+              ) : (
+                <>
+                  <CloudDownload size={12} />
+                  <span>REQUEST OLDER FROM PHONE</span>
+                </>
+              )}
+            </button>
+            {backfillMutation.isError && (
+              <span className="text-[10px] font-mono text-mc-danger text-center max-w-sm">
+                {(backfillMutation.error as Error).message}
+              </span>
+            )}
+            {backfillMutation.isSuccess && !backfillMutation.isPending && (
+              <span className="text-[10px] font-mono text-mc-textMuted text-center max-w-sm">
+                Request sent. Your phone answers on its own schedule — anything it returns appears here.
+              </span>
+            )}
+          </div>
+        )}
+
+        {canLoadOlder && messages.length > 0 && (
+          <div className="flex justify-center pb-1">
+            <button
+              onClick={loadOlderMessages}
+              disabled={isFetchingNextPage}
+              className="flex items-center gap-1.5 text-[11px] font-mono px-2.5 py-1 rounded border border-mc-border text-mc-textMuted hover:text-mc-live hover:border-mc-live/50 hover:bg-mc-surfaceHover transition-colors disabled:opacity-50 disabled:cursor-wait"
+              title="Load the previous 200 messages from the local archive"
+            >
+              {isFetchingNextPage ? (
+                <>
+                  <Loader2 size={12} className="animate-spin" />
+                  <span>LOADING...</span>
+                </>
+              ) : (
+                <>
+                  <ChevronUp size={12} />
+                  <span>LOAD OLDER MESSAGES</span>
+                </>
+              )}
+            </button>
+          </div>
+        )}
+
+        {isLoading ? (
+          <div className="text-center py-12 text-xs font-mono text-mc-textMuted">
+            Loading message history...
+          </div>
+        ) : messages.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-16 text-center space-y-3">
+            <div className="w-10 h-10 rounded-full bg-mc-surface flex items-center justify-center text-mc-live border border-mc-border">
+              <Reply size={18} />
+            </div>
+            <div className="space-y-1">
+              <div className="text-mc-text font-semibold text-xs">No message history yet</div>
+              <div className="text-mc-textMuted text-[11px] max-w-xs">
+                Start a conversation with <span className="text-mc-text font-mono font-semibold">{selectedChat.name}</span> by typing your message in the composer below.
+              </div>
+            </div>
+          </div>
+        ) : (
+          messages.map((msg) => (
+            // The divider's slot is there, empty, for every message, so a row
+            // keeps its place (and its memoised render) when older history
+            // lands and the day's first message changes.
+            <React.Fragment key={msg.msgId}>
+              {dayStarts.has(msg.msgId) && <DayDivider ts={msg.ts} />}
+              <MessageRow
+                msg={msg}
+                reactions={reactionsMap.get(msg.msgId) ?? NO_REACTIONS}
+                quoted={(msg.quotedMsgId && messagesById.get(msg.quotedMsgId)) || null}
+                isGroup={selectedChat.kind === 'group'}
+                mediaChatJid={msg.chatJid || selectedChat.jid}
+                isFocused={focusedMessageId === msg.msgId}
+                isCopied={copiedMsgId === msg.msgId}
+                isReactionDrawerOpen={activeReactionMsgId === msg.msgId}
+                onReply={onReply}
+                onCopy={handleCopyText}
+                onToggleBookmark={handleToggleBookmark}
+                onToggleReactionDrawer={toggleReactionDrawer}
+                onCloseReactionDrawer={closeReactionDrawer}
+                onReact={onReact}
+                onJumpToMessage={onJumpToMessage}
+              />
+            </React.Fragment>
+          ))
+        )}
+
+        {/* A window's own end: more of it, or, once it reaches the newest
+            message, the live thread. */}
+        {windowAt && messages.length > 0 && (
+          <div className="flex justify-center pt-1">
+            {windowThread.hasPreviousPage ? (
+              <button
+                onClick={loadNewerMessages}
+                disabled={windowThread.isFetchingPreviousPage}
+                className="flex items-center gap-1.5 text-[11px] font-mono px-2.5 py-1 rounded border border-mc-border text-mc-textMuted hover:text-mc-live hover:border-mc-live/50 hover:bg-mc-surfaceHover transition-colors disabled:opacity-50 disabled:cursor-wait"
+                title="Load the next 200 messages from the local archive"
+              >
+                {windowThread.isFetchingPreviousPage ? (
+                  <>
+                    <Loader2 size={12} className="animate-spin" />
+                    <span>LOADING...</span>
+                  </>
+                ) : (
+                  <>
+                    <ChevronDown size={12} />
+                    <span>LOAD NEWER MESSAGES</span>
+                  </>
+                )}
+              </button>
+            ) : (
+              <button
+                onClick={backToLatest}
+                className="flex items-center gap-1.5 text-[11px] font-mono px-2.5 py-1 rounded border border-mc-border text-mc-textMuted hover:text-mc-live hover:border-mc-live/50 hover:bg-mc-surfaceHover transition-colors"
+                title="Back to the live thread"
+              >
+                <ArrowDownToLine size={12} />
+                <span>BACK TO LATEST</span>
+              </button>
+            )}
+          </div>
+        )}
+      </div>
+    </section>
+  );
+};

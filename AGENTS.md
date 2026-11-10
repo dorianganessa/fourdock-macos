@@ -1,5 +1,17 @@
 # Fourdock
 
+2026-11-11 IMPLEMENTATION AUTHORIZED: owner accepted Mission Control reuse and
+said "vai". New candidate is clients/mission-control, MIT upstream 0.2.6 pinned
+4d4ffaf, with independent data ownership, browser assertion adapter and PWA/Dock
+badge calls. Default startup is synthetic demo only; never silently use an
+installed wacli or its existing store. Real backend uses a separate Linux
+candidate and explicit patched CLI image, not a new unsigned Mac executable.
+Current Fourdock Chrome and private homeserver monitor remain separate. Preserve
+the private monitor's dirty working tree. New auth is owner-controlled; no agent
+sends real messages or copies sessions. This authorizes the wacli candidate,
+superseding historical research-only/official-web-only wording for this branch
+of work, without relaxing origin/TLS/OS protections or the native execution hold.
+
 2026-11-10 LATEST OWNER DIRECTION: explicitly reopened wacli research, confirmed
 that idea, then asked to reuse only authentication and existing client/UI rather
 than rewrite a client. Earlier deferral below is historical. Read WACLI_REUSE.md:

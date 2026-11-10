@@ -1,0 +1,25 @@
+services:
+  fourdock-whatsapp-candidate:
+    build:
+      context: .
+      dockerfile: Dockerfile.fourdock
+      args:
+        WACLI_SOURCE_IMAGE: ${FOURDOCK_WACLI_IMAGE:?Set the existing patched wacli image explicitly}
+    image: fourdock-whatsapp-candidate:0.1.0
+    container_name: fourdock-whatsapp-candidate
+    # Linux homeserver only. The app binds 127.0.0.1, reached by a private
+    # SSH loopback tunnel; no public router or all-interface listener.
+    network_mode: host
+    restart: "no"
+    mem_limit: 768m
+    cpus: 1
+    pids_limit: 160
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    tmpfs: [/tmp:rw,noexec,nosuid,size=64m]
+    volumes:
+      - fourdock-whatsapp-candidate:/data
+volumes:
+  fourdock-whatsapp-candidate:
+    name: fourdock-whatsapp-candidate

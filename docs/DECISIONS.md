@@ -1,5 +1,17 @@
 # Decisions and authentication evidence
 
+## 2026-11-11 — Implement the existing Mission Control UI with a pairing adapter
+
+Owner accepted this route and requested implementation. Reuse the upstream MIT
+client UI rather than rewrite chat rendering, sending and media handling. The
+candidate has its own data directory and explicit synthetic default. Real
+pairing uses the existing patched CLI command contract with a fresh store;
+QR/challenges/assertions stay transient and bounded. Browser helper enforces
+genuine origin, required verification and a trusted click. No live pairing or
+sync starts at application launch. Candidate live runtime is separate on Linux,
+so no modified native executable is introduced on this managed Mac. PWA delivery
+still requires actual normal installation and OS permission testing.
+
 ## 2026-11-10 — Reopen wacli research with reuse as the priority
 
 Owner explicitly reopened the idea and confirmed it means the wacli browser

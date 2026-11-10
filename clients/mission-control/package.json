@@ -1,0 +1,76 @@
+{
+  "name": "wacli-mission-control",
+  "version": "0.2.6",
+  "description": "Local WhatsApp operator console powered by wacli",
+  "keywords": [
+    "whatsapp",
+    "wacli",
+    "console",
+    "messaging",
+    "whatsmeow",
+    "chat",
+    "operator"
+  ],
+  "license": "MIT",
+  "private": true,
+  "author": "Ido Green",
+  "type": "module",
+  "main": "apps/api/dist/index.js",
+  "bin": {
+    "wacli-mission-control": "./bin/cli.js",
+    "wacli-ui": "./bin/cli.js"
+  },
+  "files": [
+    "bin",
+    "apps/api/dist",
+    "apps/web/dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/greenido/wacli-ui.git"
+  },
+  "homepage": "https://github.com/greenido/wacli-ui#readme",
+  "bugs": {
+    "url": "https://github.com/greenido/wacli-ui/issues"
+  },
+  "engines": {
+    "node": "^22.13.0 || >=23.4.0"
+  },
+  "workspaces": [
+    "apps/api",
+    "apps/web"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm run dev -w @wacli/api\" \"npm run dev -w @wacli/web\"",
+    "build": "npm run build -w @wacli/api && npm run build -w @wacli/web",
+    "start": "npm run start -w @wacli/api",
+    "build:start": "npm run build && npm run start",
+    "test": "npm run test -w @wacli/api && npm run test -w @wacli/web",
+    "preview": "npm run preview -w @wacli/web",
+    "typecheck": "npm run typecheck -w @wacli/api && npm run typecheck -w @wacli/web",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "verify": "npm run lint && npm run typecheck && npm test"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^5.2.1",
+    "multer": "^1.4.5-lts.1",
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "concurrently": "^9.2.1",
+    "eslint": "^10.8.0",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "eslint-plugin-react-refresh": "^0.5.3",
+    "globals": "^17.9.0",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.66.0"
+  }
+}

@@ -1,6 +1,6 @@
 # Testing ledger
 
-Updated: 2026-11-10. Automated baseline: 2026-11-06. Target: managed macOS 27.0.1 arm64. Synthetic UI runtime:
+Updated: 2026-11-11. Automated baseline: 2026-11-06. Target: managed macOS 27.0.1 arm64. Synthetic UI runtime:
 Chrome for Testing 157.0.8103.38, Playwright 1.56.1, Node 26.4.0. Profiles are
 temporary. External DNS is blocked only in the synthetic browser; attached page
 navigations are fulfilled from fixtures. Automated checks use no real credentials
@@ -11,6 +11,21 @@ Allowed states: PASS AUTOMATICO, PASS MANUALE CONFERMATO, FAIL, BLOCCATO, NON ES
 Only the explicitly confirmed manual subtests are passed. Fixture subtests do not
 pass real-account requirements.
 Sanitized automated results: [evidence/ui-results.json](evidence/ui-results.json).
+
+## Mission Control candidate implementation, 2026-11-11
+
+- PASS AUTOMATICO: local Node26 production build, 558 API tests and 486 UI tests
+  on the pinned reused client plus Fourdock pairing adapter. Web tests explicitly
+  disable Node experimental webstorage for workers so jsdom supplies localStorage;
+  normal browser behavior is unchanged.
+- PASS AUTOMATICO: isolated Linux container --network none, no store mounts:
+  existing patched CLI exposes auth pair; read-only doctor in a fresh tmpfs store
+  does not create session.db. No live account was opened or connection attempted.
+- NON ESEGUITO: new real Chromium connector/UI integration, normal target PWA
+  install/OS badge/banner, live owner passkey/linking/persistence and incoming
+  events. A new isolated backend runtime is prepared, not a production migration.
+
+Existing Chrome/native test results cannot be transferred to this candidate.
 
 ## Reopened wacli reuse research, 2026-11-10
 

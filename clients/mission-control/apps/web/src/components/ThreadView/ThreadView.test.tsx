@@ -1,0 +1,1390 @@
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { render, screen, act, waitFor, fireEvent } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { ThreadView } from './ThreadView.tsx';
+import { ApiClientError } from '../../api/client.ts';
+import { useAppStore } from '../../store/appStore.ts';
+import type { MissionControlStatus, SleepState, UnifiedChat, UnifiedMessage } from '../../types.ts';
+
+const getHealth = vi.hoisted(() => vi.fn());
+// Health waits to hear the app is awake before it asks; these tests are awake.
+const getSleep = vi.hoisted(() =>
+  vi.fn(async (): Promise<SleepState> => ({ sleeping: false, since: null }))
+);
+const setSleep = vi.hoisted(() => vi.fn());
+const getMessages = vi.hoisted(() => vi.fn());
+const getMessage = vi.hoisted(() => vi.fn());
+const getScheduled = vi.hoisted(() => vi.fn());
+const cancelScheduled = vi.hoisted(() => vi.fn());
+const bookmarkMessage = vi.hoisted(() => vi.fn());
+const getHistoryCoverage = vi.hoisted(() => vi.fn());
+const backfillHistory = vi.hoisted(() => vi.fn());
+const exportConversation = vi.hoisted(() => vi.fn());
+const sendReact = vi.hoisted(() => vi.fn());
+const getMediaUrl = vi.hoisted(() =>
+  vi.fn((_params: { chat?: string; id?: string; path?: string }) => '')
+);
+
+vi.mock('../../api/client.ts', () => ({
+  api: {
+    getHealth,
+    getSleep,
+    setSleep,
+    getMessages,
+    getMessage,
+    getScheduled,
+    cancelScheduled,
+    bookmarkMessage,
+    getHistoryCoverage,
+    backfillHistory,
+    exportConversation,
+    getMediaUrl,
+    sendReact,
+  },
+  ApiClientError: class extends Error {
+    constructor(
+      message: string,
+      public status?: number
+    ) {
+      super(message);
+    }
+  },
+}));
+
+const COVERAGE = {
+  chatJid: 'alice@s.whatsapp.net',
+  name: 'Alice',
+  kind: 'dm',
+  messageCount: 54,
+  oldestTs: '2026-06-08T15:35:32Z',
+  newestTs: '2026-09-03T18:08:52Z',
+  lastMessageTs: '2026-09-03T18:08:52Z',
+  status: 'ready',
+};
+
+const CHAT: UnifiedChat = {
+  jid: 'alice@s.whatsapp.net',
+  kind: 'dm',
+  name: 'Alice',
+  lastMessageTs: '2026-09-01T10:00:00Z',
+  lastMessage: 'hi',
+  lastMessageFromMe: false,
+  archived: false,
+  pinned: false,
+  mutedUntil: 0,
+  unread: false,
+  unreadCount: 0,
+};
+
+const HEALTHY: Partial<MissionControlStatus> = {
+  wacliInstalled: true,
+  wacliWorking: true,
+  processState: 'running',
+  statusSummary: 'ok',
+};
+
+function message(i: number): UnifiedMessage {
+  return {
+    chatJid: CHAT.jid,
+    chatName: 'Alice',
+    msgId: `MSG-${i}`,
+    senderJid: CHAT.jid,
+    senderName: 'Alice',
+    ts: new Date(Date.UTC(2026, 8, 1, 10, i)).toISOString(),
+    fromMe: false,
+    text: `message body ${i}`,
+    displayText: `message body ${i}`,
+    isForwarded: false,
+    reactionToId: null,
+    reactionEmoji: null,
+    mediaType: null,
+    mediaCaption: null,
+    filename: null,
+    mimeType: null,
+    localPath: null,
+    starred: false,
+    bookmarked: false,
+    edited: false,
+    revoked: false,
+  };
+}
+
+function renderThread() {
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  return {
+    client,
+    ...render(
+      <QueryClientProvider client={client}>
+        <ThreadView />
+      </QueryClientProvider>
+    ),
+  };
+}
+
+describe('ThreadView history window', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    Element.prototype.scrollIntoView = vi.fn();
+    getHealth.mockResolvedValue(HEALTHY);
+    getScheduled.mockResolvedValue([]);
+    bookmarkMessage.mockResolvedValue({ bookmarked: true });
+    getHistoryCoverage.mockResolvedValue([COVERAGE]);
+    backfillHistory.mockResolvedValue({ chat: CHAT.jid, requested: 200 });
+    useAppStore.setState({ selectedChat: CHAT, highlightedMessageId: null });
+  });
+
+  afterEach(() => {
+    useAppStore.setState({ selectedChat: null, highlightedMessageId: null });
+  });
+
+  it('offers no local paging control when the whole local archive is loaded', async () => {
+    getMessages.mockResolvedValue({ messages: [message(1)], hasMore: false });
+    renderThread();
+
+    expect(await screen.findByText('message body 1')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /LOAD OLDER MESSAGES/i })).not.toBeInTheDocument();
+  });
+
+  it('walks back from the oldest loaded message instead of re-reading the thread', async () => {
+    const user = userEvent.setup();
+    getMessages.mockResolvedValue({ messages: [message(1), message(2)], hasMore: true });
+    renderThread();
+
+    await user.click(await screen.findByRole('button', { name: /LOAD OLDER MESSAGES/i }));
+
+    // The thread used to widen one `limit`, so reaching 200 more messages meant
+    // re-reading every message already on screen — and paying for it again on
+    // every poll. Each step is now one page, anchored to where the last ended.
+    expect(getMessages).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({ chat: CHAT.jid, limit: 200, before: undefined })
+    );
+
+    // wacli returns newest first, so the cursor is the *last* message of the
+    // page just read — and `--before` takes a time, not an id.
+    const oldestLoaded = message(2).ts;
+    await waitFor(() =>
+      expect(getMessages).toHaveBeenNthCalledWith(
+        2,
+        expect.objectContaining({ chat: CHAT.jid, limit: 200, before: oldestLoaded })
+      )
+    );
+  });
+
+  it('keeps the newest page on screen while an older one is being fetched', async () => {
+    const user = userEvent.setup();
+    getMessages.mockResolvedValue({ messages: [message(1)], hasMore: true });
+    renderThread();
+
+    expect(await screen.findByText('message body 1')).toBeInTheDocument();
+
+    getMessages.mockResolvedValue({ messages: [message(2)], hasMore: false });
+    await user.click(screen.getByRole('button', { name: /LOAD OLDER MESSAGES/i }));
+
+    // Paging appends history rather than replacing the window, so nothing that
+    // was already being read leaves the pane.
+    expect(await screen.findByText('message body 2')).toBeInTheDocument();
+    expect(screen.getByText('message body 1')).toBeInTheDocument();
+  });
+});
+
+describe('ThreadView reply quotes', () => {
+  /** A reply to `quotedMsgId`, newer than every `message(i)` here. */
+  function reply(quotedMsgId: string): UnifiedMessage {
+    return {
+      ...message(30),
+      msgId: 'MSG-REPLY',
+      text: 'replying now',
+      displayText: 'replying now',
+      quotedMsgId,
+      quotedSenderJid: CHAT.jid,
+    };
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    Element.prototype.scrollIntoView = vi.fn();
+    getHealth.mockResolvedValue(HEALTHY);
+    getScheduled.mockResolvedValue([]);
+    getHistoryCoverage.mockResolvedValue([COVERAGE]);
+    useAppStore.setState({ selectedChat: CHAT, highlightedMessageId: null });
+  });
+
+  afterEach(() => {
+    // The setter, not the id alone: a jump also leaves its time behind, and a
+    // stale time opens a history window in whichever test runs next.
+    useAppStore.getState().setHighlightedMessageId(null);
+    useAppStore.setState({ selectedChat: null });
+  });
+
+  it('previews a loaded quote and jumps to it without asking wacli', async () => {
+    const user = userEvent.setup();
+    getMessages.mockResolvedValue({ messages: [reply('MSG-1'), message(1)], hasMore: false });
+    renderThread();
+
+    const chip = await screen.findByTitle('Jump to the quoted message');
+    expect(chip).toHaveTextContent('Alice');
+    expect(chip).toHaveTextContent('message body 1');
+
+    await user.click(chip);
+    expect(getMessage).not.toHaveBeenCalled();
+    expect(useAppStore.getState().highlightedMessageId).toBe('MSG-1');
+    expect(useAppStore.getState().highlightedMessageAt).toBe(message(1).ts);
+  });
+
+  it('looks an unloaded quote up on click, and opens the thread at its time', async () => {
+    const user = userEvent.setup();
+    getMessages.mockResolvedValue({ messages: [reply('MSG-OLD')], hasMore: true });
+    getMessage.mockResolvedValue({ ...message(0), msgId: 'MSG-OLD', ts: '2026-05-04T08:00:00Z' });
+    renderThread();
+
+    // Nothing is looked up just for drawing the thread.
+    const chip = await screen.findByText('Earlier message');
+    expect(getMessage).not.toHaveBeenCalled();
+
+    await user.click(chip);
+    expect(getMessage).toHaveBeenCalledWith({ chat: CHAT.jid, id: 'MSG-OLD' });
+    await waitFor(() =>
+      expect(useAppStore.getState().highlightedMessageAt).toBe('2026-05-04T08:00:00Z')
+    );
+    expect(useAppStore.getState().highlightedMessageId).toBe('MSG-OLD');
+  });
+
+  it('shows an unloaded quote from the text the reply carries', async () => {
+    getMessages.mockResolvedValue({
+      messages: [{ ...reply('MSG-OLD'), quotedText: 'the plan we agreed on' }],
+      hasMore: true,
+    });
+    renderThread();
+
+    const chip = await screen.findByRole('button', { name: /Earlier message/ });
+    expect(chip).toHaveTextContent('the plan we agreed on');
+    expect(getMessage).not.toHaveBeenCalled();
+  });
+
+  it('says when the quoted message is not in the archive, instead of jumping', async () => {
+    const user = userEvent.setup();
+    getMessages.mockResolvedValue({ messages: [reply('MSG-NEVER-SYNCED')], hasMore: true });
+    getMessage.mockRejectedValue(new ApiClientError('That message is not in the local archive.', 404));
+    renderThread();
+
+    await user.click(await screen.findByText('Earlier message'));
+
+    expect(await screen.findByText('Not in the local archive')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Not in the local archive/ })).toBeDisabled();
+    expect(useAppStore.getState().highlightedMessageId).toBeNull();
+  });
+});
+
+describe('ThreadView jump-to-message', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    Element.prototype.scrollIntoView = vi.fn();
+    getHealth.mockResolvedValue(HEALTHY);
+    getScheduled.mockResolvedValue([]);
+    useAppStore.setState({ selectedChat: CHAT, highlightedMessageId: null });
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+    useAppStore.setState({ selectedChat: null, highlightedMessageId: null });
+  });
+
+  it('scrolls to a target inside the loaded window', async () => {
+    getMessages.mockResolvedValue({ messages: [message(1), message(2)], hasMore: false });
+    useAppStore.setState({ highlightedMessageId: 'MSG-2' });
+    renderThread();
+
+    await screen.findByText('message body 2');
+    // The scroll is deferred to an animation frame, so wait for the frame.
+    await waitFor(() => expect(Element.prototype.scrollIntoView).toHaveBeenCalled());
+  });
+
+  it('says so when the target is older than the loaded history', async () => {
+    getMessages.mockResolvedValue({ messages: [message(1)], hasMore: true });
+    useAppStore.setState({ highlightedMessageId: 'MSG-ANCIENT' });
+    renderThread();
+
+    expect(await screen.findByText(/older than the history loaded here/i)).toBeInTheDocument();
+  });
+
+  it('reports an unreachable target when there is no more history to load', async () => {
+    getMessages.mockResolvedValue({ messages: [message(1)], hasMore: false });
+    useAppStore.setState({ highlightedMessageId: 'MSG-ANCIENT' });
+    renderThread();
+
+    expect(await screen.findByText(/not in the local archive/i)).toBeInTheDocument();
+  });
+
+  it('clears a highlight it never found, so auto-scroll keeps working', async () => {
+    // Timers have to be faked before the effect schedules its reset.
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    getMessages.mockResolvedValue({ messages: [message(1)], hasMore: false });
+    useAppStore.setState({ highlightedMessageId: 'MSG-ANCIENT' });
+    renderThread();
+
+    await screen.findByText('message body 1');
+
+    // The reset timer used to live inside the "element found" branch, so a miss
+    // left the id set forever and killed the scroll-to-bottom branch with it.
+    await act(async () => {
+      vi.advanceTimersByTime(15000);
+    });
+
+    expect(useAppStore.getState().highlightedMessageId).toBeNull();
+  });
+});
+
+describe('ThreadView archive boundary', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    Element.prototype.scrollIntoView = vi.fn();
+    getHealth.mockResolvedValue(HEALTHY);
+    getScheduled.mockResolvedValue([]);
+    getHistoryCoverage.mockResolvedValue([COVERAGE]);
+    backfillHistory.mockResolvedValue({ chat: CHAT.jid, requested: 200 });
+    useAppStore.setState({ selectedChat: CHAT, highlightedMessageId: null });
+  });
+
+  afterEach(() => {
+    useAppStore.setState({ selectedChat: null, highlightedMessageId: null });
+  });
+
+  it('offers to ask the phone once local paging has run out', async () => {
+    getMessages.mockResolvedValue({ messages: [message(1)], hasMore: false });
+    renderThread();
+
+    expect(await screen.findByRole('button', { name: /REQUEST OLDER FROM PHONE/i })).toBeInTheDocument();
+  });
+
+  it('does not offer a phone request while the local archive still has pages', async () => {
+    getMessages.mockResolvedValue({ messages: [message(1)], hasMore: true });
+    renderThread();
+
+    expect(await screen.findByRole('button', { name: /LOAD OLDER MESSAGES/i })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /REQUEST OLDER FROM PHONE/i })).not.toBeInTheDocument();
+  });
+
+  it('says where the local archive starts, so the wall is explained', async () => {
+    getMessages.mockResolvedValue({ messages: [message(1)], hasMore: false });
+    renderThread();
+
+    expect(await screen.findByText(/Local archive for this chat starts/i)).toBeInTheDocument();
+  });
+
+  it('requests a backfill and refreshes the thread from it', async () => {
+    const user = userEvent.setup();
+    getMessages.mockResolvedValue({ messages: [message(1)], hasMore: false });
+    renderThread();
+
+    await user.click(await screen.findByRole('button', { name: /REQUEST OLDER FROM PHONE/i }));
+
+    await waitFor(() =>
+      expect(backfillHistory).toHaveBeenCalledWith({ chat: CHAT.jid, count: 200 })
+    );
+    expect(
+      await screen.findByText(/Your phone answers on its own schedule/i)
+    ).toBeInTheDocument();
+  });
+
+  it('refuses the request in safe read-only mode and says why', async () => {
+    getHealth.mockResolvedValue({ ...HEALTHY, readOnly: true });
+    getMessages.mockResolvedValue({ messages: [message(1)], hasMore: false });
+    renderThread();
+
+    const button = await screen.findByRole('button', { name: /REQUEST OLDER FROM PHONE/i });
+    expect(button).toBeDisabled();
+    expect(button).toHaveAttribute('title', expect.stringContaining('read-only'));
+  });
+
+  it('surfaces a failed backfill instead of looking like nothing happened', async () => {
+    const user = userEvent.setup();
+    getMessages.mockResolvedValue({ messages: [message(1)], hasMore: false });
+    backfillHistory.mockRejectedValue(new Error('store is locked by another process'));
+    renderThread();
+
+    await user.click(await screen.findByRole('button', { name: /REQUEST OLDER FROM PHONE/i }));
+
+    expect(await screen.findByText(/store is locked by another process/i)).toBeInTheDocument();
+  });
+
+  it('shows how far back the archive reaches in the header', async () => {
+    getMessages.mockResolvedValue({ messages: [message(1)], hasMore: false });
+    renderThread();
+
+    expect(await screen.findByText(/ARCHIVE .* · 54 MSG/)).toBeInTheDocument();
+  });
+});
+
+describe('ThreadView conversation export', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    Element.prototype.scrollIntoView = vi.fn();
+    getHealth.mockResolvedValue(HEALTHY);
+    getScheduled.mockResolvedValue([]);
+    getHistoryCoverage.mockResolvedValue([COVERAGE]);
+    getMessages.mockResolvedValue({ messages: [message(1)], hasMore: false });
+    exportConversation.mockResolvedValue({
+      chatJid: CHAT.jid,
+      chatName: 'Alice',
+      exportedAt: '2026-09-03T12:00:00.000Z',
+      count: 1,
+      truncated: false,
+      messages: [message(1)],
+    });
+    useAppStore.setState({ selectedChat: CHAT, highlightedMessageId: null });
+  });
+
+  afterEach(() => {
+    useAppStore.setState({ selectedChat: null, highlightedMessageId: null });
+  });
+
+  it('keeps the format choice behind the button until it is asked for', async () => {
+    const user = userEvent.setup();
+    renderThread();
+
+    expect(screen.queryByRole('menuitem', { name: /Text transcript/i })).not.toBeInTheDocument();
+    await user.click(await screen.findByRole('button', { name: /EXPORT/i }));
+    expect(await screen.findByRole('menuitem', { name: /Text transcript/i })).toBeInTheDocument();
+    expect(screen.getByRole('menuitem', { name: /JSON/i })).toBeInTheDocument();
+  });
+
+  it('exports the selected conversation', async () => {
+    const user = userEvent.setup();
+    renderThread();
+
+    await user.click(await screen.findByRole('button', { name: /EXPORT/i }));
+    await user.click(await screen.findByRole('menuitem', { name: /Text transcript/i }));
+
+    await waitFor(() => expect(exportConversation).toHaveBeenCalledWith({ chat: CHAT.jid }));
+  });
+
+  it('warns when the export was capped rather than implying it is complete', async () => {
+    const user = userEvent.setup();
+    exportConversation.mockResolvedValue({
+      chatJid: CHAT.jid,
+      chatName: 'Alice',
+      exportedAt: '2026-09-03T12:00:00.000Z',
+      count: 5000,
+      truncated: true,
+      messages: [message(1)],
+    });
+    renderThread();
+
+    await user.click(await screen.findByRole('button', { name: /EXPORT/i }));
+    await user.click(await screen.findByRole('menuitem', { name: /JSON/i }));
+
+    expect(await screen.findByRole('status')).toHaveTextContent(/size cap/i);
+  });
+
+  it('reports an export that failed', async () => {
+    const user = userEvent.setup();
+    exportConversation.mockRejectedValue(new Error('store is locked by another process'));
+    renderThread();
+
+    await user.click(await screen.findByRole('button', { name: /EXPORT/i }));
+    await user.click(await screen.findByRole('menuitem', { name: /JSON/i }));
+
+    expect(await screen.findByRole('status')).toHaveTextContent(/store is locked/i);
+  });
+});
+
+describe('ThreadView asleep', () => {
+  const ASLEEP: SleepState = { sleeping: true, since: '2026-09-15T22:14:00.000Z' };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    Element.prototype.scrollIntoView = vi.fn();
+    getHealth.mockResolvedValue(HEALTHY);
+    getScheduled.mockResolvedValue([]);
+    getHistoryCoverage.mockResolvedValue([COVERAGE]);
+    setSleep.mockResolvedValue({ sleeping: false, since: null });
+    exportConversation.mockResolvedValue({
+      chatJid: CHAT.jid,
+      chatName: 'Alice',
+      exportedAt: '2026-09-15T22:30:00.000Z',
+      count: 1,
+      truncated: false,
+      messages: [message(1)],
+    });
+    useAppStore.setState({ selectedChat: CHAT, highlightedMessageId: null });
+  });
+
+  afterEach(() => {
+    useAppStore.setState({ selectedChat: null, highlightedMessageId: null });
+  });
+
+  /** A thread loaded while awake, then frozen by a sleep push. */
+  async function renderAsleep() {
+    getMessages.mockResolvedValue({ messages: [message(1)], hasMore: true });
+    const view = renderThread();
+    expect(await screen.findByText('message body 1')).toBeInTheDocument();
+    act(() => view.client.setQueryData(['sleep'], ASLEEP));
+    return view;
+  }
+
+  /** Whether `first` had been called by the time of `second`'s latest call. */
+  const calledBefore =(first: ReturnType<typeof vi.fn>, second: ReturnType<typeof vi.fn>) =>
+    first.mock.invocationCallOrder[0] < second.mock.invocationCallOrder.at(-1)!;
+
+  it('wakes the app before loading older messages, then loads them', async () => {
+    const user = userEvent.setup();
+    await renderAsleep();
+    getMessages.mockResolvedValue({ messages: [message(2)], hasMore: false });
+
+    await user.click(screen.getByRole('button', { name: /LOAD OLDER MESSAGES/i }));
+
+    expect(await screen.findByText('message body 2')).toBeInTheDocument();
+    expect(setSleep).toHaveBeenCalledTimes(1);
+    expect(setSleep).toHaveBeenCalledWith(false, 'load older');
+    expect(calledBefore(setSleep, getMessages)).toBe(true);
+  });
+
+  it('wakes the app before exporting', async () => {
+    const user = userEvent.setup();
+    await renderAsleep();
+
+    await user.click(screen.getByRole('button', { name: /EXPORT/i }));
+    await user.click(await screen.findByRole('menuitem', { name: /Text transcript/i }));
+
+    await waitFor(() => expect(exportConversation).toHaveBeenCalledWith({ chat: CHAT.jid }));
+    expect(setSleep).toHaveBeenCalledWith(false, 'export');
+    expect(calledBefore(setSleep, exportConversation)).toBe(true);
+  });
+
+  it('asks nothing of the server to page or export while awake', async () => {
+    const user = userEvent.setup();
+    getMessages.mockResolvedValue({ messages: [message(1)], hasMore: true });
+    renderThread();
+    expect(await screen.findByText('message body 1')).toBeInTheDocument();
+
+    getMessages.mockResolvedValue({ messages: [message(2)], hasMore: false });
+    await user.click(screen.getByRole('button', { name: /LOAD OLDER MESSAGES/i }));
+    await user.click(screen.getByRole('button', { name: /EXPORT/i }));
+    await user.click(await screen.findByRole('menuitem', { name: /JSON/i }));
+
+    expect(await screen.findByText('message body 2')).toBeInTheDocument();
+    await waitFor(() => expect(exportConversation).toHaveBeenCalled());
+    expect(setSleep).not.toHaveBeenCalled();
+  });
+});
+
+describe('ThreadView media across a chat switch', () => {
+  const OTHER_CHAT: UnifiedChat = { ...CHAT, jid: 'bob@s.whatsapp.net', name: 'Bob' };
+
+  function imageMessage(): UnifiedMessage {
+    return { ...message(1), msgId: 'MEDIA-1', mediaType: 'image', mimeType: 'image/jpeg' };
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    getMediaUrl.mockReturnValue('');
+    Element.prototype.scrollIntoView = vi.fn();
+    getHealth.mockResolvedValue(HEALTHY);
+    getScheduled.mockResolvedValue([]);
+    getHistoryCoverage.mockResolvedValue([COVERAGE]);
+    useAppStore.setState({ selectedChat: CHAT, highlightedMessageId: null });
+  });
+
+  afterEach(() => {
+    useAppStore.setState({ selectedChat: null, highlightedMessageId: null });
+  });
+
+  it('asks for media using the chat the message is in', async () => {
+    getMessages.mockResolvedValue({ messages: [imageMessage()], hasMore: false });
+    renderThread();
+
+    await waitFor(() => expect(getMediaUrl).toHaveBeenCalled());
+    expect(getMediaUrl).toHaveBeenCalledWith(
+      expect.objectContaining({ chat: CHAT.jid, id: 'MEDIA-1' })
+    );
+  });
+
+  it('does not pair the previous thread\'s messages with the chat being opened', async () => {
+    getMessages.mockResolvedValue({ messages: [imageMessage()], hasMore: false });
+    renderThread();
+    await waitFor(() => expect(getMediaUrl).toHaveBeenCalled());
+
+    // Switching chats leaves the previous thread on screen while the new one
+    // loads (`keepPreviousData`), and the selected JID has already changed.
+    getMessages.mockReturnValue(new Promise(() => {}));
+    getMediaUrl.mockClear();
+    act(() => {
+      useAppStore.setState({ selectedChat: OTHER_CHAT });
+    });
+
+    await waitFor(() => expect(getMediaUrl).toHaveBeenCalled());
+
+    // Every request for this message must still name the chat it belongs to.
+    // Pairing it with the newly selected chat was a guaranteed 404 and a doomed
+    // `wacli media download` for every attachment in the outgoing thread.
+    for (const [params] of getMediaUrl.mock.calls) {
+      if (params.id === 'MEDIA-1') {
+        expect(params).toMatchObject({ chat: CHAT.jid });
+      }
+    }
+    expect(getMediaUrl).not.toHaveBeenCalledWith(
+      expect.objectContaining({ chat: OTHER_CHAT.jid, id: 'MEDIA-1' })
+    );
+  });
+});
+
+describe('ThreadView jump across a chat switch', () => {
+  const BOB: UnifiedChat = { ...CHAT, jid: 'bob@s.whatsapp.net', name: 'Bob' };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    Element.prototype.scrollIntoView = vi.fn();
+    getHealth.mockResolvedValue(HEALTHY);
+    getScheduled.mockResolvedValue([]);
+    getHistoryCoverage.mockResolvedValue([COVERAGE]);
+    useAppStore.setState({ selectedChat: CHAT, highlightedMessageId: null });
+  });
+
+  afterEach(() => {
+    useAppStore.setState({ selectedChat: null, highlightedMessageId: null });
+  });
+
+  it('does not accuse the archive while the previous chat is still on screen', async () => {
+    let deliverBob: ((page: { messages: UnifiedMessage[]; hasMore: boolean }) => void) | undefined;
+    getMessages.mockImplementation(({ chat }: { chat: string }) =>
+      chat === CHAT.jid
+        ? Promise.resolve({ messages: [message(1)], hasMore: false })
+        : new Promise((resolve) => {
+            deliverBob = resolve;
+          })
+    );
+    renderThread();
+    await screen.findByText('message body 1');
+
+    // Opening a message from another conversation: the selection changes at
+    // once, but `keepPreviousData` keeps Alice's thread rendered until Bob's
+    // arrives. Judging the target against Alice's messages is what produced the
+    // "not in the local archive" notice for a message that was in Bob's.
+    act(() => {
+      useAppStore.getState().setSelectedChat(BOB);
+      useAppStore.getState().setHighlightedMessageId('MSG-7');
+    });
+
+    await waitFor(() =>
+      expect(getMessages).toHaveBeenCalledWith(expect.objectContaining({ chat: BOB.jid }))
+    );
+    expect(screen.queryByText(/not in the local archive/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/older than the history loaded here/i)).not.toBeInTheDocument();
+
+    const bobsMessage = { ...message(7), chatJid: BOB.jid, chatName: 'Bob' };
+    await act(async () => {
+      deliverBob?.({ messages: [bobsMessage], hasMore: false });
+    });
+
+    expect(await screen.findByText('message body 7')).toBeInTheDocument();
+    expect(screen.queryByText(/not in the local archive/i)).not.toBeInTheDocument();
+  });
+
+});
+
+describe('ThreadView keeps the operator where a jump put them', () => {
+  const scrollTopWrites: number[] = [];
+  let originalScrollTop: PropertyDescriptor | undefined;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    scrollTopWrites.length = 0;
+    originalScrollTop = Object.getOwnPropertyDescriptor(Element.prototype, 'scrollTop');
+    // jsdom lays nothing out, so a scroll-to-bottom is only observable as the
+    // write itself.
+    Object.defineProperty(Element.prototype, 'scrollTop', {
+      configurable: true,
+      get: () => 0,
+      set: (value: number) => {
+        scrollTopWrites.push(value);
+      },
+    });
+    Element.prototype.scrollIntoView = vi.fn();
+    getHealth.mockResolvedValue(HEALTHY);
+    getScheduled.mockResolvedValue([]);
+    getHistoryCoverage.mockResolvedValue([COVERAGE]);
+    useAppStore.setState({ selectedChat: CHAT, highlightedMessageId: null });
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+    if (originalScrollTop) {
+      Object.defineProperty(Element.prototype, 'scrollTop', originalScrollTop);
+    }
+    useAppStore.setState({ selectedChat: null, highlightedMessageId: null });
+  });
+
+  it('opens a thread at the newest message when nothing was jumped to', async () => {
+    getMessages.mockResolvedValue({ messages: [message(1), message(2)], hasMore: false });
+    renderThread();
+
+    await screen.findByText('message body 2');
+    await waitFor(() => expect(scrollTopWrites.length).toBeGreaterThan(0));
+  });
+
+  it('does not throw the thread back to the newest message when the highlight fades', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    getMessages.mockResolvedValue({ messages: [message(1), message(2)], hasMore: false });
+    useAppStore.setState({ highlightedMessageId: 'MSG-1' });
+    renderThread();
+
+    await screen.findByText('message body 1');
+    await waitFor(() => expect(Element.prototype.scrollIntoView).toHaveBeenCalled());
+    scrollTopWrites.length = 0;
+
+    // The highlight is deliberately short-lived. Clearing it used to fall
+    // through to the scroll-to-newest branch, so the operator was shown the
+    // message they asked for and then yanked away from it seconds later.
+    await act(async () => {
+      vi.advanceTimersByTime(6000);
+    });
+
+    expect(useAppStore.getState().highlightedMessageId).toBeNull();
+    expect(scrollTopWrites).toEqual([]);
+  });
+});
+
+describe('ThreadView reactions', () => {
+  function reactionRow(over: Partial<UnifiedMessage> = {}): UnifiedMessage {
+    return {
+      ...message(9),
+      msgId: 'RX-1',
+      text: '',
+      displayText: '',
+      fromMe: true,
+      senderJid: '',
+      senderName: 'Me',
+      reactionToId: 'MSG-1',
+      reactionEmoji: '\u{1F44D}',
+      ...over,
+    };
+  }
+
+  /** Opens the drawer on the only message on screen and picks a quick emoji. */
+  async function react(user: ReturnType<typeof userEvent.setup>, emoji: string) {
+    await user.click(await screen.findByTitle('React with emoji'));
+    await user.click(await screen.findByTitle(emoji));
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    Element.prototype.scrollIntoView = vi.fn();
+    getHealth.mockResolvedValue(HEALTHY);
+    getScheduled.mockResolvedValue([]);
+    getHistoryCoverage.mockResolvedValue([COVERAGE]);
+    getMessages.mockResolvedValue({ messages: [message(1)], hasMore: false });
+    sendReact.mockResolvedValue({ sent: true });
+    useAppStore.setState({ selectedChat: CHAT, highlightedMessageId: null });
+  });
+
+  afterEach(() => {
+    useAppStore.setState({ selectedChat: null, highlightedMessageId: null });
+  });
+
+  it('shows the emoji on click rather than a wacli round trip later', async () => {
+    const user = userEvent.setup();
+    // Never settles: anything on screen is there because the click put it there.
+    sendReact.mockReturnValue(new Promise(() => {}));
+    renderThread();
+
+    await screen.findByText('message body 1');
+    await react(user, '\u{1F44D}');
+
+    // Sending costs a wacli spawn, the store lock and a post-send wait, and the
+    // row only reaches the thread on the poll after that — up to half a minute
+    // of a click looking like it did nothing.
+    expect(await screen.findByText('\u{1F44D}')).toBeInTheDocument();
+    expect(sendReact).toHaveBeenCalledWith(
+      expect.objectContaining({ to: CHAT.jid, id: 'MSG-1', reaction: '\u{1F44D}', confirm: true })
+    );
+  });
+
+  it('asks for the thread again instead of waiting out the poll', async () => {
+    const user = userEvent.setup();
+    renderThread();
+
+    await screen.findByText('message body 1');
+    getMessages.mockClear();
+    await react(user, '\u{1F44D}');
+
+    await waitFor(() => expect(getMessages).toHaveBeenCalled());
+  });
+
+  it('shows one emoji, not two, once the archive reports the same reaction', async () => {
+    const user = userEvent.setup();
+    renderThread();
+    await screen.findByText('message body 1');
+
+    // The refetch a successful reaction triggers carries wacli's own row, which
+    // has a real message id and cannot be matched to the optimistic one by id.
+    getMessages.mockResolvedValue({ messages: [message(1), reactionRow()], hasMore: false });
+    await react(user, '\u{1F44D}');
+
+    await waitFor(() => expect(getMessages).toHaveBeenCalledTimes(2));
+    expect(await screen.findAllByText('\u{1F44D}')).toHaveLength(1);
+  });
+
+  it('takes the emoji back and says why when the send is refused', async () => {
+    const user = userEvent.setup();
+    sendReact.mockRejectedValue(new Error('Safe read-only mode is active.'));
+    renderThread();
+
+    await screen.findByText('message body 1');
+    await react(user, '\u{1F525}');
+
+    // Showing a reaction before it lands is only honest if a refusal undoes it.
+    expect(await screen.findByRole('alert')).toHaveTextContent(/Safe read-only mode is active/i);
+    await waitFor(() => expect(screen.queryByText('\u{1F525}')).not.toBeInTheDocument());
+  });
+
+  it('keeps one reaction per person, newest first', async () => {
+    getMessages.mockResolvedValue({
+      messages: [
+        message(1),
+        reactionRow({ msgId: 'RX-OLD', reactionEmoji: '\u{1F44D}', ts: '2026-09-01T10:00:00Z' }),
+        reactionRow({ msgId: 'RX-NEW', reactionEmoji: '❤️', ts: '2026-09-01T11:00:00Z' }),
+      ],
+      hasMore: false,
+    });
+    renderThread();
+
+    await screen.findByText('message body 1');
+    // Changing a reaction replaces it on WhatsApp; appending every row left the
+    // old emoji sitting next to the new one.
+    expect(await screen.findAllByText('❤️')).toHaveLength(1);
+    expect(screen.queryByText('\u{1F44D}')).not.toBeInTheDocument();
+  });
+});
+
+describe('ThreadView jump without a message id', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    Element.prototype.scrollIntoView = vi.fn();
+    getHealth.mockResolvedValue(HEALTHY);
+    getScheduled.mockResolvedValue([]);
+    getHistoryCoverage.mockResolvedValue([COVERAGE]);
+    useAppStore.setState({
+      selectedChat: CHAT,
+      highlightedMessageId: null,
+      highlightedMessageHint: null,
+    });
+  });
+
+  afterEach(() => {
+    useAppStore.setState({
+      selectedChat: null,
+      highlightedMessageId: null,
+      highlightedMessageHint: null,
+    });
+  });
+
+  function sentMessage(): UnifiedMessage {
+    return {
+      ...message(4),
+      msgId: '3EB0626F628F3B645B291E',
+      fromMe: true,
+      senderJid: '',
+      senderName: 'Me',
+      text: 'Ma kore gever?',
+      displayText: 'Ma kore gever?',
+    };
+  }
+
+  it('focuses the message a sidebar row describes when it carries no id', async () => {
+    getMessages.mockResolvedValue({ messages: [message(1), sentMessage()], hasMore: false });
+    useAppStore.setState({
+      highlightedMessageHint: { text: 'Ma kore gever?', sentAfter: '2026-09-01T10:00:00Z' },
+    });
+    renderThread();
+
+    await screen.findByText('Ma kore gever?');
+    // Every scheduled send already on disk reaches the thread this way, with no
+    // id wacli ever produced.
+    await waitFor(() => expect(Element.prototype.scrollIntoView).toHaveBeenCalled());
+    expect(screen.queryByText(/not in the local archive/i)).not.toBeInTheDocument();
+  });
+
+  it('falls back to the description when the recorded id is not in the thread', async () => {
+    getMessages.mockResolvedValue({ messages: [message(1), sentMessage()], hasMore: false });
+    useAppStore.setState({
+      highlightedMessageId: 'wamid.NOT-IN-THE-ARCHIVE',
+      highlightedMessageHint: { text: 'Ma kore gever?', sentAfter: '2026-09-01T10:00:00Z' },
+    });
+    renderThread();
+
+    await screen.findByText('Ma kore gever?');
+    await waitFor(() => expect(Element.prototype.scrollIntoView).toHaveBeenCalled());
+    expect(screen.queryByText(/not in the local archive/i)).not.toBeInTheDocument();
+  });
+
+  it('still says so when neither the id nor the description can be found', async () => {
+    getMessages.mockResolvedValue({ messages: [message(1)], hasMore: false });
+    useAppStore.setState({
+      highlightedMessageHint: { text: 'never sent from here', sentAfter: '2026-09-01T10:00:00Z' },
+    });
+    renderThread();
+
+    // The notice has to keep working: it is only wrong when it fires for a
+    // message that is present.
+    expect(await screen.findByText(/not in the local archive/i)).toBeInTheDocument();
+  });
+});
+
+describe('ThreadView message direction', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    Element.prototype.scrollIntoView = vi.fn();
+    getHealth.mockResolvedValue(HEALTHY);
+    getScheduled.mockResolvedValue([]);
+    getHistoryCoverage.mockResolvedValue([COVERAGE]);
+    useAppStore.setState({ selectedChat: CHAT, highlightedMessageId: null });
+  });
+
+  afterEach(() => {
+    useAppStore.setState({ selectedChat: null, highlightedMessageId: null });
+  });
+
+  function bodyWith(text: string, msgId = 'MSG-DIR'): UnifiedMessage {
+    return { ...message(1), msgId, text, displayText: text };
+  }
+
+  it('lays a Hebrew body out right-to-left', async () => {
+    getMessages.mockResolvedValue({ messages: [bodyWith('מתי אתה מגיע?')], hasMore: false });
+    renderThread();
+
+    expect(await screen.findByText('מתי אתה מגיע?')).toHaveAttribute('dir', 'rtl');
+  });
+
+  it('leaves an English body left-to-right', async () => {
+    getMessages.mockResolvedValue({ messages: [bodyWith('on my way')], hasMore: false });
+    renderThread();
+
+    expect(await screen.findByText('on my way')).toHaveAttribute('dir', 'ltr');
+  });
+
+  it('decides per message, so one Hebrew line does not flip its neighbours', async () => {
+    getMessages.mockResolvedValue({
+      messages: [bodyWith('בדרך', 'MSG-HE'), bodyWith('see you there', 'MSG-EN')],
+      hasMore: false,
+    });
+    renderThread();
+
+    expect(await screen.findByText('בדרך')).toHaveAttribute('dir', 'rtl');
+    expect(screen.getByText('see you there')).toHaveAttribute('dir', 'ltr');
+  });
+
+  it('keeps the deleted-message notice left-to-right, English as it is', async () => {
+    const deleted: UnifiedMessage = { ...bodyWith('היי'), revoked: true };
+    getMessages.mockResolvedValue({ messages: [deleted], hasMore: false });
+    renderThread();
+
+    const notice = await screen.findByText('This message was deleted.');
+    expect(notice.parentElement).toHaveAttribute('dir', 'ltr');
+  });
+});
+
+/**
+ * The helpers in lib/threadScroll decide this, and are unit-tested there. What
+ * these cover is the wiring: that the thread records where the operator was,
+ * and consults it before scrolling. Every piece can be correct while nothing
+ * calls them.
+ */
+describe('ThreadView follows the newest message only from the newest message', () => {
+  let client: QueryClient;
+
+  function renderWithClient() {
+    client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    return render(
+      <QueryClientProvider client={client}>
+        <ThreadView />
+      </QueryClientProvider>
+    );
+  }
+
+  const scrollBox = (container: HTMLElement) =>
+    container.querySelector('.overflow-y-auto') as HTMLElement;
+
+  /** jsdom does no layout, so the geometry has to be stated outright. */
+  function giveGeometry(el: HTMLElement, scrollHeight: number, clientHeight: number): void {
+    Object.defineProperty(el, 'scrollHeight', { value: scrollHeight, configurable: true });
+    Object.defineProperty(el, 'clientHeight', { value: clientHeight, configurable: true });
+  }
+
+  /** Puts the reading position somewhere and lets the thread notice. */
+  function scrollTo(el: HTMLElement, top: number): void {
+    el.scrollTop = top;
+    fireEvent.scroll(el);
+  }
+
+  async function aMessageArrives(): Promise<void> {
+    getMessages.mockResolvedValue({
+      messages: [message(1), message(2), message(3)],
+      hasMore: false,
+    });
+    await act(async () => {
+      await client.invalidateQueries({ queryKey: ['messages', CHAT.jid] });
+    });
+    await screen.findByText('message body 3');
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    Element.prototype.scrollIntoView = vi.fn();
+    getHealth.mockResolvedValue(HEALTHY);
+    getScheduled.mockResolvedValue([]);
+    getHistoryCoverage.mockResolvedValue([COVERAGE]);
+    getMessages.mockResolvedValue({ messages: [message(1), message(2)], hasMore: false });
+    useAppStore.setState({ selectedChat: CHAT, highlightedMessageId: null });
+  });
+
+  afterEach(() => {
+    useAppStore.setState({ selectedChat: null, highlightedMessageId: null });
+  });
+
+  it('opens a conversation at its newest message', async () => {
+    const { container } = renderWithClient();
+    await screen.findByText('message body 2');
+
+    const el = scrollBox(container);
+    giveGeometry(el, 5000, 800);
+    await aMessageArrives();
+
+    expect(el.scrollTop).toBe(5000);
+  });
+
+  it('keeps following while the operator sits at the bottom', async () => {
+    const { container } = renderWithClient();
+    await screen.findByText('message body 2');
+
+    const el = scrollBox(container);
+    giveGeometry(el, 5000, 800);
+    scrollTo(el, 4200); // exactly the bottom
+
+    await aMessageArrives();
+
+    expect(el.scrollTop).toBe(5000);
+  });
+
+  it('still follows from a few pixels off the floor', async () => {
+    const { container } = renderWithClient();
+    await screen.findByText('message body 2');
+
+    const el = scrollBox(container);
+    giveGeometry(el, 5000, 800);
+    scrollTo(el, 4150); // 50px up: a partly-scrolled last bubble
+
+    await aMessageArrives();
+
+    expect(el.scrollTop).toBe(5000);
+  });
+
+  /** The whole point: reading history is not interrupted by an arrival. */
+  it('leaves a reader alone once they have scrolled up', async () => {
+    const { container } = renderWithClient();
+    await screen.findByText('message body 2');
+
+    const el = scrollBox(container);
+    giveGeometry(el, 5000, 800);
+    scrollTo(el, 1000);
+
+    await aMessageArrives();
+
+    expect(el.scrollTop).toBe(1000);
+  });
+
+  it('goes back to following when asked for the newest message', async () => {
+    const { container } = renderWithClient();
+    await screen.findByText('message body 2');
+
+    const el = scrollBox(container);
+    giveGeometry(el, 5000, 800);
+    scrollTo(el, 1000);
+
+    // The `end` shortcut: an explicit ask to go to the newest message, and to
+    // start following it again.
+    await act(async () => {
+      useAppStore.getState().runCommand('thread:jump-newest');
+    });
+    expect(el.scrollTop).toBe(5000);
+
+    scrollTo(el, 5000); // where the jump left it: the bottom
+    await aMessageArrives();
+
+    expect(el.scrollTop).toBe(5000);
+  });
+});
+
+describe('ThreadView scheduled banner', () => {
+  const PENDING = {
+    id: 'sched-1',
+    to: CHAT.jid,
+    message: 'See you at 7',
+    scheduledAt: '2026-09-18T19:00:00.000Z',
+    createdAt: '2026-09-18T18:00:00.000Z',
+    status: 'pending' as const,
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    Element.prototype.scrollIntoView = vi.fn();
+    getHealth.mockResolvedValue(HEALTHY);
+    getHistoryCoverage.mockResolvedValue([COVERAGE]);
+    getMessages.mockResolvedValue({ messages: [message(1)], hasMore: false });
+    getScheduled.mockResolvedValue({
+      pending: [PENDING],
+      history: [],
+      nextCursor: null,
+      totalPending: 1,
+      totalHistory: 0,
+    });
+    useAppStore.setState({ selectedChat: CHAT, highlightedMessageId: null });
+  });
+
+  afterEach(() => {
+    useAppStore.setState({ selectedChat: null, highlightedMessageId: null });
+  });
+
+  it('says so when the message is too late to cancel', async () => {
+    // The server refuses a cancel once the send is under way. Silently eating
+    // that refusal would leave the operator believing the message was stopped.
+    const user = userEvent.setup();
+    cancelScheduled.mockRejectedValue(
+      new Error('Too late to cancel: this message is already being sent.')
+    );
+    renderThread();
+
+    await user.click(await screen.findByRole('button', { name: 'CANCEL' }));
+
+    expect(cancelScheduled).toHaveBeenCalledWith('sched-1');
+    expect(await screen.findByRole('alert')).toHaveTextContent(/already being sent/i);
+  });
+
+  it('keeps the refusal on the chat it belongs to', async () => {
+    const user = userEvent.setup();
+    cancelScheduled.mockRejectedValue(
+      new Error('Too late to cancel: this message is already being sent.')
+    );
+    renderThread();
+
+    await user.click(await screen.findByRole('button', { name: 'CANCEL' }));
+    await screen.findByRole('alert');
+
+    act(() => {
+      useAppStore.setState({ selectedChat: { ...CHAT, jid: 'bob@s.whatsapp.net', name: 'Bob' } });
+    });
+
+    await waitFor(() => expect(screen.queryByRole('alert')).not.toBeInTheDocument());
+  });
+
+  it('offers no cancel for a message already on its way out', async () => {
+    getScheduled.mockResolvedValue({
+      pending: [{ ...PENDING, status: 'sending' as const }],
+      history: [],
+      nextCursor: null,
+      totalPending: 1,
+      totalHistory: 0,
+    });
+    renderThread();
+
+    expect(await screen.findByText('SENDING NOW')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'CANCEL' })).not.toBeInTheDocument();
+  });
+
+  it('lists every queued message for the chat and cancels the one asked for', async () => {
+    // Only the first used to be shown or cancellable; the rest were behind
+    // the right rail's LATER tab, invisible from the conversation itself.
+    const user = userEvent.setup();
+    cancelScheduled.mockResolvedValue({ cancelled: true });
+    getScheduled.mockResolvedValue({
+      pending: [
+        PENDING,
+        { ...PENDING, id: 'sched-2', message: 'Bring the tickets', scheduledAt: '2026-09-18T20:00:00.000Z' },
+        { ...PENDING, id: 'sched-3', message: 'Already going', status: 'sending' as const },
+      ],
+      history: [],
+      nextCursor: null,
+      totalPending: 3,
+      totalHistory: 0,
+    });
+    renderThread();
+
+    expect(await screen.findByText('SCHEDULED (3)')).toBeInTheDocument();
+    expect(screen.getByText(/See you at 7/)).toBeInTheDocument();
+    expect(screen.getByText(/Bring the tickets/)).toBeInTheDocument();
+    expect(screen.getByText(/Already going/)).toBeInTheDocument();
+    // One cancel per message that can still be stopped.
+    expect(screen.getAllByRole('button', { name: 'CANCEL' })).toHaveLength(2);
+    expect(screen.getByText('SENDING NOW')).toBeInTheDocument();
+
+    await user.click(screen.getByTitle('Cancel scheduled message: Bring the tickets'));
+
+    expect(cancelScheduled).toHaveBeenCalledWith('sched-2');
+  });
+});
+
+describe('ThreadView dates', () => {
+  /** Message `i`, at a local time on day `day` of September 2026. */
+  const on = (i: number, day: number, hour: number): UnifiedMessage => ({
+    ...message(i),
+    ts: new Date(2026, 8, day, hour, i).toISOString(),
+  });
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    Element.prototype.scrollIntoView = vi.fn();
+    getHealth.mockResolvedValue(HEALTHY);
+    getScheduled.mockResolvedValue([]);
+    getHistoryCoverage.mockResolvedValue([COVERAGE]);
+    useAppStore.setState({ selectedChat: CHAT, highlightedMessageId: null });
+    // Only the clock stands still. Timers stay real, for the queries.
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date(2026, 8, 3, 9, 30));
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+    useAppStore.setState({ selectedChat: null, highlightedMessageId: null });
+  });
+
+  it('marks where each day starts', async () => {
+    getMessages.mockResolvedValue({
+      // Newest first, as wacli answers. Two of them share yesterday.
+      messages: [on(4, 3, 8), on(3, 2, 22), on(2, 2, 9), on(1, 1, 18)],
+      hasMore: false,
+    });
+    renderThread();
+    await screen.findByText('message body 4');
+
+    const labels = screen.getAllByRole('separator').map((d) => d.getAttribute('aria-label'));
+    expect(labels).toHaveLength(3);
+    expect(labels[0]).not.toMatch(/Today|Yesterday/);
+    expect(labels.slice(1)).toEqual(['Yesterday', 'Today']);
+
+    // Each divider sits right above its day's first message.
+    const [, yesterday, today] = screen.getAllByRole('separator');
+    expect(yesterday.nextElementSibling).toHaveTextContent('message body 2');
+    expect(today.nextElementSibling).toHaveTextContent('message body 4');
+  });
+
+  it('keeps the full date of every message a hover away', async () => {
+    getMessages.mockResolvedValue({ messages: [on(1, 1, 18)], hasMore: false });
+    renderThread();
+    await screen.findByText('message body 1');
+
+    const time = document.getElementById('msg-MSG-1')!.querySelector('time')!;
+    expect(time).toHaveAttribute('dateTime', on(1, 1, 18).ts);
+    // The bubble shows the time alone, so the date lives here.
+    expect(time.getAttribute('title')).toContain('2026');
+  });
+});
+
+describe('ThreadView jump to a message older than the loaded thread', () => {
+  /** The hit: message 50, far behind the 200 newest that the thread opens on. */
+  const HIT = message(50);
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    Element.prototype.scrollIntoView = vi.fn();
+    getHealth.mockResolvedValue(HEALTHY);
+    getScheduled.mockResolvedValue([]);
+    getHistoryCoverage.mockResolvedValue([COVERAGE]);
+    getMessages.mockImplementation(async (p: { before?: string; after?: string }) => {
+      // Forward from the hit, then on from there to the end of the archive.
+      if (p.after === HIT.ts) return { messages: [message(51), message(52)], hasMore: true };
+      if (p.after) return { messages: [message(53), message(54)], hasMore: false };
+      // Back from the hit, the hit included.
+      if (p.before) return { messages: [HIT, message(49), message(48)], hasMore: true };
+      // The live thread: the 200 newest, 100 to 299.
+      return { messages: Array.from({ length: 200 }, (_, k) => message(299 - k)), hasMore: true };
+    });
+    useAppStore.setState({ selectedChat: CHAT, highlightedMessageId: null, highlightedMessageAt: null });
+  });
+
+  afterEach(() => {
+    useAppStore.setState({ selectedChat: null, highlightedMessageId: null, highlightedMessageAt: null });
+  });
+
+  async function jumpToHit() {
+    renderThread();
+    await screen.findByText('message body 299');
+    act(() => useAppStore.getState().setHighlightedMessageId(HIT.msgId, null, HIT.ts));
+    await screen.findByText('message body 50');
+  }
+
+  it('opens the history around the hit and lands on it', async () => {
+    await jumpToHit();
+
+    // Two reads either side of the hit, instead of paging back through
+    // everything between it and the newest message.
+    expect(getMessages).toHaveBeenCalledWith({
+      chat: CHAT.jid,
+      limit: 100,
+      before: '2026-09-01T10:50:01.000Z',
+    });
+    expect(getMessages).toHaveBeenCalledWith({ chat: CHAT.jid, limit: 100, after: HIT.ts, asc: true });
+
+    // In place of the live thread, and saying so.
+    expect(screen.queryByText('message body 299')).not.toBeInTheDocument();
+    expect(screen.getByText(/Reading history from/)).toBeInTheDocument();
+
+    await waitFor(() => expect(Element.prototype.scrollIntoView).toHaveBeenCalled());
+    expect(vi.mocked(Element.prototype.scrollIntoView).mock.contexts.at(-1)).toHaveAttribute(
+      'id',
+      'msg-MSG-50'
+    );
+    // Straight there: a smooth scroll from wherever the replaced thread was
+    // spent the highlight on the way.
+    expect(Element.prototype.scrollIntoView).toHaveBeenLastCalledWith({
+      behavior: 'auto',
+      block: 'center',
+    });
+  });
+
+  it('reads on forward from the window, then hands back to the live thread', async () => {
+    const user = userEvent.setup();
+    await jumpToHit();
+
+    await user.click(screen.getByRole('button', { name: /LOAD NEWER MESSAGES/ }));
+
+    // From the window's newest message and oldest first, not from the chat's newest.
+    expect(getMessages).toHaveBeenCalledWith({
+      chat: CHAT.jid,
+      limit: 200,
+      after: message(52).ts,
+      asc: true,
+    });
+    expect(await screen.findByText('message body 54')).toBeInTheDocument();
+
+    // The archive has nothing newer, so the way on is the live thread.
+    expect(screen.queryByRole('button', { name: /LOAD NEWER MESSAGES/ })).not.toBeInTheDocument();
+    await user.click(screen.getAllByRole('button', { name: /BACK TO LATEST/ }).at(-1)!);
+
+    expect(await screen.findByText('message body 299')).toBeInTheDocument();
+    expect(screen.queryByText(/Reading history from/)).not.toBeInTheDocument();
+    expect(screen.queryByText('message body 50')).not.toBeInTheDocument();
+  });
+
+  it('jumps in place when the live thread already holds the hit', async () => {
+    const recent = message(250);
+    renderThread();
+    await screen.findByText('message body 299');
+
+    act(() => useAppStore.getState().setHighlightedMessageId(recent.msgId, null, recent.ts));
+
+    await waitFor(() => expect(Element.prototype.scrollIntoView).toHaveBeenCalled());
+    expect(screen.queryByText(/Reading history from/)).not.toBeInTheDocument();
+    expect(getMessages).not.toHaveBeenCalledWith(expect.objectContaining({ asc: true }));
+  });
+
+  it('closes the window when another chat is opened', async () => {
+    await jumpToHit();
+
+    act(() => useAppStore.getState().setSelectedChat({ ...CHAT, jid: 'bob@s.whatsapp.net', name: 'Bob' }));
+
+    await waitFor(() =>
+      expect(screen.queryByText(/Reading history from/)).not.toBeInTheDocument()
+    );
+  });
+});

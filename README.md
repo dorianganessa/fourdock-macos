@@ -1,6 +1,11 @@
 # Fourdock for macOS
 
 A small, local workspace for WhatsApp, Telegram, Fastmail and work Gmail.
+An independent **WhatsApp client candidate** now reuses the MIT Mission Control
+UI and adds the browser-assisted pairing method. Start with synthetic data:
+`npm run mission:setup`, `npm run mission:build`, `npm run mission:demo`, then
+http://127.0.0.1:4702. See [candidate instructions](clients/mission-control/FOURDOCK.md).
+This does not replace the four-service Chrome workspace or use existing sessions.
 **Current direction (2026-11-10): return to the working Chrome workspace.**
 Version 0.2.0 adds global service shortcuts and a notification relay that retains
 sender/preview while adding Fourdock and the service name. macOS attribution

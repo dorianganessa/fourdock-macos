@@ -1,0 +1,265 @@
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import request from 'supertest';
+import { createApp } from '../index.js';
+import { WacliProcessManager } from '../wacli/process-manager.js';
+import * as commands from '../wacli/commands.js';
+
+/** A doctor payload for a store whose lock is held by somebody else. */
+const lockedDoctor = {
+  store_dir: '/mock/.wacli',
+  authenticated: true,
+  connected: false,
+  connection_state: 'locked_by_other_process',
+  lock_held: true,
+  linked_jid: '15551234567@s.whatsapp.net',
+  store: {},
+};
+
+describe('Health doctor probe', () => {
+  let installedSpy: ReturnType<typeof vi.spyOn>;
+  let execSpy: ReturnType<typeof vi.spyOn>;
+
+  beforeEach(() => {
+    installedSpy = vi.spyOn(commands, 'checkWacliInstalled').mockResolvedValue({
+      installed: true,
+      version: 'wacli 0.17.1',
+      binPath: 'wacli',
+      error: null,
+    });
+    execSpy = vi.spyOn(commands, 'execWacli').mockResolvedValue(lockedDoctor);
+  });
+
+  afterEach(() => {
+    installedSpy.mockRestore();
+    execSpy.mockRestore();
+  });
+
+  /** A manager pretending to own a live, connected daemon. */
+  function connectedManager() {
+    const pm = new WacliProcessManager({ apiPort: 3002 });
+    vi.spyOn(pm, 'getPid').mockReturnValue(4242);
+    vi.spyOn(pm, 'isDaemonConnected').mockReturnValue(true);
+    vi.spyOn(pm, 'getState').mockReturnValue('running');
+    return pm;
+  }
+
+  it('reports connected when the lock belongs to our own healthy daemon', async () => {
+    const app = createApp(connectedManager());
+
+    const res = await request(app).get('/api/health?fresh=1');
+
+    // wacli doctor said locked_by_other_process, but that "other process" is
+    // our daemon refusing the probe — the daemon itself is connected.
+    expect(res.body.data.doctor.connected).toBe(true);
+    expect(res.body.data.doctor.connectionState).toBe('connected');
+    expect(res.body.data.statusSummary).toBe('ok');
+  });
+
+  it('reports connecting when our daemon holds the lock but is not up yet', async () => {
+    const pm = new WacliProcessManager({ apiPort: 3002 });
+    vi.spyOn(pm, 'getPid').mockReturnValue(4242);
+    vi.spyOn(pm, 'isDaemonConnected').mockReturnValue(false);
+    vi.spyOn(pm, 'getState').mockReturnValue('running');
+    const app = createApp(pm);
+
+    const res = await request(app).get('/api/health?fresh=1');
+
+    expect(res.body.data.doctor.connected).toBe(false);
+    expect(res.body.data.doctor.connectionState).toBe('connecting');
+  });
+
+  it('still reports a genuine external lock when we have no daemon running', async () => {
+    const pm = new WacliProcessManager({ apiPort: 3002 });
+    vi.spyOn(pm, 'getPid').mockReturnValue(null);
+    vi.spyOn(pm, 'getState').mockReturnValue('stopped');
+    const app = createApp(pm);
+
+    const res = await request(app).get('/api/health?fresh=1');
+
+    // Nothing of ours is running, so somebody else really does hold the lock
+    // and the operator must be told.
+    expect(res.body.data.doctor.connectionState).toBe('locked_by_other_process');
+    expect(res.body.data.statusSummary).toBe('store_locked_external');
+  });
+
+  it('names the external lock holder while our own daemon is restart-looping', async () => {
+    // What an external `wacli sync` actually does to us: our daemon spawns,
+    // cannot take the lock, exits, and backs off — so the state is `restarting`
+    // and `getPid()` is null for most of it. Every check that needed a PID of
+    // ours, or a `stopped`/`failed` state, missed this and left the operator
+    // reading "sync daemon is starting" for as long as the other process ran.
+    execSpy.mockResolvedValue({ ...lockedDoctor, lock_owner_pid: 9999 });
+
+    const pm = new WacliProcessManager({ apiPort: 3002 });
+    vi.spyOn(pm, 'getPid').mockReturnValue(null);
+    vi.spyOn(pm, 'getState').mockReturnValue('restarting');
+    const app = createApp(pm);
+
+    const res = await request(app).get('/api/health?fresh=1');
+
+    expect(res.body.data.statusSummary).toBe('store_locked_external');
+    expect(res.body.data.statusMessage).toContain('pid 9999');
+    expect(res.body.data.storeLockHolderPid).toBe(9999);
+  });
+
+  it('does not read a daemon of our own as an external lock holder', async () => {
+    // The doctor result is cached for seconds, so the PID it names can be the
+    // daemon that just exited. Reporting that as somebody else's wacli would
+    // turn an ordinary restart into a false alarm.
+    execSpy.mockResolvedValue({ ...lockedDoctor, lock_owner_pid: 4242 });
+
+    const pm = new WacliProcessManager({ apiPort: 3002 });
+    vi.spyOn(pm, 'getPid').mockReturnValue(null);
+    vi.spyOn(pm, 'getState').mockReturnValue('restarting');
+    vi.spyOn(pm, 'hasSpawnedPid').mockImplementation((pid) => pid === 4242);
+    const app = createApp(pm);
+
+    const res = await request(app).get('/api/health?fresh=1');
+
+    expect(res.body.data.statusSummary).toBe('sync_starting');
+  });
+
+  it('reuses a cached doctor result instead of probing the store every poll', async () => {
+    const app = createApp(connectedManager());
+
+    await request(app).get('/api/health?fresh=1');
+    const afterFirst = execSpy.mock.calls.length;
+
+    await request(app).get('/api/health');
+    await request(app).get('/api/health');
+    await request(app).get('/api/health');
+
+    // Each probe is a store-touching command competing with the sync daemon,
+    // and every open tab polls on its own timer.
+    expect(execSpy.mock.calls.length).toBe(afterFirst);
+  });
+
+  it('collapses polls arriving during a slow probe into one', async () => {
+    // A real `wacli doctor` is not instant, and that window is exactly when
+    // several tabs' polls pile up on a cold cache.
+    let releaseProbe: (value: unknown) => void = () => {};
+    execSpy.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          releaseProbe = resolve;
+        })
+    );
+
+    const app = createApp(connectedManager());
+    // .map forces supertest to actually dispatch: its Test object is lazy and
+    // sends nothing until something calls .then on it.
+    const polls = [
+      request(app).get('/api/health'),
+      request(app).get('/api/health'),
+      request(app).get('/api/health'),
+    ].map((pending) => pending.then((res) => res));
+
+    // Let all three reach the handler before the probe answers.
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    releaseProbe(lockedDoctor);
+    await Promise.all(polls);
+
+    const doctorCalls = execSpy.mock.calls.filter((call) =>
+      (call[0] as string[]).join(' ').startsWith('doctor')
+    );
+    expect(doctorCalls.length).toBe(1);
+  });
+
+  it('bypasses the cache when the operator asks for a fresh check', async () => {
+    const app = createApp(connectedManager());
+
+    await request(app).get('/api/health');
+    execSpy.mockClear();
+
+    await request(app).get('/api/health?fresh=1');
+
+    const doctorCalls = execSpy.mock.calls.filter((call) =>
+      (call[0] as string[]).join(' ').startsWith('doctor')
+    );
+    expect(doctorCalls.length).toBe(1);
+  });
+});
+
+describe('Health doctor cache freshness', () => {
+  let installedSpy: ReturnType<typeof vi.spyOn>;
+  let execSpy: ReturnType<typeof vi.spyOn>;
+
+  beforeEach(() => {
+    installedSpy = vi.spyOn(commands, 'checkWacliInstalled').mockResolvedValue({
+      installed: true,
+      version: 'wacli 0.17.1',
+      binPath: 'wacli',
+      error: null,
+    });
+    execSpy = vi.spyOn(commands, 'execWacli');
+  });
+
+  afterEach(() => {
+    installedSpy.mockRestore();
+    execSpy.mockRestore();
+    vi.useRealTimers();
+  });
+
+  it('picks up a state change once the cache expires', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    execSpy.mockResolvedValue({ ...lockedDoctor, authenticated: true });
+
+    const pm = new WacliProcessManager({ apiPort: 3002 });
+    vi.spyOn(pm, 'getPid').mockReturnValue(4242);
+    vi.spyOn(pm, 'isDaemonConnected').mockReturnValue(true);
+    vi.spyOn(pm, 'getState').mockReturnValue('running');
+    const app = createApp(pm);
+
+    const before = await request(app).get('/api/health');
+    expect(before.body.data.doctor.authenticated).toBe(true);
+
+    // The store logs out while the cached answer still says otherwise.
+    execSpy.mockResolvedValue({ ...lockedDoctor, authenticated: false });
+    const cached = await request(app).get('/api/health');
+    expect(cached.body.data.doctor.authenticated).toBe(true);
+
+    // A cache that never expires would hide this forever.
+    vi.setSystemTime(Date.now() + 11_000);
+    const after = await request(app).get('/api/health');
+    expect(after.body.data.doctor.authenticated).toBe(false);
+    expect(after.body.data.statusSummary).toBe('not_authenticated');
+  });
+
+  it('does not cache a failed probe', async () => {
+    execSpy.mockRejectedValueOnce(new Error('wacli doctor exploded'));
+
+    const pm = new WacliProcessManager({ apiPort: 3002 });
+    const app = createApp(pm);
+
+    const failed = await request(app).get('/api/health');
+    expect(failed.body.data.statusSummary).toBe('error');
+    expect(failed.body.data.lastError).toContain('exploded');
+
+    // The next poll must actually retry rather than replay the error.
+    execSpy.mockResolvedValue({ ...lockedDoctor, connection_state: 'connected', connected: true });
+    const recovered = await request(app).get('/api/health');
+    expect(recovered.body.data.statusSummary).toBe('ok');
+    expect(recovered.body.data.doctor.connected).toBe(true);
+  });
+
+  it('leaves a normal doctor result untouched', async () => {
+    execSpy.mockResolvedValue({
+      ...lockedDoctor,
+      connected: true,
+      connection_state: 'connected',
+    });
+
+    const pm = new WacliProcessManager({ apiPort: 3002 });
+    vi.spyOn(pm, 'getPid').mockReturnValue(4242);
+    vi.spyOn(pm, 'isDaemonConnected').mockReturnValue(false);
+    vi.spyOn(pm, 'getState').mockReturnValue('running');
+    const app = createApp(pm);
+
+    const res = await request(app).get('/api/health?fresh=1');
+
+    // Reconciliation only rewrites locked_by_other_process; it must never
+    // downgrade a doctor result that already answered cleanly.
+    expect(res.body.data.doctor.connected).toBe(true);
+    expect(res.body.data.doctor.connectionState).toBe('connected');
+  });
+});

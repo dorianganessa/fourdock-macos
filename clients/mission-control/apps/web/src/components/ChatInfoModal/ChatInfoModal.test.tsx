@@ -1,0 +1,295 @@
+import React from 'react';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { ChatInfoModal } from './ChatInfoModal.tsx';
+import { useAppStore } from '../../store/appStore.ts';
+import type { SleepState, UnifiedChat } from '../../types.ts';
+
+const getHealth = vi.hoisted(() => vi.fn());
+// Health waits to hear the app is awake before it asks; these tests are awake.
+const getSleep = vi.hoisted(() =>
+  vi.fn(async (): Promise<SleepState> => ({ sleeping: false, since: null }))
+);
+const getContact = vi.hoisted(() => vi.fn());
+const getGroups = vi.hoisted(() => vi.fn());
+const getTags = vi.hoisted(() => vi.fn());
+const setContactAlias = vi.hoisted(() => vi.fn());
+const setChatTag = vi.hoisted(() => vi.fn());
+
+vi.mock('../../api/client.ts', () => ({
+  api: { getHealth, getSleep, getContact, getGroups, getTags, setContactAlias, setChatTag },
+  ApiClientError: class extends Error {},
+}));
+
+const DM: UnifiedChat = {
+  jid: 'alice@s.whatsapp.net',
+  kind: 'dm',
+  name: 'Alice',
+  lastMessageTs: null,
+  lastMessage: null,
+  lastMessageFromMe: false,
+  archived: false,
+  pinned: false,
+  mutedUntil: 0,
+  unread: false,
+  unreadCount: 0,
+};
+
+const GROUP: UnifiedChat = { ...DM, jid: 'team@g.us', kind: 'group', name: 'Ops Team' };
+
+function renderModal() {
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  return render(
+    <QueryClientProvider client={client}>
+      <ChatInfoModal />
+    </QueryClientProvider>
+  );
+}
+
+describe('ChatInfoModal', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    getHealth.mockResolvedValue({ wacliInstalled: true, wacliWorking: true, readOnly: false });
+    getContact.mockResolvedValue({
+      jid: DM.jid,
+      phone: '15551234567',
+      name: 'Alice',
+      alias: '',
+      systemName: 'Alice Anderson',
+      updatedAt: '2026-09-01T10:00:00Z',
+      tags: [],
+      known: true,
+    });
+    getGroups.mockResolvedValue([
+      {
+        jid: GROUP.jid,
+        name: 'Ops Team',
+        ownerJid: 'boss@s.whatsapp.net',
+        createdAt: '2025-01-05T09:00:00Z',
+        leftAt: null,
+        updatedAt: '2026-08-01T09:00:00Z',
+      },
+    ]);
+    getTags.mockResolvedValue({ tags: [], byJid: {} });
+    setContactAlias.mockResolvedValue({ jid: DM.jid, alias: 'Alice W' });
+    setChatTag.mockResolvedValue({ jid: DM.jid, tags: ['work'] });
+    useAppStore.setState({ selectedChat: DM, activeModal: 'chat-info' });
+  });
+
+  afterEach(() => {
+    useAppStore.setState({ selectedChat: null, activeModal: null });
+  });
+
+  it('stays closed until it is asked for', () => {
+    useAppStore.setState({ activeModal: null });
+    renderModal();
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+
+  it('reads nothing from wacli while the app is asleep, and keeps the alias locked', async () => {
+    getSleep.mockResolvedValueOnce({ sleeping: true, since: '2026-09-15T22:14:00.000Z' });
+    renderModal();
+
+    await waitFor(() => expect(getSleep).toHaveBeenCalled());
+    expect(await screen.findByLabelText('Local alias')).toBeDisabled();
+    expect(getContact).not.toHaveBeenCalled();
+    expect(getHealth).not.toHaveBeenCalled();
+  });
+
+  it('shows the contact wacli has on file', async () => {
+    renderModal();
+
+    expect(await screen.findByText('15551234567')).toBeInTheDocument();
+    expect(screen.getByText('Alice Anderson')).toBeInTheDocument();
+    expect(screen.getByText(DM.jid)).toBeInTheDocument();
+  });
+
+  it('saves an alias to the wacli store', async () => {
+    const user = userEvent.setup();
+    renderModal();
+
+    // The box is disabled until the contact has loaded; typing into it before
+    // then would silently do nothing.
+    const input = await screen.findByLabelText('Local alias');
+    await waitFor(() => expect(input).toBeEnabled());
+
+    await user.type(input, 'Alice W');
+    await user.click(screen.getByRole('button', { name: /SAVE/i }));
+
+    await waitFor(() =>
+      expect(setContactAlias).toHaveBeenCalledWith({ jid: DM.jid, alias: 'Alice W' })
+    );
+  });
+
+  it('disables alias editing in safe read-only mode, since it writes the store', async () => {
+    getHealth.mockResolvedValue({ wacliInstalled: true, wacliWorking: true, readOnly: true });
+    renderModal();
+
+    await waitFor(() => expect(screen.getByLabelText('Local alias')).toBeDisabled());
+    expect(screen.getByRole('button', { name: /SAVE/i })).toBeDisabled();
+  });
+
+  it('still lets tags be added in read-only mode, because they never reach wacli', async () => {
+    const user = userEvent.setup();
+    getHealth.mockResolvedValue({ wacliInstalled: true, wacliWorking: true, readOnly: true });
+    renderModal();
+
+    await user.type(await screen.findByLabelText('Add tag'), 'work');
+    await user.click(screen.getByRole('button', { name: /ADD/i }));
+
+    await waitFor(() =>
+      expect(setChatTag).toHaveBeenCalledWith({ jid: DM.jid, tag: 'work', add: true })
+    );
+  });
+
+  it('removes a tag when its chip is clicked', async () => {
+    const user = userEvent.setup();
+    getContact.mockResolvedValue({
+      jid: DM.jid, phone: '15551234567', name: 'Alice', alias: '',
+      systemName: '', updatedAt: null, tags: ['work'], known: true,
+    });
+    renderModal();
+
+    await user.click(await screen.findByRole('button', { name: /Remove tag "work"/i }));
+
+    await waitFor(() =>
+      expect(setChatTag).toHaveBeenCalledWith({ jid: DM.jid, tag: 'work', add: false })
+    );
+    expect(setContactAlias).not.toHaveBeenCalled();
+  });
+
+  it('says tags are local, so they are never mistaken for WhatsApp state', async () => {
+    renderModal();
+    expect(await screen.findByText(/kept on this machine/i)).toBeInTheDocument();
+  });
+
+  it('shows group metadata and offers no alias box for a group', async () => {
+    useAppStore.setState({ selectedChat: GROUP });
+    getTags.mockResolvedValue({ tags: ['ops'], byJid: { 'team@g.us': ['ops'] } });
+    renderModal();
+
+    expect(await screen.findByText('boss@s.whatsapp.net')).toBeInTheDocument();
+    expect(screen.queryByLabelText('Local alias')).not.toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: /Remove tag "ops"/i })).toBeInTheDocument();
+  });
+
+  it('says why group members are not listed rather than implying there are none', async () => {
+    useAppStore.setState({ selectedChat: GROUP });
+    renderModal();
+
+    expect(await screen.findByText(/participants are not shown here/i)).toBeInTheDocument();
+  });
+
+  it('reports a failed alias save', async () => {
+    const user = userEvent.setup();
+    setContactAlias.mockRejectedValue(new Error('store is locked by another process'));
+    renderModal();
+
+    const input = await screen.findByLabelText('Local alias');
+    await waitFor(() => expect(input).toBeEnabled());
+
+    await user.type(input, 'X');
+    await user.click(screen.getByRole('button', { name: /SAVE/i }));
+
+    expect(await screen.findByText(/store is locked by another process/i)).toBeInTheDocument();
+  });
+
+  describe('tag autocomplete', () => {
+    const VOCAB = { tags: ['follow-up', 'work', 'work-travel'], byJid: {} };
+
+    beforeEach(() => {
+      getTags.mockResolvedValue(VOCAB);
+    });
+
+    it('offers the whole vocabulary the moment the box is focused', async () => {
+      const user = userEvent.setup();
+      renderModal();
+
+      await user.click(await screen.findByLabelText('Add tag'));
+
+      await waitFor(() => expect(screen.getAllByRole('option')).toHaveLength(3));
+      expect(screen.getByRole('option', { name: 'work-travel' })).toBeInTheDocument();
+    });
+
+    it('narrows to matching tags and adds the one that is clicked', async () => {
+      const user = userEvent.setup();
+      renderModal();
+
+      await user.type(await screen.findByLabelText('Add tag'), 'work');
+
+      await waitFor(() => expect(screen.getAllByRole('option')).toHaveLength(2));
+      await user.click(screen.getByRole('option', { name: 'work-travel' }));
+
+      await waitFor(() =>
+        expect(setChatTag).toHaveBeenCalledWith({ jid: DM.jid, tag: 'work-travel', add: true })
+      );
+    });
+
+    it('commits the arrowed-to suggestion on Enter', async () => {
+      const user = userEvent.setup();
+      renderModal();
+
+      await user.type(await screen.findByLabelText('Add tag'), 'wor');
+      await waitFor(() => expect(screen.getAllByRole('option')).toHaveLength(2));
+
+      await user.keyboard('{ArrowDown}{ArrowDown}{Enter}');
+
+      await waitFor(() =>
+        expect(setChatTag).toHaveBeenCalledWith({ jid: DM.jid, tag: 'work-travel', add: true })
+      );
+    });
+
+    it('still commits what was typed when no suggestion was picked', async () => {
+      const user = userEvent.setup();
+      renderModal();
+
+      await user.type(await screen.findByLabelText('Add tag'), 'regatta{Enter}');
+
+      await waitFor(() =>
+        expect(setChatTag).toHaveBeenCalledWith({ jid: DM.jid, tag: 'regatta', add: true })
+      );
+    });
+
+    it('warns about a near-duplicate no substring match would catch, and offers the real tag', async () => {
+      const user = userEvent.setup();
+      renderModal();
+
+      // Neither string contains the other, so only the near-miss check sees it.
+      await user.type(await screen.findByLabelText('Add tag'), 'followup');
+
+      expect(await screen.findByText(/second spelling/i)).toBeInTheDocument();
+      await user.click(screen.getByRole('button', { name: 'follow-up' }));
+
+      await waitFor(() =>
+        expect(setChatTag).toHaveBeenCalledWith({ jid: DM.jid, tag: 'follow-up', add: true })
+      );
+    });
+
+    it('refuses to re-add a tag the chat already carries', async () => {
+      const user = userEvent.setup();
+      getContact.mockResolvedValue({
+        jid: DM.jid, phone: '15551234567', name: 'Alice', alias: '',
+        systemName: '', updatedAt: null, tags: ['work'], known: true,
+      });
+      renderModal();
+
+      await user.type(await screen.findByLabelText('Add tag'), 'work{Enter}');
+
+      expect(await screen.findByText(/already has/i)).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /ADD/i })).toBeDisabled();
+      expect(screen.queryByRole('option', { name: 'work' })).not.toBeInTheDocument();
+      expect(setChatTag).not.toHaveBeenCalled();
+    });
+
+    it('shows the folded tag, so a typed spelling is not mistaken for the stored one', async () => {
+      const user = userEvent.setup();
+      renderModal();
+
+      await user.type(await screen.findByLabelText('Add tag'), 'Follow Up');
+
+      expect(await screen.findByText(/Saved as/i)).toBeInTheDocument();
+    });
+  });
+});

@@ -1,0 +1,134 @@
+import React, { useState, useCallback } from 'react';
+import { Fourdock } from './components/Fourdock/Fourdock.tsx';
+import { ReadOnlyBanner } from './components/ReadOnlyBanner/ReadOnlyBanner.tsx';
+import { SleepBanner } from './components/SleepBanner/SleepBanner.tsx';
+import { WacliStatusBanner } from './components/WacliStatusBanner/WacliStatusBanner.tsx';
+import { WacliUpdateNotice } from './components/WacliUpdateNotice/WacliUpdateNotice.tsx';
+import { ChatList } from './components/ChatList/ChatList.tsx';
+import { ThreadView } from './components/ThreadView/ThreadView.tsx';
+import { Composer } from './components/Composer/Composer.tsx';
+import { StatusStrip } from './components/StatusStrip/StatusStrip.tsx';
+import { SendConfirmModal } from './components/SendConfirmModal/SendConfirmModal.tsx';
+import { SettingsModal } from './components/SettingsModal/SettingsModal.tsx';
+import { NewChatModal } from './components/NewChatModal/NewChatModal.tsx';
+import { ChatInfoModal } from './components/ChatInfoModal/ChatInfoModal.tsx';
+import { HelpModal } from './components/HelpModal/HelpModal.tsx';
+import { TagManagerModal } from './components/TagManagerModal/TagManagerModal.tsx';
+import { ModeConfirmModal } from './components/ModeConfirmModal/ModeConfirmModal.tsx';
+import { SearchBar } from './components/SearchBar/SearchBar.tsx';
+import { ResizeHandle } from './components/ResizeHandle/ResizeHandle.tsx';
+import { useUnreadTitle } from './hooks/useUnreadBadge.ts';
+import { useWebSocket } from './hooks/useWebSocket.ts';
+import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts.ts';
+import { useSleepEffects } from './hooks/useSleepMode.ts';
+import { useWakeOnIntent } from './hooks/useWakeOnIntent.ts';
+import {
+  CHAT_LIST_PANE,
+  STATUS_STRIP_PANE,
+  readSavedPaneWidth,
+  savePaneWidth,
+} from './lib/paneWidths.ts';
+
+export const App: React.FC = () => {
+  const { isConnected } = useWebSocket();
+  // Puts the waiting count in the tab title, so a backgrounded console still
+  // says whether anything needs the operator.
+  useUnreadTitle();
+  // Asleep, no poll ticks and no refocus refetches; pushes still land.
+  useSleepEffects();
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  // Opening a chat, searching or filtering wakes a sleeping app.
+  useWakeOnIntent({ searchOpen: isSearchOpen });
+
+  // Resizable pane widths with localStorage persistence
+  const [chatListWidth, setChatListWidth] = useState<number>(() => readSavedPaneWidth(CHAT_LIST_PANE));
+  const [statusStripWidth, setStatusStripWidth] = useState<number>(() =>
+    readSavedPaneWidth(STATUS_STRIP_PANE)
+  );
+
+  const handleChatListResize = (newWidth: number) => {
+    setChatListWidth(newWidth);
+    savePaneWidth(CHAT_LIST_PANE, newWidth);
+  };
+
+  const handleStatusStripResize = (newWidth: number) => {
+    setStatusStripWidth(newWidth);
+    savePaneWidth(STATUS_STRIP_PANE, newWidth);
+  };
+
+  const handleResetChatListWidth = () => {
+    handleChatListResize(CHAT_LIST_PANE.defaultWidth);
+  };
+
+  const handleResetStatusStripWidth = () => {
+    handleStatusStripResize(STATUS_STRIP_PANE.defaultWidth);
+  };
+
+  const toggleSearch = useCallback(() => setIsSearchOpen((prev) => !prev), []);
+
+  // The console's whole keyboard layer, catalogued in lib/shortcuts.ts and
+  // documented by the same list the help modal renders.
+  useKeyboardShortcuts({ isSearchOpen, onToggleSearch: toggleSearch });
+
+  return (
+    <div className="flex flex-col h-screen w-screen bg-mc-bg text-mc-text font-sans overflow-hidden select-none">
+      <Fourdock />
+      {/* Safe Mode / Read-Only Top Banner */}
+      <ReadOnlyBanner />
+
+      {/* Sleep mode: what is still going out while nothing else refreshes */}
+      <SleepBanner />
+
+      {/* System Warning / First-Load wacli Diagnostic Banner */}
+      <WacliStatusBanner />
+
+      {/* A newer wacli is out: the command to take it, never taken for you */}
+      <WacliUpdateNotice />
+
+      {/* Main 3-Pane Console */}
+      <div className="flex-1 flex min-h-0">
+        {/* Left Rail: Chat List */}
+        <ChatList width={chatListWidth} />
+
+        {/* Left Splitter */}
+        <ResizeHandle
+          side="left"
+          currentWidth={chatListWidth}
+          minWidth={CHAT_LIST_PANE.min}
+          maxWidth={CHAT_LIST_PANE.max}
+          onResize={handleChatListResize}
+          onReset={handleResetChatListWidth}
+        />
+
+        {/* Dominant Center: Thread View + Fixed Composer */}
+        <div className="flex-1 flex flex-col min-w-0 min-h-0 relative z-10 overflow-hidden">
+          <ThreadView />
+          <Composer />
+        </div>
+
+        {/* Right Splitter */}
+        <ResizeHandle
+          side="right"
+          currentWidth={statusStripWidth}
+          minWidth={STATUS_STRIP_PANE.min}
+          maxWidth={STATUS_STRIP_PANE.max}
+          onResize={handleStatusStripResize}
+          onReset={handleResetStatusStripWidth}
+        />
+
+        {/* Right Rail: System Status Strip & Send Audit */}
+        <StatusStrip wsConnected={isConnected} width={statusStripWidth} />
+      </div>
+
+      {/* Modals */}
+      <SendConfirmModal />
+      <SettingsModal />
+      <NewChatModal />
+      <ChatInfoModal />
+      <TagManagerModal />
+      <ModeConfirmModal />
+      <HelpModal />
+      {isSearchOpen && <SearchBar onClose={() => setIsSearchOpen(false)} />}
+    </div>
+  );
+};

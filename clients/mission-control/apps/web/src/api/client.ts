@@ -1,0 +1,417 @@
+import type {
+  ChatCoverage,
+  ConversationExport,
+  UnifiedChat,
+  UnifiedContact,
+  UnifiedGroup,
+  UnifiedMessage,
+  MissionControlStatus,
+  ScheduledMessage,
+  ScheduledPage,
+  ActivityPage,
+  BookmarkEntry,
+  SleepState,
+} from '../types.ts';
+
+const API_BASE =
+  import.meta.env.VITE_API_URL ??
+  (typeof window !== 'undefined' ? window.location.origin : 'http://127.0.0.1:3002');
+
+export class ApiClientError extends Error {
+  constructor(
+    message: string,
+    public status?: number,
+    public code?: string,
+    public lockHolderPid?: number | null
+  ) {
+    super(message);
+    this.name = 'ApiClientError';
+  }
+}
+
+interface ApiResponse<T> {
+  success: boolean;
+  data: T;
+  error: string | null;
+  code?: string;
+  lockHolderPid?: number | null;
+}
+
+async function request<T>(
+  path: string,
+  options: RequestInit = {},
+  params?: Record<string, string | number | boolean | undefined>
+): Promise<T> {
+  const url = new URL(path, API_BASE);
+  if (params) {
+    for (const [key, value] of Object.entries(params)) {
+      if (value !== undefined && value !== '') {
+        url.searchParams.set(key, String(value));
+      }
+    }
+  }
+
+  const headers = new Headers(options.headers);
+  if (!headers.has('Accept')) {
+    headers.set('Accept', 'application/json');
+  }
+
+  const response = await fetch(url.toString(), {
+    ...options,
+    headers,
+  });
+
+  if (!response.ok) {
+    let errorMsg = `HTTP Error ${response.status}: ${response.statusText}`;
+    let errorCode: string | undefined;
+    let lockHolderPid: number | null | undefined;
+    try {
+      const errorJson = (await response.json()) as ApiResponse<unknown>;
+      if (errorJson.error) {
+        errorMsg = errorJson.error;
+      }
+      errorCode = errorJson.code;
+      lockHolderPid = errorJson.lockHolderPid;
+    } catch {
+      // ignore
+    }
+    throw new ApiClientError(errorMsg, response.status, errorCode, lockHolderPid);
+  }
+
+  const body = (await response.json()) as ApiResponse<T>;
+  if (!body.success) {
+    throw new ApiClientError(body.error || 'API returned unsuccessful result', response.status);
+  }
+
+  return body.data;
+}
+
+export const api = {
+  /**
+   * Pass `fresh` to bypass the server's short-lived `wacli doctor` cache. Used
+   * by the manual RE-CHECK, which must actually re-probe rather than replay a
+   * cached answer.
+   */
+  getHealth: (params?: { fresh?: boolean }) =>
+    request<MissionControlStatus>(
+      '/api/health',
+      {},
+      params?.fresh ? { fresh: '1' } : undefined
+    ),
+
+  getMode: () => request<{ readOnly: boolean }>('/api/mode'),
+
+  setMode: (readOnly: boolean) =>
+    request<{ readOnly: boolean }>('/api/mode', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ readOnly }),
+    }),
+
+  /** Sleep mode: the daemon stopped, only scheduled messages going out. */
+  getSleep: () => request<SleepState>('/api/sleep'),
+
+  /** `reason` lands in the server log, so an unexpected wake can be traced. */
+  setSleep: (sleeping: boolean, reason?: string) =>
+    request<SleepState>('/api/sleep', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ sleeping, reason }),
+    }),
+
+  getChats: (params?: {
+    query?: string;
+    limit?: number;
+    archived?: boolean;
+    pinned?: boolean;
+    muted?: boolean;
+    unread?: boolean;
+  }) => request<UnifiedChat[]>('/api/chats', {}, params),
+
+  /** `through` stops at that message, leaving anything newer unread (wacli 0.22). */
+  markChatRead: (chat: string, through?: string) =>
+    request<{
+      chat: string;
+      unread: boolean;
+      unreadCount: number;
+      through?: string | null;
+      localOnly?: boolean;
+    }>('/api/chats/mark-read', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ chat, through }),
+    }),
+
+  getMessages: (params: {
+    chat: string;
+    limit?: number;
+    before?: string;
+    after?: string;
+    asc?: boolean;
+  }) =>
+    request<{ messages: UnifiedMessage[]; hasMore: boolean }>('/api/messages', {}, params),
+
+  /** One message by id. A 404 means the local archive does not hold it. */
+  getMessage: (params: { chat: string; id: string }) =>
+    request<UnifiedMessage>('/api/messages/show', {}, params),
+
+  /**
+   * Everything in one conversation, for keeping or reading elsewhere. Answers
+   * with `truncated` rather than quietly handing back a partial history.
+   */
+  exportConversation: (params: { chat: string; limit?: number; before?: string; after?: string }) =>
+    request<ConversationExport>('/api/messages/export', {}, params),
+
+  /** One contact's local metadata, including this machine's own tags. */
+  getContact: (params: { jid: string }) =>
+    request<UnifiedContact>('/api/contacts/show', {}, params),
+
+  getGroups: (params: { query?: string } = {}) =>
+    request<UnifiedGroup[]>('/api/groups', {}, params),
+
+  /**
+   * wacli's own local alias for a contact. Written to the wacli store, so safe
+   * read-only mode refuses it. An empty alias clears it.
+   */
+  setContactAlias: (data: { jid: string; alias: string }) =>
+    request<{ jid: string; alias: string }>('/api/contacts/alias', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    }),
+
+  /** Every tag in use, and which chats carry them. */
+  getTags: () =>
+    request<{ tags: string[]; byJid: Record<string, string[]> }>('/api/tags'),
+
+  /**
+   * Mission Control's own label. wacli can write a tag but has no command that
+   * reads one back, so these live here and never leave the host.
+   */
+  setChatTag: (data: { jid: string; tag: string; add: boolean }) =>
+    request<{ jid: string; tags: string[] }>('/api/tags', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    }),
+
+  /**
+   * Renames one label on every chat carrying it. `merged` comes back true when
+   * the new name was already in use and the two vocabularies were folded into
+   * one, which the caller is expected to have confirmed first.
+   */
+  renameTag: (data: { from: string; to: string }) =>
+    request<{ from: string; to: string; renamed: number; merged: boolean }>('/api/tags/rename', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    }),
+
+  /** Retires one label, dropping it from every chat that carries it. */
+  deleteTag: (data: { tag: string }) =>
+    request<{ tag: string; removed: number }>('/api/tags/delete', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    }),
+
+  /** How far back the local archive reaches — what the thread can page to. */
+  getHistoryCoverage: (params: { chat?: string } = {}) =>
+    request<ChatCoverage[]>('/api/history/coverage', {}, params),
+
+  /**
+   * Asks the primary device for older messages. This reaches the phone and
+   * writes the local store, so safe read-only mode refuses it.
+   */
+  backfillHistory: (data: { chat: string; count?: number }) =>
+    request<{ chat: string; requested: number }>('/api/history/backfill', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    }),
+
+  searchMessages: (params: {
+    q: string;
+    chat?: string;
+    limit?: number;
+    before?: string;
+    after?: string;
+    type?: string;
+  }) =>
+    request<{ query: string; fts: boolean; results: UnifiedMessage[] }>('/api/search', {}, params),
+
+  /** `chatName` only labels the server's ACTIVITY row; wacli never sees it. */
+  sendText: (data: {
+    to: string;
+    chatName?: string;
+    message: string;
+    replyTo?: string;
+    confirm: boolean;
+  }) =>
+    request<{ sent: boolean; messageId?: string }>('/api/send/text', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    }),
+
+  sendFile: (formData: FormData) =>
+    request<{ sent: boolean; messageId?: string }>('/api/send/file', {
+      method: 'POST',
+      body: formData,
+    }),
+
+  sendReact: (data: { to: string; id: string; reaction: string; sender?: string; confirm: boolean }) =>
+    request<{ sent: boolean }>('/api/send/react', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    }),
+
+  scheduleText: (data: {
+    to: string;
+    recipientName?: string;
+    message: string;
+    replyTo?: string;
+    scheduledAt: string;
+    confirm: boolean;
+  }) =>
+    request<{ scheduled: boolean; item: ScheduledMessage }>('/api/send/schedule', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    }),
+
+  scheduleFile: (formData: FormData) =>
+    request<{ scheduled: boolean; item: ScheduledMessage }>('/api/send/schedule-file', {
+      method: 'POST',
+      body: formData,
+    }),
+
+  /**
+   * One view of the queue: every pending message, and one page of resolved
+   * history. Pending is never paged, so a caller that only wants what is about
+   * to go out can read `pending` and ignore the cursor entirely.
+   */
+  getScheduled: (params?: { chat?: string; limit?: number; before?: string }) =>
+    request<ScheduledPage>('/api/send/scheduled', {}, params),
+
+  /** The send audit stream, newest first. Ten rows unless asked otherwise. */
+  getActivity: (params?: { limit?: number; before?: string }) =>
+    request<ActivityPage>('/api/activity', {}, params),
+
+  cancelScheduled: (id: string) =>
+    request<{ cancelled: boolean }>(`/api/send/scheduled/${id}`, {
+      method: 'DELETE',
+    }),
+
+  /**
+   * Retries a failed scheduled message on the same record. Omit scheduledAt to
+   * dispatch immediately; pass one to requeue it for later. The server rejects
+   * anything that is not still in the failed state, so a double click cannot
+   * put the message out twice.
+   */
+  resendScheduled: (id: string, data: { scheduledAt?: string } = {}) =>
+    request<{ resent: boolean; item: ScheduledMessage }>(`/api/send/scheduled/${id}/resend`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ ...data, confirm: true }),
+    }),
+
+  discardScheduled: (id: string) =>
+    request<{ discarded: boolean }>(`/api/send/scheduled/${id}/discard`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({}),
+    }),
+
+  /**
+   * `fromPhone` asks the phone for a file WhatsApp's servers no longer have,
+   * which the plain download answers with code `MEDIA_EXPIRED` (wacli 0.22).
+   */
+  downloadMedia: (data: { chat: string; id: string; fromPhone?: boolean }) =>
+    request<{
+      downloaded: boolean;
+      localPath?: string;
+      source?: 'cache' | 'server' | 'phone' | null;
+      details?: unknown;
+    }>('/api/media/download', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    }),
+
+  getMediaUrl: (params: { chat?: string; id?: string; path?: string; download?: boolean; filename?: string }) => {
+    const url = new URL('/api/media/content', API_BASE);
+    if (params.chat) url.searchParams.set('chat', params.chat);
+    if (params.id) url.searchParams.set('id', params.id);
+    if (params.path) url.searchParams.set('path', params.path);
+    if (params.download) url.searchParams.set('download', '1');
+    if (params.filename) url.searchParams.set('filename', params.filename);
+    return url.toString();
+  },
+
+  /**
+   * Mission Control's own bookmark. Not a WhatsApp star: wacli can read a
+   * synced star but has no command to set one, so this never leaves the host.
+   */
+  bookmarkMessage: (data: {
+    chat: string;
+    id: string;
+    bookmarked: boolean;
+    chatName?: string;
+    senderName?: string;
+    text?: string;
+    ts?: string;
+  }) =>
+    request<{ chat: string; id: string; bookmarked: boolean }>('/api/messages/bookmark', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    }),
+
+  getBookmarks: (params?: { chat?: string; limit?: number }) =>
+    request<BookmarkEntry[]>('/api/messages/bookmarks', {}, params),
+
+  getSettings: () =>
+    request<{ readOnly: boolean; storeDir?: string; account?: string; currentLogFile?: string }>(
+      '/api/settings'
+    ),
+
+  restartDaemon: () =>
+    request<{ state: string; pid: number | null }>('/api/daemon/restart', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    }),
+};

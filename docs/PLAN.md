@@ -1,6 +1,25 @@
 # Plan and handoff
 
-Updated: 2026-11-10. **Prototype; not ready for daily use.**
+Updated: 2026-11-11. **Prototype; not ready for daily use.**
+
+## Current implementation: reused Mission Control WhatsApp candidate
+
+Owner accepted the reuse proposal and authorized implementation. The public MIT
+source is vendored under clients/mission-control at upstream 4d4ffaf (0.2.6),
+retaining its license and documentation. Fourdock adds separate demo/live stores,
+single-attempt pairing pipes, browser helper, explicit handoff confirmation,
+PWA install metadata/icons and app badge updates. Existing Fourdock remains.
+
+Default startup uses only a bundled synthetic CLI and owned demo data. Build,
+558 API and 486 web tests pass locally. Tests use temporary stores, not accounts.
+The real patched homeserver CLI command was checked in a --network none container
+with no mounted store: auth pair exists and read-only doctor does not create a
+session in an empty store. This is not real authentication verification.
+
+Next: run browser/connector integration on CI; review/install the synthetic PWA
+normally on the target; prepare a separate server candidate and owner-only live
+pairing. No production monitor/session or regular Chrome profile is modified.
+See clients/mission-control/FOURDOCK.md for exact commands and scope.
 
 ## Latest exploration: reuse an existing wacli client and authentication helper
 

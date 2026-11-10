@@ -1,0 +1,943 @@
+import React from 'react';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { act, renderHook, waitFor } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { useWebSocket, wsReconnectDelay, WS_RECONNECT_BASE_MS, WS_RECONNECT_MAX_MS } from './useWebSocket.ts';
+import { NOTIFICATIONS_STORAGE_KEY } from '../lib/notifications.ts';
+import { useAppStore } from '../store/appStore.ts';
+import { MARK_READ_DEBOUNCE_MS } from '../lib/chatRead.ts';
+import { flattenMessagePages, type MessagePages } from '../lib/messagePages.ts';
+import type { MissionControlEvent, UnifiedChat, UnifiedMessage } from '../types.ts';
+
+const markChatRead = vi.hoisted(() => vi.fn().mockResolvedValue(undefined));
+
+vi.mock('../api/client.ts', () => ({
+  api: { markChatRead },
+  ApiClientError: class extends Error {},
+}));
+
+/** Minimal stand-in for the browser socket: the hook only opens and listens. */
+class FakeWebSocket {
+  static instances: FakeWebSocket[] = [];
+  static readonly OPEN = 1;
+  static readonly CONNECTING = 0;
+
+  readyState = FakeWebSocket.OPEN;
+  onopen: (() => void) | null = null;
+  onclose: (() => void) | null = null;
+  onerror: (() => void) | null = null;
+  onmessage: ((e: { data: string }) => void) | null = null;
+
+  constructor(public url: string) {
+    FakeWebSocket.instances.push(this);
+  }
+
+  close() {
+    this.readyState = 3;
+  }
+
+  emit(event: MissionControlEvent) {
+    this.onmessage?.({ data: JSON.stringify(event) });
+  }
+}
+
+function chat(overrides: Partial<UnifiedChat> = {}): UnifiedChat {
+  return {
+    jid: 'alice@s.whatsapp.net',
+    kind: 'dm',
+    name: 'Alice',
+    lastMessageTs: '2026-09-01T10:00:00Z',
+    lastMessage: 'earlier line',
+    lastMessageFromMe: false,
+    archived: false,
+    pinned: false,
+    mutedUntil: 0,
+    unread: false,
+    unreadCount: 0,
+    ...overrides,
+  };
+}
+
+function message(overrides: Partial<UnifiedMessage> = {}): UnifiedMessage {
+  return {
+    chatJid: 'alice@s.whatsapp.net',
+    chatName: 'Alice',
+    msgId: 'MSG-1',
+    senderJid: 'alice@s.whatsapp.net',
+    senderName: 'Alice',
+    ts: '2026-09-01T11:00:00Z',
+    fromMe: false,
+    text: 'the newest line',
+    displayText: 'the newest line',
+    isForwarded: false,
+    reactionToId: null,
+    reactionEmoji: null,
+    mediaType: null,
+    mediaCaption: null,
+    filename: null,
+    mimeType: null,
+    localPath: null,
+    starred: false,
+    bookmarked: false,
+    edited: false,
+    revoked: false,
+    ...overrides,
+  };
+}
+
+let queryClient: QueryClient;
+let invalidateSpy: ReturnType<typeof vi.spyOn>;
+
+function mount() {
+  const wrapper = ({ children }: { children: React.ReactNode }) => (
+    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+  );
+  const view = renderHook(() => useWebSocket(), { wrapper });
+  const socket = FakeWebSocket.instances.at(-1)!;
+  act(() => {
+    socket.onopen?.();
+  });
+  // The open handshake refreshes health and chats; the assertions below are
+  // about what arriving *messages* cost, so start the count from here.
+  invalidateSpy.mockClear();
+  return { ...view, socket };
+}
+
+/**
+ * Where the operator is relative to this tab. jsdom reports an unfocused
+ * document, so a test about reading has to say the operator is looking.
+ */
+function setTab(state: 'looking' | 'behind another window' | 'hidden') {
+  vi.spyOn(document, 'hasFocus').mockReturnValue(state === 'looking');
+  Object.defineProperty(document, 'visibilityState', {
+    configurable: true,
+    get: () => (state === 'hidden' ? 'hidden' : 'visible'),
+  });
+}
+
+function resetTab() {
+  vi.mocked(document.hasFocus).mockRestore();
+  delete (document as { visibilityState?: unknown }).visibilityState;
+}
+
+describe('useWebSocket chat rail reconciliation', () => {
+  beforeEach(() => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    FakeWebSocket.instances = [];
+    vi.stubGlobal('WebSocket', FakeWebSocket);
+    queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+    invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
+    useAppStore.setState({ selectedChat: null });
+    markChatRead.mockClear();
+    setTab('looking');
+  });
+
+  afterEach(() => {
+    resetTab();
+    vi.unstubAllGlobals();
+    vi.useRealTimers();
+  });
+
+  it('patches the rail row in place instead of refetching the chat list', async () => {
+    queryClient.setQueryData(['chats', '', 'all'], [chat()]);
+    const { socket, unmount } = mount();
+
+    act(() => {
+      socket.emit({ type: 'message.new', data: message(), ts: '2026-09-01T11:00:00Z' });
+    });
+
+    const rail = queryClient.getQueryData<UnifiedChat[]>(['chats', '', 'all'])!;
+    expect(rail[0].lastMessage).toBe('the newest line');
+    expect(rail[0].lastMessageFromMe).toBe(false);
+    expect(rail[0].lastMessageTs).toBe('2026-09-01T11:00:00Z');
+
+    act(() => {
+      vi.advanceTimersByTime(5000);
+    });
+    expect(invalidateSpy).not.toHaveBeenCalledWith({ queryKey: ['chats'] });
+
+    unmount();
+  });
+
+  it('bumps the unread badge immediately for a chat the operator is not viewing', () => {
+    queryClient.setQueryData(['chats', '', 'all'], [chat({ unreadCount: 2, unread: true })]);
+    const { socket, unmount } = mount();
+
+    act(() => {
+      socket.emit({ type: 'message.new', data: message(), ts: '2026-09-01T11:00:00Z' });
+    });
+
+    const rail = queryClient.getQueryData<UnifiedChat[]>(['chats', '', 'all'])!;
+    expect(rail[0].unreadCount).toBe(3);
+    expect(rail[0].unread).toBe(true);
+
+    unmount();
+  });
+
+  it('clears unread and marks read when the message lands in the open chat', async () => {
+    queryClient.setQueryData(['chats', '', 'all'], [chat({ unreadCount: 2, unread: true })]);
+    useAppStore.setState({ selectedChat: chat() });
+    const { socket, unmount } = mount();
+
+    act(() => {
+      socket.emit({ type: 'message.new', data: message(), ts: '2026-09-01T11:00:00Z' });
+    });
+
+    // The badge clears at once: that half is local and free.
+    const rail = queryClient.getQueryData<UnifiedChat[]>(['chats', '', 'all'])!;
+    expect(rail[0].unreadCount).toBe(0);
+    expect(rail[0].unread).toBe(false);
+    expect(rail[0].lastMessage).toBe('the newest line');
+
+    // The receipt waits, because each one costs the sync daemon seconds that
+    // any send made meanwhile spends queued behind it.
+    expect(markChatRead).not.toHaveBeenCalled();
+
+    await act(async () => {
+      vi.advanceTimersByTime(MARK_READ_DEBOUNCE_MS);
+    });
+    await waitFor(() => expect(markChatRead).toHaveBeenCalledWith('alice@s.whatsapp.net', undefined));
+
+    unmount();
+  });
+
+  it('sends one receipt for a burst of messages, not one per message', async () => {
+    queryClient.setQueryData(['chats', '', 'all'], [chat({ unreadCount: 2, unread: true })]);
+    useAppStore.setState({ selectedChat: chat() });
+    const { socket, unmount } = mount();
+
+    // A lively group: six messages inside the debounce window.
+    for (let i = 0; i < 6; i++) {
+      act(() => {
+        socket.emit({ type: 'message.new', data: message(), ts: '2026-09-01T11:00:00Z' });
+      });
+      await act(async () => {
+        vi.advanceTimersByTime(200);
+      });
+    }
+
+    await act(async () => {
+      vi.advanceTimersByTime(MARK_READ_DEBOUNCE_MS);
+    });
+
+    // Six receipts would be six replays of WhatsApp's chat state in the sync
+    // daemon's queue, and a reply sent meanwhile would wait behind all of them.
+    await waitFor(() => expect(markChatRead).toHaveBeenCalledTimes(1));
+
+    unmount();
+  });
+
+  it('describes media rather than leaving the preview blank', () => {
+    queryClient.setQueryData(['chats', '', 'all'], [chat()]);
+    const { socket, unmount } = mount();
+
+    act(() => {
+      socket.emit({
+        type: 'message.new',
+        data: message({ text: '', displayText: '', mediaType: 'image', mediaCaption: null }),
+        ts: '2026-09-01T11:00:00Z',
+      });
+    });
+
+    const rail = queryClient.getQueryData<UnifiedChat[]>(['chats', '', 'all'])!;
+    expect(rail[0].lastMessage).toBe('\u{1F4F7} Photo');
+
+    unmount();
+  });
+
+  it('leaves the preview alone for a reaction, which is not conversation content', () => {
+    queryClient.setQueryData(['chats', '', 'all'], [chat()]);
+    const { socket, unmount } = mount();
+
+    act(() => {
+      socket.emit({
+        type: 'message.new',
+        data: message({ msgId: 'RCT-1', reactionToId: 'MSG-0', reactionEmoji: '👍', text: '👍', displayText: '👍' }),
+        ts: '2026-09-01T11:00:00Z',
+      });
+    });
+
+    const rail = queryClient.getQueryData<UnifiedChat[]>(['chats', '', 'all'])!;
+    expect(rail[0].lastMessage).toBe('earlier line');
+
+    unmount();
+  });
+
+  it('refetches once — not once per message — for chats the rail has never seen', () => {
+    queryClient.setQueryData(['chats', '', 'all'], [chat()]);
+    const { socket, unmount } = mount();
+
+    act(() => {
+      for (let i = 0; i < 5; i++) {
+        socket.emit({
+          type: 'message.new',
+          data: message({ chatJid: `stranger-${i}@s.whatsapp.net`, msgId: `NEW-${i}` }),
+          ts: '2026-09-01T11:00:00Z',
+        });
+      }
+    });
+
+    expect(invalidateSpy).not.toHaveBeenCalledWith({ queryKey: ['chats'] });
+
+    act(() => {
+      vi.advanceTimersByTime(1000);
+    });
+
+    const railInvalidations = invalidateSpy.mock.calls.filter(
+      (call: unknown[]) => JSON.stringify(call[0]) === JSON.stringify({ queryKey: ['chats'] })
+    );
+    expect(railInvalidations).toHaveLength(1);
+
+    unmount();
+  });
+});
+
+/** Records constructions so the tests can assert on copy, not just on count. */
+class FakeNotification {
+  static permission: NotificationPermission = 'granted';
+  static instances: FakeNotification[] = [];
+  static requestPermission = vi.fn().mockResolvedValue('granted' as NotificationPermission);
+
+  onclick: (() => void) | null = null;
+  closed = false;
+
+  constructor(public title: string, public options: NotificationOptions) {
+    FakeNotification.instances.push(this);
+  }
+
+  close() {
+    this.closed = true;
+  }
+}
+
+describe('useWebSocket desktop notifications', () => {
+  beforeEach(() => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    FakeWebSocket.instances = [];
+    FakeNotification.instances = [];
+    FakeNotification.permission = 'granted';
+    vi.stubGlobal('WebSocket', FakeWebSocket);
+    vi.stubGlobal('Notification', FakeNotification);
+    queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
+    useAppStore.setState({ selectedChat: null });
+    localStorage.setItem(NOTIFICATIONS_STORAGE_KEY, 'true');
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.useRealTimers();
+    localStorage.clear();
+  });
+
+  it('raises a notification for an incoming message', () => {
+    queryClient.setQueryData(['chats', '', 'all'], [chat()]);
+    const { socket, unmount } = mount();
+
+    act(() => {
+      socket.emit({ type: 'message.new', data: message(), ts: '2026-09-01T11:00:00Z' });
+    });
+
+    expect(FakeNotification.instances).toHaveLength(1);
+    expect(FakeNotification.instances[0].title).toBe('Alice');
+    expect(FakeNotification.instances[0].options.body).toBe('the newest line');
+
+    unmount();
+  });
+
+  it('stays silent when the operator has not opted in', () => {
+    localStorage.setItem(NOTIFICATIONS_STORAGE_KEY, 'false');
+    queryClient.setQueryData(['chats', '', 'all'], [chat()]);
+    const { socket, unmount } = mount();
+
+    act(() => {
+      socket.emit({ type: 'message.new', data: message(), ts: '2026-09-01T11:00:00Z' });
+    });
+
+    expect(FakeNotification.instances).toHaveLength(0);
+    unmount();
+  });
+
+  it('stays silent for a muted chat', () => {
+    queryClient.setQueryData(['chats', '', 'all'], [chat({ mutedUntil: 1893456000 })]);
+    const { socket, unmount } = mount();
+
+    act(() => {
+      socket.emit({ type: 'message.new', data: message(), ts: '2026-09-01T11:00:00Z' });
+    });
+
+    expect(FakeNotification.instances).toHaveLength(0);
+    unmount();
+  });
+
+  it('selects the chat when the notification is clicked', () => {
+    queryClient.setQueryData(['chats', '', 'all'], [chat()]);
+    const { socket, unmount } = mount();
+
+    act(() => {
+      socket.emit({ type: 'message.new', data: message(), ts: '2026-09-01T11:00:00Z' });
+    });
+
+    act(() => {
+      FakeNotification.instances[0].onclick?.();
+    });
+
+    expect(useAppStore.getState().selectedChat?.jid).toBe('alice@s.whatsapp.net');
+    expect(FakeNotification.instances[0].closed).toBe(true);
+    unmount();
+  });
+
+  it('can still open a chat the rail has never listed', () => {
+    queryClient.setQueryData(['chats', '', 'all'], [chat()]);
+    const { socket, unmount } = mount();
+
+    act(() => {
+      socket.emit({
+        type: 'message.new',
+        data: message({ chatJid: 'stranger@s.whatsapp.net', chatName: 'Stranger', msgId: 'NEW-1' }),
+        ts: '2026-09-01T11:00:00Z',
+      });
+    });
+
+    act(() => {
+      FakeNotification.instances[0].onclick?.();
+    });
+
+    expect(useAppStore.getState().selectedChat?.jid).toBe('stranger@s.whatsapp.net');
+    expect(useAppStore.getState().selectedChat?.name).toBe('Stranger');
+    unmount();
+  });
+
+  it('does not break message ingestion when the browser refuses to construct one', () => {
+    vi.stubGlobal(
+      'Notification',
+      Object.assign(
+        class {
+          constructor() {
+            throw new Error('Notifications require a user gesture');
+          }
+        },
+        { permission: 'granted' as NotificationPermission }
+      )
+    );
+
+    queryClient.setQueryData(['chats', '', 'all'], [chat()]);
+    const { socket, unmount } = mount();
+
+    act(() => {
+      socket.emit({ type: 'message.new', data: message(), ts: '2026-09-01T11:00:00Z' });
+    });
+
+    const rail = queryClient.getQueryData<UnifiedChat[]>(['chats', '', 'all'])!;
+    expect(rail[0].lastMessage).toBe('the newest line');
+    unmount();
+  });
+});
+
+describe('useWebSocket thread reconciliation', () => {
+  beforeEach(() => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    FakeWebSocket.instances = [];
+    vi.stubGlobal('WebSocket', FakeWebSocket);
+    queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
+    useAppStore.setState({ selectedChat: null });
+    markChatRead.mockClear();
+    setTab('looking');
+  });
+
+  afterEach(() => {
+    resetTab();
+    vi.unstubAllGlobals();
+    vi.useRealTimers();
+    useAppStore.setState({ selectedChat: null });
+  });
+
+  /** The thread as an infinite query holds it: newest page first. */
+  function seedThread(...groups: UnifiedMessage[][]): void {
+    queryClient.setQueryData(['messages', 'alice@s.whatsapp.net'], {
+      pages: groups.map((messages, i) => ({ messages, hasMore: i === groups.length - 1 })),
+      pageParams: groups.map((_, i) => (i === 0 ? undefined : `cursor-${i}`)),
+    });
+  }
+
+  function thread(): MessagePages {
+    return queryClient.getQueryData<MessagePages>(['messages', 'alice@s.whatsapp.net'])!;
+  }
+
+  it('inserts a live message at the front of the newest page without a refetch', () => {
+    seedThread([message({ msgId: 'MSG-OLD', text: 'earlier line' })]);
+    const { socket, unmount } = mount();
+
+    act(() => {
+      socket.emit({ type: 'message.new', data: message(), ts: '2026-09-01T11:00:00Z' });
+    });
+
+    expect(flattenMessagePages(thread()).map((m) => m.msgId)).toEqual(['MSG-1', 'MSG-OLD']);
+    // The whole point of the socket: a new message costs no wacli read.
+    expect(invalidateSpy).not.toHaveBeenCalledWith(
+      expect.objectContaining({ queryKey: ['messages', 'alice@s.whatsapp.net'] })
+    );
+    unmount();
+  });
+
+  it('does not double a message the operator has already scrolled back past', () => {
+    seedThread([message({ msgId: 'MSG-NEW' })], [message({ msgId: 'MSG-1' })]);
+    const { socket, unmount } = mount();
+
+    act(() => {
+      socket.emit({ type: 'message.new', data: message(), ts: '2026-09-01T11:00:00Z' });
+    });
+
+    expect(flattenMessagePages(thread()).filter((m) => m.msgId === 'MSG-1')).toHaveLength(1);
+    unmount();
+  });
+
+  it('applies a receipt to a message sitting in an older page', () => {
+    seedThread([message({ msgId: 'MSG-NEW' })], [message({ msgId: 'MSG-1' })]);
+    const { socket, unmount } = mount();
+
+    act(() => {
+      socket.emit({
+        type: 'message.receipt',
+        data: {
+          chatJid: 'alice@s.whatsapp.net',
+          messageIds: ['MSG-1'],
+          status: 'read',
+          sender: 'alice@s.whatsapp.net',
+          isFromMe: false,
+        },
+        ts: '2026-09-01T11:05:00Z',
+      });
+    });
+
+    const patched = flattenMessagePages(thread()).find((m) => m.msgId === 'MSG-1')!;
+    expect(patched.deliveryStatus).toBe('read');
+    unmount();
+  });
+
+  it('keeps a read message read when a late "delivered" receipt arrives', () => {
+    // The thread now opens on the ticks wacli stored, so a straggling receipt
+    // is routinely older news than what is already on screen.
+    seedThread([message({ msgId: 'MSG-1', fromMe: true, deliveryStatus: 'read' })]);
+    const { socket, unmount } = mount();
+
+    act(() => {
+      socket.emit({
+        type: 'message.receipt',
+        data: {
+          chatJid: 'alice@s.whatsapp.net',
+          messageIds: ['MSG-1'],
+          status: 'delivered',
+          sender: 'alice@s.whatsapp.net',
+          isFromMe: false,
+        },
+        ts: '2026-09-01T11:06:00Z',
+      });
+    });
+
+    const patched = flattenMessagePages(thread()).find((m) => m.msgId === 'MSG-1')!;
+    expect(patched.deliveryStatus).toBe('read');
+    unmount();
+  });
+});
+
+/**
+ * The read receipt used to be sent from inside a `setQueriesData` updater.
+ * Updaters have to be pure — React Query runs one per query key matching
+ * `['chats']`, and StrictMode runs each twice — so a single message could ask
+ * for the receipt several times, and only the debounce hid it.
+ */
+describe('useWebSocket read receipts are a side effect, not a cache update', () => {
+  beforeEach(() => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    FakeWebSocket.instances = [];
+    vi.stubGlobal('WebSocket', FakeWebSocket);
+    queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
+    useAppStore.setState({ selectedChat: null });
+    markChatRead.mockClear();
+    setTab('looking');
+  });
+
+  afterEach(() => {
+    resetTab();
+    vi.unstubAllGlobals();
+    vi.useRealTimers();
+  });
+
+  it('marks read for a chat the rail has never seen', async () => {
+    // Being in the rail was never what made a message read — having the
+    // conversation open is. The receipt used to be unreachable for a chat the
+    // rail did not already hold, because it lived inside the rail's updater.
+    useAppStore.setState({ selectedChat: chat() });
+    const { socket, unmount } = mount();
+
+    act(() => {
+      socket.emit({ type: 'message.new', data: message(), ts: '2026-09-01T11:00:00Z' });
+    });
+
+    await act(async () => {
+      vi.advanceTimersByTime(MARK_READ_DEBOUNCE_MS);
+    });
+
+    await waitFor(() => expect(markChatRead).toHaveBeenCalledWith('alice@s.whatsapp.net', undefined));
+    unmount();
+  });
+
+  it('patches every cached rail without multiplying the receipt', async () => {
+    // Two filter tabs the operator has visited: two query keys, two updater
+    // runs, and one message that has still only been read once.
+    queryClient.setQueryData(['chats', '', 'all'], [chat({ unread: true, unreadCount: 3 })]);
+    queryClient.setQueryData(['chats', '', 'unread'], [chat({ unread: true, unreadCount: 3 })]);
+    useAppStore.setState({ selectedChat: chat() });
+    const { socket, unmount } = mount();
+
+    act(() => {
+      socket.emit({ type: 'message.new', data: message(), ts: '2026-09-01T11:00:00Z' });
+    });
+
+    for (const key of [['chats', '', 'all'], ['chats', '', 'unread']]) {
+      const rail = queryClient.getQueryData<UnifiedChat[]>(key)!;
+      expect(rail[0].lastMessage).toBe('the newest line');
+      expect(rail[0].unreadCount).toBe(0);
+    }
+
+    await act(async () => {
+      vi.advanceTimersByTime(MARK_READ_DEBOUNCE_MS);
+    });
+
+    await waitFor(() => expect(markChatRead).toHaveBeenCalledTimes(1));
+    unmount();
+  });
+
+  it('does not mark read a chat the operator is not looking at', async () => {
+    queryClient.setQueryData(['chats', '', 'all'], [chat()]);
+    useAppStore.setState({ selectedChat: chat({ jid: 'bob@s.whatsapp.net', name: 'Bob' }) });
+    const { socket, unmount } = mount();
+
+    act(() => {
+      socket.emit({ type: 'message.new', data: message(), ts: '2026-09-01T11:00:00Z' });
+    });
+
+    await act(async () => {
+      vi.advanceTimersByTime(MARK_READ_DEBOUNCE_MS);
+    });
+
+    expect(markChatRead).not.toHaveBeenCalled();
+    unmount();
+  });
+
+  it('does not mark read on a message it sent itself', async () => {
+    queryClient.setQueryData(['chats', '', 'all'], [chat()]);
+    useAppStore.setState({ selectedChat: chat() });
+    const { socket, unmount } = mount();
+
+    act(() => {
+      socket.emit({
+        type: 'message.new',
+        data: message({ fromMe: true, senderName: 'Me' }),
+        ts: '2026-09-01T11:00:00Z',
+      });
+    });
+
+    await act(async () => {
+      vi.advanceTimersByTime(MARK_READ_DEBOUNCE_MS);
+    });
+
+    expect(markChatRead).not.toHaveBeenCalled();
+    unmount();
+  });
+});
+
+/**
+ * The retry used to be a flat two seconds, forever: a console left open against
+ * a stopped API reconnected thirty times a minute for as long as the tab lived.
+ */
+describe('useWebSocket sleep state', () => {
+  beforeEach(() => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    FakeWebSocket.instances = [];
+    vi.stubGlobal('WebSocket', FakeWebSocket);
+    queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+    invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
+    useAppStore.setState({ selectedChat: null });
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.useRealTimers();
+  });
+
+  it('takes a pushed change straight into the cache, without a fetch', () => {
+    const { socket, unmount } = mount();
+    const asleep = { sleeping: true, since: '2026-09-15T22:14:00.000Z' };
+
+    act(() => {
+      socket.emit({ type: 'sleep.changed', data: asleep, ts: '2026-09-15T22:14:00.050Z' });
+    });
+
+    expect(queryClient.getQueryData(['sleep'])).toEqual(asleep);
+    expect(invalidateSpy).not.toHaveBeenCalled();
+    unmount();
+  });
+
+  it('rereads the state when the socket comes back, since a change may have been missed', () => {
+    const { socket, unmount } = mount();
+
+    act(() => {
+      socket.onopen?.();
+    });
+
+    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['sleep'] });
+    unmount();
+  });
+
+  it('rereads the queue when the socket comes back, since asleep it lives on pushes alone', () => {
+    const { socket, unmount } = mount();
+
+    act(() => {
+      socket.onopen?.();
+    });
+
+    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['scheduled'] });
+    unmount();
+  });
+});
+
+describe('useWebSocket reconnect backoff', () => {
+  beforeEach(() => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    FakeWebSocket.instances = [];
+    vi.stubGlobal('WebSocket', FakeWebSocket);
+    queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
+    useAppStore.setState({ selectedChat: null });
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.useRealTimers();
+  });
+
+  it('doubles the wait, up to a ceiling', () => {
+    expect(wsReconnectDelay(0)).toBe(1_000);
+    expect(wsReconnectDelay(1)).toBe(2_000);
+    expect(wsReconnectDelay(2)).toBe(4_000);
+    expect(wsReconnectDelay(3)).toBe(8_000);
+    expect(wsReconnectDelay(4)).toBe(16_000);
+    expect(wsReconnectDelay(5)).toBe(WS_RECONNECT_MAX_MS);
+    // However long the outage, the tab never retries faster than the ceiling.
+    expect(wsReconnectDelay(40)).toBe(WS_RECONNECT_MAX_MS);
+  });
+
+  it('comes back quickly after a single drop', async () => {
+    const { unmount } = mount();
+    const before = FakeWebSocket.instances.length;
+
+    act(() => {
+      FakeWebSocket.instances.at(-1)!.onclose?.();
+    });
+
+    // Nothing yet: the first retry waits out its (short) delay.
+    expect(FakeWebSocket.instances.length).toBe(before);
+
+    await act(async () => {
+      vi.advanceTimersByTime(WS_RECONNECT_BASE_MS);
+    });
+
+    expect(FakeWebSocket.instances.length).toBe(before + 1);
+    unmount();
+  });
+
+  it('backs off while the API stays down', async () => {
+    const { unmount } = mount();
+
+    // Three failed attempts in a row, each waiting longer than the last.
+    for (const attempt of [0, 1, 2]) {
+      const before = FakeWebSocket.instances.length;
+
+      act(() => {
+        FakeWebSocket.instances.at(-1)!.onclose?.();
+      });
+
+      // One millisecond short of the delay for this attempt: still waiting.
+      await act(async () => {
+        vi.advanceTimersByTime(wsReconnectDelay(attempt) - 1);
+      });
+      expect(FakeWebSocket.instances.length).toBe(before);
+
+      await act(async () => {
+        vi.advanceTimersByTime(1);
+      });
+      expect(FakeWebSocket.instances.length).toBe(before + 1);
+    }
+
+    unmount();
+  });
+
+  it('starts over from a short delay once a connection comes back', async () => {
+    const { unmount } = mount();
+
+    // Two drops in: the next wait would be 4s.
+    for (const attempt of [0, 1]) {
+      act(() => {
+        FakeWebSocket.instances.at(-1)!.onclose?.();
+      });
+      await act(async () => {
+        vi.advanceTimersByTime(wsReconnectDelay(attempt));
+      });
+    }
+
+    // The reconnect succeeds, so the sequence is over.
+    act(() => {
+      FakeWebSocket.instances.at(-1)!.onopen?.();
+    });
+
+    const before = FakeWebSocket.instances.length;
+    act(() => {
+      FakeWebSocket.instances.at(-1)!.onclose?.();
+    });
+
+    await act(async () => {
+      vi.advanceTimersByTime(WS_RECONNECT_BASE_MS);
+    });
+
+    expect(FakeWebSocket.instances.length).toBe(before + 1);
+    unmount();
+  });
+
+  it('stops retrying once the console unmounts', async () => {
+    const { unmount } = mount();
+    unmount();
+
+    const before = FakeWebSocket.instances.length;
+    act(() => {
+      FakeWebSocket.instances.at(-1)!.onclose?.();
+    });
+
+    await act(async () => {
+      vi.advanceTimersByTime(WS_RECONNECT_MAX_MS * 2);
+    });
+
+    expect(FakeWebSocket.instances.length).toBe(before);
+  });
+});
+
+/**
+ * A chat left open is not a chat being read. Receipts used to go out for every
+ * message that landed in the open chat, from a background tab or a window
+ * buried under others — blue ticks for messages nobody had seen.
+ */
+describe('useWebSocket read receipts wait for the operator', () => {
+  beforeEach(() => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    FakeWebSocket.instances = [];
+    vi.stubGlobal('WebSocket', FakeWebSocket);
+    queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
+    queryClient.setQueryData(['chats', '', 'all'], [chat()]);
+    useAppStore.setState({ selectedChat: chat() });
+    markChatRead.mockClear();
+  });
+
+  afterEach(() => {
+    resetTab();
+    vi.unstubAllGlobals();
+    vi.useRealTimers();
+  });
+
+  /** Lets any receipt out of its debounce. */
+  async function settle() {
+    await act(async () => {
+      vi.advanceTimersByTime(MARK_READ_DEBOUNCE_MS);
+    });
+  }
+
+  function comeBack() {
+    setTab('looking');
+    act(() => {
+      document.dispatchEvent(new Event('visibilitychange'));
+      window.dispatchEvent(new Event('focus'));
+    });
+  }
+
+  for (const state of ['hidden', 'behind another window'] as const) {
+    it(`sends no receipt while the tab is ${state}, and leaves the chat unread`, async () => {
+      setTab(state);
+      const { socket, unmount } = mount();
+
+      act(() => {
+        socket.emit({ type: 'message.new', data: message(), ts: '2026-09-01T11:00:00Z' });
+      });
+      await settle();
+
+      expect(markChatRead).not.toHaveBeenCalled();
+      const rail = queryClient.getQueryData<UnifiedChat[]>(['chats', '', 'all'])!;
+      expect(rail[0]).toMatchObject({ unread: true, unreadCount: 1 });
+
+      unmount();
+    });
+  }
+
+  it('sends the held receipt once the operator is back on that chat', async () => {
+    setTab('hidden');
+    const { socket, unmount } = mount();
+
+    act(() => {
+      socket.emit({ type: 'message.new', data: message(), ts: '2026-09-01T11:00:00Z' });
+      socket.emit({
+        type: 'message.new',
+        data: message({ msgId: 'MSG-2', text: 'and another' }),
+        ts: '2026-09-01T11:01:00Z',
+      });
+    });
+    await settle();
+    expect(markChatRead).not.toHaveBeenCalled();
+
+    comeBack();
+    await settle();
+
+    await waitFor(() => expect(markChatRead).toHaveBeenCalledTimes(1));
+    expect(markChatRead).toHaveBeenCalledWith('alice@s.whatsapp.net', undefined);
+    const rail = queryClient.getQueryData<UnifiedChat[]>(['chats', '', 'all'])!;
+    expect(rail[0]).toMatchObject({ unread: false, unreadCount: 0 });
+
+    unmount();
+  });
+
+  it('drops the held receipt when the operator comes back to another chat', async () => {
+    setTab('hidden');
+    const { socket, unmount } = mount();
+
+    act(() => {
+      socket.emit({ type: 'message.new', data: message(), ts: '2026-09-01T11:00:00Z' });
+    });
+    // A desktop notification for another chat is one way back in.
+    act(() => {
+      useAppStore.setState({ selectedChat: chat({ jid: 'bob@s.whatsapp.net', name: 'Bob' }) });
+    });
+    comeBack();
+    await settle();
+
+    expect(markChatRead).not.toHaveBeenCalled();
+
+    unmount();
+  });
+
+  it('sends nothing on return when nothing arrived while away', async () => {
+    setTab('hidden');
+    const { unmount } = mount();
+
+    comeBack();
+    await settle();
+
+    expect(markChatRead).not.toHaveBeenCalled();
+
+    unmount();
+  });
+});
