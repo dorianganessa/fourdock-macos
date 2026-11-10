@@ -19,6 +19,11 @@ try {
   const manifest = JSON.parse(await readFile(path.join(root, 'BrowserProfile/NativeMessagingHosts/com.fourdock.bridge.json'), 'utf8'));
   assert.equal(manifest.path, exe);
   assert.deepEqual(manifest.allowed_origins, ['chrome-extension://infjmihppfefdefbgjginaijgcponpog/']);
+  for (const service of ['fourdock', 'whatsapp', 'telegram', 'fastmail', 'gmail']) {
+    const icon = await readFile(path.join(root, `extension/icons/${service}.png`));
+    assert.equal(icon.readUInt32BE(16), 128);
+    assert.equal(icon.readUInt32BE(20), 128);
+  }
   host = spawn(exe, ['--native-host'], { stdio: ['pipe', 'pipe', 'ignore'] });
   const payload = Buffer.from(JSON.stringify({ type: 'hello' }));
   const header = Buffer.alloc(4); header.writeUInt32LE(payload.length);

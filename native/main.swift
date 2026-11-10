@@ -143,12 +143,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         try fm.createDirectory(at: dataRoot, withIntermediateDirectories: true, attributes: [.posixPermissions: 0o700])
         let source = Bundle.main.resourceURL!.appendingPathComponent("extension")
         let target = dataRoot.appendingPathComponent("extension")
-        try fm.createDirectory(at: target, withIntermediateDirectories: true)
         // Update only owned extension source files; never touch browser profile data.
-        for file in try fm.contentsOfDirectory(at: source, includingPropertiesForKeys: nil) {
-            let dest = target.appendingPathComponent(file.lastPathComponent)
-            let data = try Data(contentsOf: file); try data.write(to: dest, options: .atomic)
+        func copyResources(from source: URL, to target: URL) throws {
+            try fm.createDirectory(at: target, withIntermediateDirectories: true)
+            for file in try fm.contentsOfDirectory(at: source, includingPropertiesForKeys: [.isDirectoryKey]) {
+                let dest = target.appendingPathComponent(file.lastPathComponent)
+                if try file.resourceValues(forKeys: [.isDirectoryKey]).isDirectory == true {
+                    try copyResources(from: file, to: dest)
+                } else {
+                    let data = try Data(contentsOf: file)
+                    try data.write(to: dest, options: .atomic)
+                }
+            }
         }
+        try copyResources(from: source, to: target)
         let hosts = dataRoot.appendingPathComponent("BrowserProfile/NativeMessagingHosts")
         try fm.createDirectory(at: hosts, withIntermediateDirectories: true)
         let manifest: [String: Any] = ["name": "com.fourdock.bridge", "description": "Fourdock local macOS bridge", "path": Bundle.main.executableURL!.path, "type": "stdio", "allowed_origins": ["chrome-extension://\(extensionID)/"]]
