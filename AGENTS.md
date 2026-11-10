@@ -1,5 +1,15 @@
 # Fourdock
 
+2026-11-10 OWNER DECISION: retain the wacli/browser-passkey research for later;
+do NOT use it now. Continue the existing Chrome Fourdock 0.2.0 and owner setup
+checks. A previously built browser helper signs a client challenge on genuine
+web.whatsapp.com and returns the assertion to a wacli/whatsmeow client, which owns
+its own session. It does not export/import a WhatsApp Web browser session. A
+future reuse would require a custom unofficial WhatsApp client/UI or a backend,
+not direct session import into the current web tabs. Owner reports prior auth
+success; no live check, session access/copy, monitor change or migration made.
+See deferred research in docs/DECISIONS.md; do not restart this work unprompted.
+
 2026-11-10 CURRENT OWNER DIRECTION: return to the working Chrome extension,
 improve notification identity and direct global service shortcuts. Owner wants
 sender AND preview. Extension 0.2.0 relays page Notifications (not WebAuthn) via

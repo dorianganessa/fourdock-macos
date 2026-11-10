@@ -1,5 +1,27 @@
 # Decisions and authentication evidence
 
+## 2026-11-10 — Keep browser-assisted wacli pairing research deferred
+
+The owner reports a working homeserver wacli authentication method. Read-only
+review of the existing helper source confirms the mechanism: a user gesture on
+genuine web.whatsapp.com runs WebAuthn, and a private transport returns the signed
+assertion to the client, which saves its own wacli/whatsmeow session. Private keys
+remain with the authenticator. This is not extraction of the browser's existing
+WhatsApp Web session, and the resulting client store cannot simply be imported
+into the current Fourdock service tabs. No live server/session check was performed.
+
+Potential future reuse: the same browser-assisted pairing architecture for a
+custom WhatsApp client, either local or accessed through a backend. It would need
+its own chat UI and client integration; it changes the original official-web-app
+requirement and does not solve macOS executable signing. The current monitor API
+is principally read-only and intentionally disables sending; do not change that
+policy or start a second client using the same store as part of Fourdock work.
+
+Owner explicitly deferred this option and chose to continue Chrome Fourdock 0.2.0.
+Preserve the research, existing sessions and the independent homeserver setup.
+No helper code, private configuration, session store or credentials were copied
+into this public repository; no migration or new pairing is authorized/pending.
+
 ## 2026-11-10 — Return to Chrome, add global shortcuts and labelled previews
 
 Owner chose the previously working Chrome workspace and requested clearer

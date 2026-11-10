@@ -4,6 +4,11 @@ Updated: 2026-11-10. **Prototype; not ready for daily use.**
 
 ## Current direction: improve the working Chrome workspace
 
+Owner reaffirmed this direction after reviewing their existing wacli browser
+pairing helper: preserve that research for later, do not use it now. The deferred
+architecture and its limits are recorded in DECISIONS.md. Current next actions
+remain extension setup and notification/global-shortcut verification below.
+
 Owner explicitly returned to the existing Chrome version and requested direct
 service shortcuts and clearer notifications, including sender and preview.
 Extension 0.2.0 declares four global commands (macOS Control+Shift+1–4), retains
