@@ -27,6 +27,15 @@ try {
     headless: false, args: [`--disable-extensions-except=${extension}`, `--load-extension=${extension}`,
       '--host-resolver-rules=MAP web.whatsapp.com ~NOTFOUND'], ignoreDefaultArgs: ['--disable-extensions'],
   });
+  const worker = context.serviceWorkers()[0] || await context.waitForEvent('serviceworker');
+  await worker.evaluate(() => {
+    globalThis.syntheticInjectionErrors = [];
+    const inject = chrome.scripting.executeScript.bind(chrome.scripting);
+    chrome.scripting.executeScript = async request => {
+      try { return await inject(request); }
+      catch (error) { globalThis.syntheticInjectionErrors.push(String(error.message)); throw error; }
+    };
+  });
   await context.route('https://web.whatsapp.com/**', route => route.fulfill({ contentType: 'text/html', body: `<!doctype html><title>Synthetic passkey origin</title><h1>Synthetic WebAuthn fixture</h1><script>
     navigator.credentials.get = async ({publicKey}) => {
       window.syntheticCalled = true;
@@ -79,6 +88,7 @@ try {
     await wa.waitForFunction(() => document.getElementById('fourdock-passkey'));
   } catch (error) {
     console.error('Synthetic connector outcome:', await assertionResult);
+    console.error('Synthetic injection diagnostics:', await worker.evaluate(() => globalThis.syntheticInjectionErrors));
     throw error;
   }
   assert.equal(await wa.evaluate(() => window.syntheticCalled), undefined);
