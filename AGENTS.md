@@ -1,5 +1,30 @@
 # Fourdock
 
+2026-11-11 PINNED CHROME SOURCE: official tag157.0.8103.39 chrome_features.cc
+defines kAppShimNotificationAttribution disabled by default. Runtime field trials
+can override this; no profile storage/runtime feature state was read or changed.
+Thus installed version alone does not prove native PWA attribution is enabled.
+Do not turn this source default into a confirmed diagnosis of this profile.
+
+2026-11-11 OWNER PERMISSION CLARIFICATION: owner already pressed the notification
+test button and granted permission. Do not repeat that as the missing setup step.
+OS metadata still lists only Chrome entries. Requested the past test outcome:
+actual banner versus Dock number only (and whether text was hidden). This is the
+next required context before another diagnosis; do not guess additional causes
+or change flags/policies/profiles. Desktop Notifications ON/OFF has not been
+reported separately. Authenticated WhatsApp session remains untouched.
+
+2026-11-11 NOTIFICATION REGISTRATION CHECK: owner cannot find Fourdock WhatsApp
+in macOS Notifications. Read-only app metadata confirms the installed PWA and
+Chrome157.0.8103.39. Matching notification-preference metadata contains Chrome
+and Chrome AlertNotificationService entries but no Fourdock PWA entry; no message
+database/browser storage was opened. Do not repeat the nonexistent per-PWA settings
+path as established. Owner test-button result is pending: press Prova notifica e
+badge from the installed app and observe system permission prompt/banner/sender.
+Chrome's primary docs describe a separate OS prompt on first post-install notice,
+including migration from prior browser permission; this is a possible next step,
+not a confirmed diagnosis. Preserve auth/profile and do not change OS preferences.
+
 2026-11-11 OWNER NOTIFICATION CHECK: incoming updates and Dock unread number
 are now explicitly confirmed by owner. Sender/message preview banners remain
 missing/unverified. Source shows Desktop Notifications is a separate per-origin

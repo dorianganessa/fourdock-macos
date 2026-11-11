@@ -54,6 +54,29 @@ Sanitized automated results: [evidence/ui-results.json](evidence/ui-results.json
 
 Existing Chrome/native test results cannot be transferred to this candidate.
 
+Notification registration investigation: owner reports no Fourdock WhatsApp entry
+in macOS Notifications. Read-only metadata confirms the installed PWA and Chrome
+157.0.8103.39; matching OS preference records contain Google Chrome and its alert
+service, without the PWA bundle entry. This does not establish why registration
+is missing or which sender will deliver a new notice. Owner test-button result
+is requested; no settings changed, no browser storage/notification-message database
+read, no account/session reset. The earlier per-PWA settings instruction assumed
+registration prematurely. Chrome's documented first-notification permission flow:
+https://developer.chrome.com/blog/notification-attribution-macos
+
+Owner clarification: test button was already pressed and permission granted.
+Do not treat a never-requested permission as the established explanation.
+Matching OS preference records still contain only Chrome entries. Past test
+banner/badge-only result is requested to distinguish delivery from app opt-in;
+the in-app toggle state is also not yet reported. No settings or account changes.
+
+Source-only check at the exact installed Chrome tag157.0.8103.39:
+kAppShimNotificationAttribution is disabled by default in chrome_features.cc.
+Runtime field trials can override this, so version alone does not establish
+that this feature is active; actual runtime state remains unverified. No flags
+or profile storage were read/changed. Primary pinned source:
+https://chromium.googlesource.com/chromium/src/+/refs/tags/157.0.8103.39/chrome/common/chrome_features.cc
+
 First live attempt, 2026-11-11: owner reports completing the real browser passkey;
 sanitized endpoint confirms assertion_submitted and active=true. This verifies
 the response transport/submission stage, not completed WhatsApp authentication.

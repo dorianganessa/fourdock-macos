@@ -32,10 +32,15 @@ The production monitor, its store and its dirty source tree are untouched.
 
 Next three actions:
 
-1. Owner enables DESKTOP NOTIFICATIONS in the PWA settings (separate opt-in,
-   OFF by default), then verifies sender/preview banner and click destination
-   on a genuine incoming event while minimized. Incoming updates and Dock count
-   are now owner-confirmed; banner delivery/content remains open.
+1. Diagnose notification delivery before recommending a per-PWA macOS setting:
+   owner reports no Fourdock entry, matching preference metadata confirms only
+   Chrome entries despite installed PWA/Chrome157. Owner presses Prova notifica e
+   badge in the installed app and reports permission prompt/banner/sender. Then
+   enable DESKTOP NOTIFICATIONS (separate opt-in) and verify a real incoming
+   sender/preview banner and click. Incoming updates/Dock count are confirmed.
+   Owner has clarified the test was already pressed and permission granted:
+   obtain whether that test showed a banner or only a badge, rather than asking
+   to grant permission again. In-app desktop-notification toggle is unreported.
 2. Owner closes/reopens the PWA and confirms the existing session returns;
    preserve the now authenticated store, without pairing or resetting again.
 3. Make tunnel/startup behavior suitable for daily use after those checks.
