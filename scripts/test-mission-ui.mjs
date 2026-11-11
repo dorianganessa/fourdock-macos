@@ -70,11 +70,17 @@ try {
   const assertionResult = page.evaluate(extensionId => new Promise(resolve => {
     chrome.runtime.sendMessage(extensionId, { type: 'assert', publicKey: {
       rpId: 'whatsapp.com', challenge: btoa('Fourdock synthetic challenge only').replace(/=+$/, ''), userVerification: 'required', allowCredentials: [],
-    } }, result => resolve({ ok: result?.ok === true, valid: result?.assertion?.type === 'public-key', error: !!chrome.runtime.lastError }));
+    } }, result => resolve({ ok: result?.ok === true, valid: result?.assertion?.type === 'public-key', error: !!chrome.runtime.lastError,
+      ...(result?.code ? { failureStage: result.code } : {}) }));
   }), config.extensionId);
   const wa = await waEvent;
-  await wa.waitForURL('https://web.whatsapp.com/');
-  await wa.waitForFunction(() => document.getElementById('fourdock-passkey'));
+  try {
+    await wa.waitForURL('https://web.whatsapp.com/');
+    await wa.waitForFunction(() => document.getElementById('fourdock-passkey'));
+  } catch (error) {
+    console.error('Synthetic connector outcome:', await assertionResult);
+    throw error;
+  }
   assert.equal(await wa.evaluate(() => window.syntheticCalled), undefined);
   await wa.keyboard.press('Tab'); await wa.keyboard.press('Enter');
   const outcome = await assertionResult;

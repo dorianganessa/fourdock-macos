@@ -26,7 +26,7 @@ if (args.includes('auth') && args.includes('pair')) {
 } else if (args.includes('sync')) {
   console.error(JSON.stringify({ event: 'connected' }));
   const heartbeat = () => {
-    if (process.env.WACLI_STORE_DIR) fs.writeFileSync(path.join(process.env.WACLI_STORE_DIR, 'HEARTBEAT'), String(Date.now()));
+    if (process.env.WACLI_STORE_DIR) fs.writeFileSync(path.join(process.env.WACLI_STORE_DIR, 'HEARTBEAT'), new Date().toISOString());
   };
   heartbeat(); setInterval(heartbeat, 5000);
 } else if (args.includes('doctor')) {
