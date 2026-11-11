@@ -68,7 +68,18 @@ Owner clarification: test button was already pressed and permission granted.
 Do not treat a never-requested permission as the established explanation.
 Matching OS preference records still contain only Chrome entries. Past test
 banner/badge-only result is requested to distinguish delivery from app opt-in;
-the in-app toggle state is also not yet reported. No settings or account changes.
+the in-app toggle state is also not yet reported. Owner subsequently recalls only
+the permission popup and no actual banner. Asked for Chrome OS Allow notifications/
+Desktop and the app toggle state; answers pending. Static sw.js/manifest HTTP200,
+MIME and expected content are verified; runtime worker/OS delivery is not. No
+settings or account changes.
+
+Cause identified by owner: two visible Google Chrome notification entries were
+BOTH OFF in macOS. This matches the two registrations observed read-only and
+explains banner suppression despite earlier browser permission. Owner will enable
+OS notifications/Desktop/previews and test once; real-message app opt-in remains
+separate. Banner delivery/sender is still unconfirmed. No code/OS/profile/session
+change was made by the agent; no new authentication is required.
 
 Source-only check at the exact installed Chrome tag157.0.8103.39:
 kAppShimNotificationAttribution is disabled by default in chrome_features.cc.

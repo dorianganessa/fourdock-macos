@@ -39,8 +39,11 @@ Next three actions:
    enable DESKTOP NOTIFICATIONS (separate opt-in) and verify a real incoming
    sender/preview banner and click. Incoming updates/Dock count are confirmed.
    Owner has clarified the test was already pressed and permission granted:
-   obtain whether that test showed a banner or only a badge, rather than asking
-   to grant permission again. In-app desktop-notification toggle is unreported.
+   the only recalled popup was the permission dialog, with no actual banner.
+   Cause now identified by owner: TWO Google Chrome OS entries, BOTH OFF. Owner
+   enables both entries, Desktop and Show previews When Unlocked, then runs one
+   test and observes the sender. Check in-app DESKTOP NOTIFICATIONS ON for real
+   incoming previews. Successful banner delivery remains to be confirmed.
 2. Owner closes/reopens the PWA and confirms the existing session returns;
    preserve the now authenticated store, without pairing or resetting again.
 3. Make tunnel/startup behavior suitable for daily use after those checks.

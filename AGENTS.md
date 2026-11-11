@@ -1,5 +1,15 @@
 # Fourdock
 
+2026-11-11 NOTIFICATION CAUSE FOUND: owner found two visible Google Chrome
+entries in macOS Notifications and reports BOTH OFF. These match the previously
+observed Chrome and AlertNotificationService registrations. OS notification
+disablement explains absent banners despite granted browser permission. Owner
+should enable both entries, Desktop and Show previews When Unlocked, then run
+one synthetic test and observe sender/banner; no new permission-grant hypothesis,
+profile reset, auth retry or feature-flag change is needed. Real incoming banners
+also require Fourdock DESKTOP NOTIFICATIONS ON (state still unreported). Test
+delivery/sender and genuine preview remain pending; Dock count/update pass stands.
+
 2026-11-11 PINNED CHROME SOURCE: official tag157.0.8103.39 chrome_features.cc
 defines kAppShimNotificationAttribution disabled by default. Runtime field trials
 can override this; no profile storage/runtime feature state was read or changed.
@@ -8,11 +18,13 @@ Do not turn this source default into a confirmed diagnosis of this profile.
 
 2026-11-11 OWNER PERMISSION CLARIFICATION: owner already pressed the notification
 test button and granted permission. Do not repeat that as the missing setup step.
-OS metadata still lists only Chrome entries. Requested the past test outcome:
-actual banner versus Dock number only (and whether text was hidden). This is the
-next required context before another diagnosis; do not guess additional causes
-or change flags/policies/profiles. Desktop Notifications ON/OFF has not been
-reported separately. Authenticated WhatsApp session remains untouched.
+OS metadata still lists only Chrome entries. Owner now recalls the permission
+dialog only, no actual banner. Asked the next concrete controls: System Settings
+Notifications -> Google Chrome -> Allow notifications and Desktop; and Fourdock
+DESKTOP NOTIFICATIONS ON/OFF. Both are still unreported. The deployed sw.js and
+manifest return200 with correct MIME/content; this does not prove runtime worker
+or OS delivery. Do not guess further causes or change flags/policies/profiles.
+Authenticated WhatsApp session remains untouched.
 
 2026-11-11 NOTIFICATION REGISTRATION CHECK: owner cannot find Fourdock WhatsApp
 in macOS Notifications. Read-only app metadata confirms the installed PWA and
