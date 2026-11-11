@@ -25,6 +25,9 @@ jobs:
       - run: npm ci --ignore-scripts
       - run: npm ci --ignore-scripts --prefix clients/mission-control
       - run: npm run build --prefix clients/mission-control
+      - run: docker compose -f clients/mission-control/compose.candidate.yml config --quiet
+        env:
+          FOURDOCK_WACLI_IMAGE: local-test-source:unused
       - run: npm test --prefix clients/mission-control
       - run: npx playwright install --with-deps chromium
       - run: xvfb-run node scripts/test-mission-ui.mjs

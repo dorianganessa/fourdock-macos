@@ -2,6 +2,8 @@
 // Synthetic contract fixture. It contains no WhatsApp client or network code.
 import { createInterface } from 'node:readline';
 import crypto from 'node:crypto';
+import fs from 'node:fs';
+import path from 'node:path';
 const args = process.argv.slice(2);
 const write = value => process.stdout.write(JSON.stringify(value) + '\n');
 const ok = data => write({ success: true, data, error: null });
@@ -23,7 +25,10 @@ if (args.includes('auth') && args.includes('pair')) {
   console.log('Synthetic sync --send-spacing');
 } else if (args.includes('sync')) {
   console.error(JSON.stringify({ event: 'connected' }));
-  setInterval(() => {}, 10000);
+  const heartbeat = () => {
+    if (process.env.WACLI_STORE_DIR) fs.writeFileSync(path.join(process.env.WACLI_STORE_DIR, 'HEARTBEAT'), String(Date.now()));
+  };
+  heartbeat(); setInterval(heartbeat, 5000);
 } else if (args.includes('doctor')) {
   ok({ authenticated: true, connected: true, connection_state: 'connected', fts_enabled: true,
     store: { messages: 4, chats: 2, contacts: 2, groups: 0 } });

@@ -27,7 +27,9 @@ if (!process.env.VITEST) {
   } else if (!process.env.WACLI_BIN || !path.isAbsolute(process.env.WACLI_BIN)) {
     throw new Error('Live mode needs an explicit absolute WACLI_BIN with auth pair support');
   }
-  process.env.WACLI_DISABLE_SYNC = '1';
+  // Only the bundled synthetic process may start automatically. Real pairing
+  // and real synchronization remain explicit actions in live mode.
+  process.env.WACLI_DISABLE_SYNC = mode === 'demo' ? '0' : '1';
   process.env.WACLI_UPDATE_CHECK = '0';
   process.env.PORT ||= '4702';
   process.env.LOG_LEVEL ||= 'ERROR';
