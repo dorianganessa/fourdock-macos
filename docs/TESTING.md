@@ -38,9 +38,14 @@ Sanitized automated results: [evidence/ui-results.json](evidence/ui-results.json
   demo and connected a private SSH loopback tunnel. Local HTTP health confirms
   live mode, no stored session, authenticated=false and sync stopped. No pairing
   was started. The live candidate now occupies 127.0.0.1:4702; demo is stopped.
-- NON ESEGUITO: individual target PWA icon/OS badge/banner confirmation, helper
-  installation in the PWA profile, live passkey/linking/persistence and incoming
-  events. Await owner actions in the app; do not inspect account content.
+- PASS, LIVE OWNER-ASSISTED: second attempt completed the real QR/browser-passkey
+  and confirmation path. Owner reports apparent success; read-only HTTP confirms
+  phase=paired, active=false, storedSession=true, authenticated=true, connected=true,
+  connectionState=connected and sync=running. This includes helper transport and
+  sync startup, not proof of complete history or long-term connection stability.
+- NON ESEGUITO: individual target PWA icon/OS badge/banner confirmation, session
+  persistence after reopen/restart and genuine incoming events. No account content
+  was inspected and no real message was sent by the agent. Preserve the session.
 
 Existing Chrome/native test results cannot be transferred to this candidate.
 
@@ -52,7 +57,9 @@ overlooked confirmation. API showed cancelled/inactive and sync stopped; fresh
 read-only CLI auth status was false. Atomically preserved the unauthenticated
 attempt within the private candidate volume and created a fresh0700 store.
 HTTP confirms inactive/no stored session. No agent started another pairing.
-No code change or additional synthetic test was needed; full auth remains open.
+No code change or additional synthetic test was needed. The subsequent successful
+attempt above supersedes the earlier incomplete-auth status for this candidate;
+it does not change the original official-web/native authentication test results.
 
 ## Reopened wacli reuse research, 2026-11-10
 

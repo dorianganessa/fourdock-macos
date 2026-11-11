@@ -1,5 +1,16 @@
 # Fourdock
 
+2026-11-11 LIVE AUTH SUCCEEDED: owner retried and reports it appears successful.
+Read-only HTTP status confirms live phase=paired, active=false, storedSession=true,
+authenticated=true, connected=true, connectionState=connected and sync=running.
+The owner-assisted QR/browser-passkey/confirmation flow has now completed in
+the independent Mission Control/wacli candidate. Preserve this session; no reset,
+new pairing, credential reads, message inspection or sends are needed. This is
+not a pass for the original official-web/native implementations. Next acceptance
+checks: PWA close/reopen persistence, genuine incoming notification/Dock badge,
+then durable tunnel/startup behavior. Individual PWA OS outcomes remain unconfirmed;
+the previous generic "fatto" does not independently pass all of them.
+
 2026-11-11 FIRST LIVE ATTEMPT: owner completed the browser passkey and reported
 waiting. Safe endpoint showed assertion_submitted, active=true: response reached
 the CLI and was submitted; pairing/authentication was not complete. Owner then

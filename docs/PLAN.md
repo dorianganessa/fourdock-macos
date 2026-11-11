@@ -32,13 +32,11 @@ The production monitor, its store and its dirty source tree are untouched.
 
 Next three actions:
 
-1. Owner loads connector/ in the same Chrome profile as the installed PWA and
-   reloads the PWA. The announced demo-to-live transition is complete: private
-   loopback tunnel active; read-only local health says live, no session, sync off.
-2. Owner starts the new candidate's linking and completes the real passkey and
-   explicit confirmation, then loads conversations. No agent starts pairing.
-3. Record actual PWA icon/badge/banner outcomes ("fatto" reported, details still
-   requested), restart persistence and genuine incoming-event behavior.
+1. Owner closes/reopens the PWA and confirms the existing session returns;
+   preserve the now authenticated store, without pairing or resetting again.
+2. Verify actual PWA notification/Dock badge and click destination using a genuine
+   incoming event with notifications enabled; OS subtests remain unconfirmed.
+3. Make tunnel/startup behavior suitable for daily use after those checks.
 
 The tunnel is currently a running process, not an automatically installed login
 service. No production monitor service/session or regular Chrome profile changed.
@@ -50,7 +48,15 @@ Fresh read-only CLI auth status was false. Only the owned candidate's store was
 atomically renamed within its private volume and replaced with an empty0700
 directory; no credentials copied/deleted, no monitor change, no automatic retry.
 Endpoint confirms inactive/no session. Next owner attempt must complete phone
-AND PWA confirmations after passkey. Full linking remains unverified.
+AND PWA confirmations after passkey. That attempt did not complete linking.
+
+Second owner-controlled attempt SUCCEEDED: safe read-only HTTP status now shows
+phase=paired, active=false, storedSession=true, authenticated=true, connected=true,
+connectionState=connected and sync=running. The owner reports it appears successful.
+This confirms live QR/browser-passkey/confirmation and synchronization startup
+for this candidate. PWA restart persistence, real incoming events, OS badge/banner
+and durable connection startup remain separate checks. No messages were inspected
+or sent by the agent; preserve the successful session.
 
 See clients/mission-control/FOURDOCK.md for exact commands and scope.
 
