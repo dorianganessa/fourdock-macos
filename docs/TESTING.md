@@ -43,9 +43,14 @@ Sanitized automated results: [evidence/ui-results.json](evidence/ui-results.json
   phase=paired, active=false, storedSession=true, authenticated=true, connected=true,
   connectionState=connected and sync=running. This includes helper transport and
   sync startup, not proof of complete history or long-term connection stability.
-- NON ESEGUITO: individual target PWA icon/OS badge/banner confirmation, session
-  persistence after reopen/restart and genuine incoming events. No account content
-  was inspected and no real message was sent by the agent. Preserve the session.
+- PASS MANUALE CONFERMATO: owner reports incoming updates arrive and the unread
+  number appears on the PWA Dock icon. This passes those subtests only.
+- NON ESEGUITO: sender/preview banner delivery, notification click destination
+  and session persistence after reopen/restart. Source review confirms a separate
+  DESKTOP NOTIFICATIONS opt-in (default OFF), while the Dock badge is independent.
+  Existing content already includes sender/message preview. Owner setup check
+  is next; no account content or browser storage was inspected, no real message
+  was sent by the agent, and the authenticated session is preserved.
 
 Existing Chrome/native test results cannot be transferred to this candidate.
 

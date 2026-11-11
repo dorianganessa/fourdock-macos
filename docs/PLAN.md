@@ -32,10 +32,12 @@ The production monitor, its store and its dirty source tree are untouched.
 
 Next three actions:
 
-1. Owner closes/reopens the PWA and confirms the existing session returns;
+1. Owner enables DESKTOP NOTIFICATIONS in the PWA settings (separate opt-in,
+   OFF by default), then verifies sender/preview banner and click destination
+   on a genuine incoming event while minimized. Incoming updates and Dock count
+   are now owner-confirmed; banner delivery/content remains open.
+2. Owner closes/reopens the PWA and confirms the existing session returns;
    preserve the now authenticated store, without pairing or resetting again.
-2. Verify actual PWA notification/Dock badge and click destination using a genuine
-   incoming event with notifications enabled; OS subtests remain unconfirmed.
 3. Make tunnel/startup behavior suitable for daily use after those checks.
 
 The tunnel is currently a running process, not an automatically installed login

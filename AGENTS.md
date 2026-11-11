@@ -1,5 +1,16 @@
 # Fourdock
 
+2026-11-11 OWNER NOTIFICATION CHECK: incoming updates and Dock unread number
+are now explicitly confirmed by owner. Sender/message preview banners remain
+missing/unverified. Source shows Desktop Notifications is a separate per-origin
+localStorage opt-in, OFF by default; the test banner/OS permission do not enable
+it. Settings gear -> DESKTOP NOTIFICATIONS -> ON; allow permission, then test a
+genuine incoming event while PWA minimized. Existing notification content already
+includes sender and preview (group sender in body); visible current chat, muted
+chats, own messages and reactions are intentionally suppressed. If banners appear
+but text is hidden, check macOS per-app Show previews. Do not inspect account
+content/browser storage or change system preferences automatically.
+
 2026-11-11 LIVE AUTH SUCCEEDED: owner retried and reports it appears successful.
 Read-only HTTP status confirms live phase=paired, active=false, storedSession=true,
 authenticated=true, connected=true, connectionState=connected and sync=running.
