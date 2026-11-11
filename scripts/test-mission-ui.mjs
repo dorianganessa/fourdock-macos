@@ -89,7 +89,7 @@ try {
       rpId: 'whatsapp.com', challenge: btoa('Fourdock synthetic challenge only').replace(/=+$/, ''), userVerification: 'required', allowCredentials: [],
     } }, result => resolve({ ok: result?.ok === true, valid: result?.assertion?.type === 'public-key', error: !!chrome.runtime.lastError,
       ...(result?.code ? { failureStage: result.code } : {}) }));
-  }), config.extensionId);
+  }), config.extensionId).catch(() => ({ ok: false, valid: false, error: true, failureStage: 'fixture-page-closed' }));
   const wa = await waEvent;
   try {
     await wa.goto('https://web.whatsapp.com/');
@@ -100,7 +100,10 @@ try {
     throw error;
   }
   assert.equal(await wa.evaluate(() => window.syntheticCalled), undefined);
-  await wa.getByRole('heading', { name: 'Synthetic WebAuthn fixture' }).click();
+  await wa.bringToFront();
+  // The closed shadow overlay covers the fixture heading. Start keyboard
+  // traversal from the document, then activate its real button with trusted keys.
+  await wa.evaluate(() => { document.body.tabIndex = -1; document.body.focus(); });
   await wa.keyboard.press('Tab'); await wa.keyboard.press('Enter');
   const outcome = await assertionResult;
   assert.deepEqual(outcome, { ok: true, valid: true, error: false });
