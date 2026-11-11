@@ -32,9 +32,15 @@ Sanitized automated results: [evidence/ui-results.json](evidence/ui-results.json
   DNS-confined first request preceding automation attachment. No real WebAuthn
   ceremony occurs; OS badge/banner delivery is stubbed. Screenshot inspected.
   [Sanitized browser evidence](evidence/mission-control-ui.json).
-- NON ESEGUITO: normal target PWA install/OS badge/banner, live owner passkey,
-  linking/persistence and incoming events. Owner demo question is pending.
-  The local demo is available at 127.0.0.1:4702; it has synthetic data only.
+- Owner replied "fatto" to the PWA install/test steps. Separate icon, Dock badge3
+  and banner outcomes remain requested; do not infer all passed from that reply.
+- PASS AUTOMATICO: after announcing the transition, stopped only the owned idle
+  demo and connected a private SSH loopback tunnel. Local HTTP health confirms
+  live mode, no stored session, authenticated=false and sync stopped. No pairing
+  was started. The live candidate now occupies 127.0.0.1:4702; demo is stopped.
+- NON ESEGUITO: individual target PWA icon/OS badge/banner confirmation, helper
+  installation in the PWA profile, live passkey/linking/persistence and incoming
+  events. Await owner actions in the app; do not inspect account content.
 
 Existing Chrome/native test results cannot be transferred to this candidate.
 

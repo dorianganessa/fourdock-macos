@@ -1,5 +1,17 @@
 # Fourdock
 
+2026-11-11 LIVE HANDOFF: owner replied "fatto" to the PWA demo instructions.
+Installation/test completion reported; individual icon/badge/banner outcomes
+are still requested, so do not mark all three passed. After announcing the
+transition, stopped only the owned idle demo and started a private SSH loopback
+tunnel at 127.0.0.1:4702 to the independent live candidate. Sanitized local HTTP
+check confirms mode=live, storedSession=false, authenticated=false, sync stopped.
+No live pairing was started. Tunnel is a running process, not a login service.
+Next owner action: load clients/mission-control/connector in the SAME Chrome
+profile as the PWA, reload PWA, then explicitly start linking/passkey/confirmation.
+Never read/log QR/assertions/messages; observe only safe status fields if needed.
+Do not restart the demo on the live port or switch origins silently.
+
 2026-11-11 CANDIDATE CHECKPOINT: workflow 42960440631 passes at 83d4a37:
 build, compose validation, 558 API + 486 UI tests and four synthetic browser
 checks (Chromium 141). The fixture controls initial tab navigation to keep DNS

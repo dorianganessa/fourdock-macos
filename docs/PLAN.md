@@ -32,10 +32,16 @@ The production monitor, its store and its dirty source tree are untouched.
 
 Next three actions:
 
-1. Owner installs the demo PWA normally and checks its Dock badge/banner identity.
-2. After that check, connect the private tunnel and load the helper extension.
-   Do not silently switch the demo origin to the live backend during its test.
-3. Owner performs the candidate's live pairing/restart and incoming-event checks.
+1. Owner loads connector/ in the same Chrome profile as the installed PWA and
+   reloads the PWA. The announced demo-to-live transition is complete: private
+   loopback tunnel active; read-only local health says live, no session, sync off.
+2. Owner starts the new candidate's linking and completes the real passkey and
+   explicit confirmation, then loads conversations. No agent starts pairing.
+3. Record actual PWA icon/badge/banner outcomes ("fatto" reported, details still
+   requested), restart persistence and genuine incoming-event behavior.
+
+The tunnel is currently a running process, not an automatically installed login
+service. No production monitor service/session or regular Chrome profile changed.
 
 See clients/mission-control/FOURDOCK.md for exact commands and scope.
 
