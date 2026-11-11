@@ -30,6 +30,14 @@ try {
   const worker = context.serviceWorkers()[0] || await context.waitForEvent('serviceworker');
   await worker.evaluate(() => {
     globalThis.syntheticInjectionErrors = [];
+    // Extension-created first navigations can precede Playwright attachment.
+    // Keep DNS confinement, create a blank target, then navigate the attached
+    // page below so its HTTPS document is served exclusively by our fixture.
+    const createTab = chrome.tabs.create.bind(chrome.tabs);
+    chrome.tabs.create = options => {
+      if (options.url !== 'https://web.whatsapp.com/') throw new Error('Unexpected fixture destination');
+      return createTab({ ...options, url: 'about:blank' });
+    };
     const inject = chrome.scripting.executeScript.bind(chrome.scripting);
     chrome.scripting.executeScript = async request => {
       try { return await inject(request); }
@@ -84,7 +92,7 @@ try {
   }), config.extensionId);
   const wa = await waEvent;
   try {
-    await wa.waitForURL('https://web.whatsapp.com/');
+    await wa.goto('https://web.whatsapp.com/');
     await wa.waitForFunction(() => document.getElementById('fourdock-passkey'));
   } catch (error) {
     console.error('Synthetic connector outcome:', await assertionResult);
@@ -92,14 +100,16 @@ try {
     throw error;
   }
   assert.equal(await wa.evaluate(() => window.syntheticCalled), undefined);
+  await wa.getByRole('heading', { name: 'Synthetic WebAuthn fixture' }).click();
   await wa.keyboard.press('Tab'); await wa.keyboard.press('Enter');
   const outcome = await assertionResult;
   assert.deepEqual(outcome, { ok: true, valid: true, error: false });
-  results.push('Loaded Chrome connector delegates only to genuine-origin fixture after trusted click; no real WebAuthn ceremony');
+  results.push('Loaded Chrome connector delegates to HTTPS-origin fixture after trusted click; initial tab navigation is attached by the fixture, no real WebAuthn ceremony');
   await page.bringToFront();
   await mkdir('dist', { recursive: true });
   await page.screenshot({ path: 'dist/mission-control-synthetic.png' });
   await writeFile('dist/mission-control-ui.json', JSON.stringify({ date: new Date().toISOString(), fixture: true,
+    browserVersion: context.browser()?.version(), source: process.env.GITHUB_SHA,
     osDeliveryTested: false, realAuthenticationTested: false, results }, null, 2));
   console.log(JSON.stringify({ syntheticChecks: results.length, results }, null, 2));
 } finally { await context?.close(); app.kill('SIGTERM'); }
