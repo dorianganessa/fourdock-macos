@@ -58,8 +58,15 @@ try {
     window.syntheticBadges = [];
     Object.defineProperty(navigator, 'setAppBadge', { value: async count => window.syntheticBadges.push(count) });
     Object.defineProperty(navigator, 'clearAppBadge', { value: async () => window.syntheticBadges.push(0) });
-    Notification.requestPermission = async () => 'granted';
-    ServiceWorkerRegistration.prototype.showNotification = async (title, options) => { window.syntheticNotice = { title, body: options.body }; };
+    window.Notification = class {
+      static permission = 'granted';
+      static requestPermission = async () => 'granted';
+      constructor(title, options) {
+        window.syntheticNotice = { title, body: options.body };
+        setTimeout(() => this.onshow?.(), 10);
+      }
+      close() {}
+    };
   });
   await page.goto('http://127.0.0.1:4702');
   await page.getByText('DEMO · solo conversazioni sintetiche').waitFor();
@@ -72,8 +79,10 @@ try {
   for (const icon of manifest.icons) assert((await fetch(`http://127.0.0.1:4702${icon.src}`)).ok);
   await page.getByRole('button', { name: 'Prova notifica e badge' }).click();
   await page.waitForFunction(() => window.syntheticNotice?.title === 'Fourdock WhatsApp');
+  await page.getByText(/Browser reported the test notification\./).waitFor();
+  assert((await page.evaluate(() => window.syntheticNotice.body)).includes('Demo sender'));
   assert((await page.evaluate(() => window.syntheticBadges)).includes(3));
-  results.push('PWA metadata/icons, service worker and notification/badge API calls pass; OS display stubbed');
+  results.push('PWA metadata/icons, page Notification preview/status and independent badge API calls pass; OS display stubbed');
   await page.getByRole('button', { name: 'Collega WhatsApp', exact: true }).click();
   await page.getByRole('button', { name: 'Avvia simulazione' }).click();
   await page.getByRole('button', { name: 'Simula conferma passkey' }).click();

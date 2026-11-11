@@ -1,0 +1,5 @@
+# Use an explicitly selected, already built candidate. Keep its API and CLI.
+# The web/ directory is the tested Fourdock-WhatsApp-web CI artifact.
+ARG FOURDOCK_BASE_IMAGE
+FROM ${FOURDOCK_BASE_IMAGE}
+COPY --chown=node:node web/ /app/apps/web/dist/

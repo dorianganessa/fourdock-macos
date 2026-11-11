@@ -32,6 +32,15 @@ The production monitor, its store and its dirty source tree are untouched.
 
 Next three actions:
 
+Current notification repair: owner enabled the actual in-app toggle but the test
+still does nothing. The old SW-ready test can wait forever (reproduced), unlike
+the page Notification path used by incoming messages. Replacement uses that path,
+shows browser feedback with an eight-second bound and keeps badge restoration
+independent. Validate tests/CI, deploy its tested web-only artifact onto the same
+candidate API/CLI, preserve the authenticated volume and restore running sync.
+Owner then reloads and reports the inline status and any actual banner. Do not
+reset/re-pair or assume registration/physical banner delivery from API success.
+
 1. Diagnose notification delivery before recommending a per-PWA macOS setting:
    owner reports no Fourdock entry, matching preference metadata confirms only
    Chrome entries despite installed PWA/Chrome157. Owner presses Prova notifica e

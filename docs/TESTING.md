@@ -14,6 +14,16 @@ Sanitized automated results: [evidence/ui-results.json](evidence/ui-results.json
 
 ## Mission Control candidate implementation, 2026-11-11
 
+Notification-test repair in progress: owner enabled the app toggle; no visible
+test result. Regression reproduced against the old header: a never-ready service
+worker prevents any notification creation and the button reports no progress.
+New header uses incoming messages' page Notification API, explicit browser events
+and an eight-second no-feedback deadline; synthetic badge restoration is separate.
+Five focused cases cover the stalled-worker regression, no response, browser
+error, denied permission without repeat prompting, and constructor rejection.
+Production web build passed; focused validation/updated CI are pending. These
+checks do not prove the owner's actual worker state or physical banner display.
+
 - PASS AUTOMATICO: local Node26 production build, 558 API tests and 486 UI tests
   on the pinned reused client plus Fourdock pairing adapter. Web tests explicitly
   disable Node experimental webstorage for workers so jsdom supplies localStorage;

@@ -33,6 +33,11 @@ jobs:
       - run: xvfb-run node scripts/test-mission-ui.mjs
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
+          name: Fourdock-WhatsApp-web
+          path: clients/mission-control/apps/web/dist
+          if-no-files-found: error
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
           name: Fourdock-WhatsApp-synthetic-evidence
           path: dist/mission-control-*
           if-no-files-found: error

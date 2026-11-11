@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { readUnreadTotal } from '../../hooks/useUnreadBadge.ts';
+import { notificationPermission, notificationsEnabled, requestNotificationPermission } from '../../lib/notifications.ts';
 
 type PairState = { mode?: string; phase: string; active?: boolean; owner?: string; failure?: string; storedSession?: boolean;
   request?: { type: string; id?: string; png?: string; code?: string; publicKey?: Record<string, unknown> } };
@@ -18,9 +19,13 @@ export function Fourdock() {
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const [expanded, setExpanded] = useState(false);
+  const [testRunning, setTestRunning] = useState(false);
+  const [noticeStatus, setNoticeStatus] = useState('');
+  const testCleanup = useRef<(() => void) | undefined>(undefined);
   const [installed, setInstalled] = useState(window.matchMedia?.('(display-mode: standalone)')?.matches ?? false);
   const owner = useRef('');
   const install = useRef<Event & { prompt(): Promise<void> } | null>(null);
+  useEffect(() => () => testCleanup.current?.(), []);
   useEffect(() => {
     const poll = () => { api('', 'GET', owner.current).then(setState).catch(() => {}); };
     poll(); const timer = expanded ? setInterval(poll, 1000) : undefined;
@@ -59,17 +64,50 @@ export function Fourdock() {
     assertion = undefined;
   };
   const notify = async () => {
-    if (!('Notification' in window)) throw new Error('Notifiche non disponibili in questo browser.');
-    if (await Notification.requestPermission() !== 'granted') throw new Error('Consenti le notifiche di questa app nelle impostazioni.');
-    const service = await navigator.serviceWorker.ready;
-    await service.showNotification('Fourdock WhatsApp', { body: 'Notifica di prova: nessun messaggio è stato inviato.', icon: '/icons/app-192.png', tag: 'fourdock-test' });
-    const badges = navigator as Navigator & { setAppBadge?: (count: number) => Promise<void>; clearAppBadge?: () => Promise<void> };
-    await badges.setAppBadge?.(3);
-    setTimeout(() => {
-      const count = readUnreadTotal(queryClient);
-      if (count) void badges.setAppBadge?.(count).catch(() => {});
-      else void badges.clearAppBadge?.().catch(() => {});
-    }, 10000);
+    testCleanup.current?.();
+    setTestRunning(true);
+    setNoticeStatus('Checking notification permission…');
+    try {
+      if (!('Notification' in window)) throw new Error('Notifications are unavailable in this browser.');
+      if (await requestNotificationPermission() !== 'granted') throw new Error('Browser notification permission is blocked.');
+      const badges = navigator as Navigator & { setAppBadge?: (count: number) => Promise<void>; clearAppBadge?: () => Promise<void> };
+      const restoreBadge = () => {
+        const count = readUnreadTotal(queryClient);
+        if (count) void badges.setAppBadge?.(count).catch(() => {});
+        else void badges.clearAppBadge?.().catch(() => {});
+      };
+      // Keep the badge independent of banner delivery and restore real unread
+      // state even when the browser rejects or never confirms the notification.
+      void badges.setAppBadge?.(3).catch(() => {});
+      let notice: Notification | undefined;
+      let deadline: ReturnType<typeof setTimeout> | undefined;
+      let complete = false;
+      const restoreTimer = setTimeout(() => { restoreBadge(); notice?.close(); }, 10000);
+      testCleanup.current = () => {
+        complete = true; clearTimeout(deadline); clearTimeout(restoreTimer);
+        if (notice) { notice.onshow = null; notice.onerror = null; notice.close(); }
+        restoreBadge();
+      };
+      const report = (message: string) => {
+        if (complete) return;
+        complete = true; clearTimeout(deadline);
+        setNoticeStatus(message); setTestRunning(false);
+      };
+      // Exercise the same page Notification API used by incoming messages.
+      // No service-worker-ready wait: that promise can remain pending forever.
+      notice = new Notification('Fourdock WhatsApp', {
+        body: 'Demo sender: this is a sample message preview. No message was sent.',
+        icon: '/icons/app-192.png', tag: 'fourdock-test', silent: false,
+      });
+      setNoticeStatus('Test preview created; waiting for browser feedback…');
+      deadline = setTimeout(() => report('Browser gave no notification confirmation after 8 seconds.'), 8000);
+      notice.onshow = () => report('Browser reported the test notification. If no banner appeared, check macOS notification delivery.');
+      notice.onerror = () => report('The browser reported an error displaying the test preview.');
+    } catch (reason) {
+      setTestRunning(false);
+      setNoticeStatus('The test failed before a preview could be displayed.');
+      throw reason instanceof DOMException ? new Error(`${reason.name}: ${reason.message}`) : reason;
+    }
   };
   return <section className="px-4 py-2 border-b border-mc-border bg-mc-surface text-mc-text text-xs" aria-label="Fourdock">
     <div className="flex items-center gap-3 flex-wrap">
@@ -80,8 +118,12 @@ export function Fourdock() {
         if (install.current) await install.current.prompt();
         else setError('Nel menu Chrome scegli Trasmetti, salva e condividi → Installa pagina come app.');
       })}>Installa come app</button>}
-      <button className="underline" onClick={() => perform(notify)}>Prova notifica e badge</button>
+      <button disabled={busy || testRunning} className="underline disabled:opacity-50" onClick={() => perform(notify)}>Prova notifica e badge</button>
     </div>
+    {noticeStatus && <div role="status" className="py-2 space-y-1">
+      <p>{noticeStatus}</p>
+      <p>Incoming previews: {notificationsEnabled() ? 'ON' : 'OFF'} · Browser permission: {notificationPermission()} · Window: {window.matchMedia?.('(display-mode: standalone)')?.matches ? 'app' : 'browser'}</p>
+    </div>}
     {expanded && <div className="py-3 flex gap-3 flex-col max-w-xl">
       <p>{demo ? 'Questa prova simula il collegamento. Non scansionare codici e non usare una passkey reale.' : 'Collega un nuovo dispositivo con la tua passkey. La sessione resta in questa istanza del client.'}</p>
       <p role="status">{state.failure ? 'Collegamento interrotto. Nessun nuovo tentativo automatico.' : state.phase === 'paired' ? 'Collegamento completato.' : state.phase === 'passkey' ? 'Conferma la passkey per continuare.' : state.phase === 'confirm' ? 'Conferma il collegamento.' : state.active ? 'Collegamento in corso…' : 'Pronto per iniziare.'}</p>

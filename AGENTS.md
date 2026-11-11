@@ -1,5 +1,18 @@
 # Fourdock
 
+2026-11-11 NOTIFICATION TEST FIX IN VALIDATION: owner enabled the IN-APP toggle
+but test still gives no visible result. Chrome OS entries were previously OFF;
+do not treat enabling them alone as a confirmed banner-delivery pass. Reproduced
+the old test hanging before notification creation when serviceWorker.ready never
+resolves. New test uses the page Notification constructor (same incoming-message
+path), shows permission/opt-in/window metadata and bounded show/error/no-response
+feedback, independent badge update/restoration. No OS/profile/feature flags changed.
+Linux candidate currently authenticated/connected/sync running, no pairing active.
+Deploy ONLY tested web assets atop its existing API/CLI image, retain own volume,
+and restore the previously running sync without new pairing. Never touch monitor.
+Do not claim the owner's actual worker failure or OS delivery is proven by this
+synthetic regression; owner must reload and report the new inline test outcome.
+
 2026-11-11 NOTIFICATION CAUSE FOUND: owner found two visible Google Chrome
 entries in macOS Notifications and reports BOTH OFF. These match the previously
 observed Chrome and AlertNotificationService registrations. OS notification

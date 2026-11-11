@@ -25,6 +25,20 @@ installed app normal macOS notification/badge permission. Chrome remains its
 engine; this is not a new unsigned Swift executable. Ordinary PWA installation
 on the managed target is an owner check, not assumed to succeed.
 
+The test button now exercises the same page Notification API as incoming previews,
+without waiting for service-worker activation. It reports browser show/error or
+no confirmation after eight seconds, plus the app opt-in, browser permission and
+app/browser window context. A browser event is not proof that a person saw a macOS
+banner. The synthetic badge restores the real unread total independently.
+If macOS lists only Chrome notification entries, check those registered entries;
+do not assume a separate Fourdock entry already exists.
+
+For an existing live candidate, Dockerfile.frontend-update can layer the tested
+Fourdock-WhatsApp-web CI artifact (as web/ in its build context) onto an explicit
+FOURDOCK_BASE_IMAGE. It changes only static assets; retain the candidate volume
+and restore its prior sync state after recreation. It does not migrate the CLI,
+read/copy sessions, or touch the production monitor.
+
 ## Live candidate prerequisites
 
 Live mode requires an explicit `FOURDOCK_MODE=live` and absolute `WACLI_BIN` that
