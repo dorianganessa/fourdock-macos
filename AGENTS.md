@@ -1,5 +1,18 @@
 # Fourdock
 
+2026-11-11 FIRST LIVE ATTEMPT: owner completed the browser passkey and reported
+waiting. Safe endpoint showed assertion_submitted, active=true: response reached
+the CLI and was submitted; pairing/authentication was not complete. Owner then
+confirmed pressing Annulla and explicitly requested reset/retry, after noting
+an overlooked confirmation. Fresh CLI auth status (WACLI_READONLY=1) confirmed
+authenticated=false, API pairing inactive/cancelled and sync stopped. Reset only
+the owned candidate store by atomic rename within its private volume, preserving
+the cancelled unauthenticated attempt; created empty0700 whatsapp directory.
+HTTP now confirms active=false, storedSession=false. No agent retry was started.
+Next: owner Avvia collegamento, QR/passkey, check BOTH phone and PWA confirmations,
+then Carica conversazioni. Do not claim full auth passed or a confirmed client
+freeze; no code/network/protocol change was required for this reset.
+
 2026-11-11 LIVE HANDOFF: owner replied "fatto" to the PWA demo instructions.
 Installation/test completion reported; individual icon/badge/banner outcomes
 are still requested, so do not mark all three passed. After announcing the

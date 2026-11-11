@@ -44,6 +44,16 @@ Sanitized automated results: [evidence/ui-results.json](evidence/ui-results.json
 
 Existing Chrome/native test results cannot be transferred to this candidate.
 
+First live attempt, 2026-11-11: owner reports completing the real browser passkey;
+sanitized endpoint confirms assertion_submitted and active=true. This verifies
+the response transport/submission stage, not completed WhatsApp authentication.
+Owner confirmed cancellation and explicitly authorized reset/retry after an
+overlooked confirmation. API showed cancelled/inactive and sync stopped; fresh
+read-only CLI auth status was false. Atomically preserved the unauthenticated
+attempt within the private candidate volume and created a fresh0700 store.
+HTTP confirms inactive/no stored session. No agent started another pairing.
+No code change or additional synthetic test was needed; full auth remains open.
+
 ## Reopened wacli reuse research, 2026-11-10
 
 Completed source/metadata review, not an execution test: Mission Control 0.2.6

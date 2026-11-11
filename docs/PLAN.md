@@ -43,6 +43,15 @@ Next three actions:
 The tunnel is currently a running process, not an automatically installed login
 service. No production monitor service/session or regular Chrome profile changed.
 
+First live attempt: owner completed passkey; safe status reached
+assertion_submitted while awaiting the next WhatsApp confirmation. Owner
+cancelled and requested reset/retry after reporting an overlooked confirmation.
+Fresh read-only CLI auth status was false. Only the owned candidate's store was
+atomically renamed within its private volume and replaced with an empty0700
+directory; no credentials copied/deleted, no monitor change, no automatic retry.
+Endpoint confirms inactive/no session. Next owner attempt must complete phone
+AND PWA confirmations after passkey. Full linking remains unverified.
+
 See clients/mission-control/FOURDOCK.md for exact commands and scope.
 
 ## Previous research checkpoint: reuse a wacli client and authentication helper
