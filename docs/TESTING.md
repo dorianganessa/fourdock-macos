@@ -33,7 +33,12 @@ API/CLI image. Verified base layers preserved, own volume retained, artifact
 SHA256 and the new asset served over the existing loopback tunnel. Preserved
 authenticated session and restored previously running sync; post-update HTTP
 reports authenticated=true, connected=true, sync=running. No message inspected
-or sent, no new pairing/profile/permission change. Owner reload/test is pending.
+or sent, no new pairing/profile/permission change.
+
+PASS MANUALE CONFERMATO: owner now reports seeing a test banner after this update.
+This confirms synthetic physical OS banner delivery. Its exact OS sender label,
+real incoming sender/preview content and click target are not yet confirmed.
+Next owner check: genuine incoming message with PWA minimized and chat unmuted.
 
 - PASS AUTOMATICO: local Node26 production build, 558 API tests and 486 UI tests
   on the pinned reused client plus Fourdock pairing adapter. Web tests explicitly

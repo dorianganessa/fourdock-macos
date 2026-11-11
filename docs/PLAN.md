@@ -40,21 +40,14 @@ independent. CI43045169931 passes at646eac5: 558 API +491 web tests and four
 browser checks. Deployed that exact web artifact on the existing API/CLI base,
 verified base layers and the candidate volume, then restored prior running sync.
 Post-update HTTP confirms the new asset and authenticated/connected/running state.
-Owner now reloads and reports the inline status and any actual banner. Do not
-reset/re-pair or assume physical banner delivery from browser/API success.
+Owner has now explicitly confirmed seeing the test banner: physical delivery of
+the sample is passed manually. Real incoming sender/preview/click remains open.
+Do not reset/re-pair or repeat the already completed permission/test setup.
 
-1. Diagnose notification delivery before recommending a per-PWA macOS setting:
-   owner reports no Fourdock entry, matching preference metadata confirms only
-   Chrome entries despite installed PWA/Chrome157. Owner presses Prova notifica e
-   badge in the installed app and reports permission prompt/banner/sender. Then
-   enable DESKTOP NOTIFICATIONS (separate opt-in) and verify a real incoming
-   sender/preview banner and click. Incoming updates/Dock count are confirmed.
-   Owner has clarified the test was already pressed and permission granted:
-   the only recalled popup was the permission dialog, with no actual banner.
-   Cause now identified by owner: TWO Google Chrome OS entries, BOTH OFF. Owner
-   enables both entries, Desktop and Show previews When Unlocked, then runs one
-   test and observes the sender. Check in-app DESKTOP NOTIFICATIONS ON for real
-   incoming previews. Successful banner delivery remains to be confirmed.
+1. Owner minimizes PWA and observes a genuine incoming unmuted-chat message:
+   verify sender/preview banner and click destination. Incoming updates, Dock
+   count and the new synthetic test banner are manually confirmed. The app's
+   DESKTOP NOTIFICATIONS toggle has been enabled; preserve that setting/session.
 2. Owner closes/reopens the PWA and confirms the existing session returns;
    preserve the now authenticated store, without pairing or resetting again.
 3. Make tunnel/startup behavior suitable for daily use after those checks.

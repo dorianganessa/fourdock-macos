@@ -11,5 +11,7 @@
   "authenticatedAfterUpdate": true,
   "connectedAfterUpdate": true,
   "syncAfterUpdate": "running",
-  "ownerBannerConfirmed": false
+  "ownerBannerConfirmed": true,
+  "ownerConfirmationScope": "Synthetic test-button banner only",
+  "ownerIncomingPreviewConfirmed": false
 }

@@ -6,9 +6,11 @@ Tested frontend artifact is live as index-CA7Q0aG7.js, sha256806a7e88e8b5c1a4c42
 Layered ONLY static files on the existing API/CLI base; verified base layers and
 candidate volume, preserved authentication and restored previously running sync.
 Post-update local HTTP confirms the new asset, authenticated/connected=true and
-sync running. No login or profile/permission reset. Owner must Cmd+R in PWA and
-press Prova notifica e badge; request the inline status (and its ON/permission/
-window metadata) if no banner. Do not claim physical OS delivery yet.
+sync running. No login or profile/permission reset. Owner has now explicitly
+confirmed seeing a test banner. PASS MANUALE for synthetic OS banner delivery;
+do not repeat permission/setup/test-button troubleshooting. Real incoming sender/
+preview, notification click target and OS sender identity remain unconfirmed.
+Next: owner minimizes PWA and observes a genuine incoming unmuted-chat message.
 Local Node26 focused runs hit the first-render5s test deadline; clean Node24 CI
 passes all cases. The original stalled-SW regression failed old code as intended.
 Runtime image is fourdock-whatsapp-candidate:preview-646eac5; preserve the private
