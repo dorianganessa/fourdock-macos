@@ -16,12 +16,30 @@ The real patched homeserver CLI command was checked in a --network none containe
 with no mounted store: auth pair exists and read-only doctor does not create a
 session in an empty store. This is not real authentication verification.
 
-Next: run browser/connector integration on CI; review/install the synthetic PWA
-normally on the target; prepare a separate server candidate and owner-only live
-pairing. No production monitor/session or regular Chrome profile is modified.
+Workflow 42960440631 passes at 83d4a37: clean build, compose validation, all 1,044
+unit tests and four synthetic Chromium141 browser checks. The reused list/thread,
+PWA/SW/notification-badge API calls, pairing pipes and loaded connector's trusted
+activation/assertion return pass. Initial tab navigation is controlled by the
+fixture because extension-created requests can precede automation attachment;
+DNS remains blocked and no real WebAuthn ceremony occurs. Screenshot inspected.
+See docs/evidence/mission-control-ui.json. OS notification display is stubbed.
+
+The independent server candidate has been built from the public source and the
+existing patched CLI image. Its separate named volume is mounted only there;
+the listener is 127.0.0.1:4702. Read-only health verification reports installed
+CLI 0.20.0, authenticated=false and process stopped. No pairing or sync was run.
+The production monitor, its store and its dirty source tree are untouched.
+
+Next three actions:
+
+1. Owner installs the demo PWA normally and checks its Dock badge/banner identity.
+2. After that check, connect the private tunnel and load the helper extension.
+   Do not silently switch the demo origin to the live backend during its test.
+3. Owner performs the candidate's live pairing/restart and incoming-event checks.
+
 See clients/mission-control/FOURDOCK.md for exact commands and scope.
 
-## Latest exploration: reuse an existing wacli client and authentication helper
+## Previous research checkpoint: reuse a wacli client and authentication helper
 
 Owner reopened the deferred idea and explicitly prefers adapting authentication
 and reusing existing software over writing a client. Source review identified
@@ -32,8 +50,8 @@ The PWA path now has a current primary reference: Chrome152+ macOS installed PWA
 have their own native notification attribution and permission-bound Dock badges.
 This does not imply existing Fourdock extension alerts gain PWA identity.
 
-No new runtime, account, profile, homeserver service or candidate dependency was
-changed. Existing Chrome Fourdock remains the working baseline. Next research
+At that research checkpoint, no runtime, account, profile, homeserver service or
+candidate dependency was changed. Existing Chrome Fourdock remains the working baseline. Next research
 checks: isolated UI/CLI contract build; separate pairing integration; normal PWA
 identity/badge feasibility if selected. None is a live auth or OS delivery pass.
 

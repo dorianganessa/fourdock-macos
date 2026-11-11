@@ -6,7 +6,7 @@ UI and adds the browser-assisted pairing method. Start with synthetic data:
 `npm run mission:setup`, `npm run mission:build`, `npm run mission:demo`, then
 http://127.0.0.1:4702. See [candidate instructions](clients/mission-control/FOURDOCK.md).
 This does not replace the four-service Chrome workspace or use existing sessions.
-**Current direction (2026-11-10): return to the working Chrome workspace.**
+**Working baseline (2026-11-10): the Chrome workspace remains available.**
 Version 0.2.0 adds global service shortcuts and a notification relay that retains
 sender/preview while adding Fourdock and the service name. macOS attribution
 remains Chrome; service-worker push notifications are outside the page relay.
@@ -27,7 +27,7 @@ were then confirmed for all four. The original WhatsApp QR/passkey flow remains
 unverified. See
 [investigation](docs/AUTHENTICATION.md).
 
-Fourdock uses **official Google Chrome**, a dedicated browser profile, an extension
+The four-service workspace uses **official Google Chrome**, a dedicated browser profile, an extension
 and a small Swift launcher. Sites run as top-level browser tabs. Chrome keeps its
 original signature, passkey entitlement, security protections and update mechanism.
 No backend, Fourdock account, cookie import or private service API is involved.

@@ -1,5 +1,18 @@
 # Fourdock
 
+2026-11-11 CANDIDATE CHECKPOINT: workflow 42960440631 passes at 83d4a37:
+build, compose validation, 558 API + 486 UI tests and four synthetic browser
+checks (Chromium 141). The fixture controls initial tab navigation to keep DNS
+confinement; origin checks, script execution, trusted keyboard activation and
+assertion return exercise the loaded extension. OS delivery and actual passkey
+remain untested. Evidence: docs/evidence/mission-control-ui.json.
+Owned local demo runs at 127.0.0.1:4702. Owner PWA install/Dock badge/banner question
+is pending; do not switch that origin to live unexpectedly. Separate Linux
+candidate is built/running from 9739e57, own volume, loopback-only, CLI 0.20.0,
+authenticated=false and sync stopped. No private session/store was opened/copied.
+Next: owner demo PWA check, private tunnel/helper setup, owner live auth/restart
+and incoming-event checks. Current four-service workspace stays separate.
+
 2026-11-11 IMPLEMENTATION AUTHORIZED: owner accepted Mission Control reuse and
 said "vai". New candidate is clients/mission-control, MIT upstream 0.2.6 pinned
 4d4ffaf, with independent data ownership, browser assertion adapter and PWA/Dock

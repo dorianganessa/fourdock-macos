@@ -65,6 +65,12 @@ need owner verification; API success is insufficient. The existing UI receives
 events while its renderer is alive. Closing every app window does not guarantee
 ongoing notifications. No real message is sent during agent tests.
 
+Incoming-message desktop notifications are off by default upstream: enable them
+in Settings after granting app permission. The test button checks OS delivery
+only, not a real incoming message. The candidate starts read-only; enabling its
+own send mode is separate from the production monitor's policy. Global shortcuts
+from the original four-service extension do not yet target this independent PWA.
+
 The production monitor's read-only/send policy and its working tree are untouched.
 Running a separate server candidate and its live authentication still require
 candidate runtime configuration; do not start another process on the monitor's

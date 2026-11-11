@@ -21,9 +21,20 @@ Sanitized automated results: [evidence/ui-results.json](evidence/ui-results.json
 - PASS AUTOMATICO: isolated Linux container --network none, no store mounts:
   existing patched CLI exposes auth pair; read-only doctor in a fresh tmpfs store
   does not create session.db. No live account was opened or connection attempted.
-- NON ESEGUITO: new real Chromium connector/UI integration, normal target PWA
-  install/OS badge/banner, live owner passkey/linking/persistence and incoming
-  events. A new isolated backend runtime is prepared, not a production migration.
+- PASS AUTOMATICO: separate live candidate image builds; container starts with
+  its own named volume and 127.0.0.1:4702 bind. Read-only health check confirms
+  CLI 0.20.0, authenticated=false and sync stopped. No production store is mounted.
+- PASS AUTOMATICO: workflow 42960440631, source 83d4a37, clean Linux Node24 build,
+  compose validation, 558+486 unit tests and four browser checks in Chromium141.
+  The reused list/thread, PWA/icons/service worker, badge/notification API calls,
+  pairing pipes and loaded extension's trusted activation/assertion return pass.
+  Initial extension tab navigation is controlled by the fixture to avoid its
+  DNS-confined first request preceding automation attachment. No real WebAuthn
+  ceremony occurs; OS badge/banner delivery is stubbed. Screenshot inspected.
+  [Sanitized browser evidence](evidence/mission-control-ui.json).
+- NON ESEGUITO: normal target PWA install/OS badge/banner, live owner passkey,
+  linking/persistence and incoming events. Owner demo question is pending.
+  The local demo is available at 127.0.0.1:4702; it has synthetic data only.
 
 Existing Chrome/native test results cannot be transferred to this candidate.
 
