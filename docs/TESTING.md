@@ -21,8 +21,19 @@ New header uses incoming messages' page Notification API, explicit browser event
 and an eight-second no-feedback deadline; synthetic badge restoration is separate.
 Five focused cases cover the stalled-worker regression, no response, browser
 error, denied permission without repeat prompting, and constructor rejection.
-Production web build passed; focused validation/updated CI are pending. These
-checks do not prove the owner's actual worker state or physical banner display.
+Production web build passed. Local Node26 focused runs hit the default first-
+render5s timeout; they were not counted as passes. Clean Node24 workflow43045169931
+at646eac5 passes all558 API/all491 web tests and four Chromium141 fixtures,
+including the new sample preview and browser-event status. OS delivery remains
+stubbed; screenshot inspected. [Browser evidence](evidence/notification-test-ui.json).
+These checks do not prove the owner's actual worker state or physical banner.
+
+Deployed the tested static artifact only, atop the running candidate's existing
+API/CLI image. Verified base layers preserved, own volume retained, artifact
+SHA256 and the new asset served over the existing loopback tunnel. Preserved
+authenticated session and restored previously running sync; post-update HTTP
+reports authenticated=true, connected=true, sync=running. No message inspected
+or sent, no new pairing/profile/permission change. Owner reload/test is pending.
 
 - PASS AUTOMATICO: local Node26 production build, 558 API tests and 486 UI tests
   on the pinned reused client plus Fourdock pairing adapter. Web tests explicitly

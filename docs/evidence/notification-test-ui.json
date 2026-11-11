@@ -1,0 +1,14 @@
+{
+  "date": "2026-11-11T15:09:40.744Z",
+  "fixture": true,
+  "browserVersion": "141.0.7390.37",
+  "source": "646eac50c3d88b2efd2c38cdcdead3c074bfa763",
+  "osDeliveryTested": false,
+  "realAuthenticationTested": false,
+  "results": [
+    "Reused Mission Control renders synthetic chat list and conversation without real accounts",
+    "PWA metadata/icons, page Notification preview/status and independent badge API calls pass; OS display stubbed",
+    "Pairing UI completes synthetic challenge/assertion/explicit confirmation through real process pipes",
+    "Loaded Chrome connector delegates to HTTPS-origin fixture after trusted click; initial tab navigation is attached by the fixture, no real WebAuthn ceremony"
+  ]
+}

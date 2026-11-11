@@ -1,6 +1,21 @@
 # Fourdock
 
-2026-11-11 NOTIFICATION TEST FIX IN VALIDATION: owner enabled the IN-APP toggle
+2026-11-11 NOTIFICATION TEST FIX DEPLOYED: CI43045169931 passes at646eac5:
+558 API +491 web tests and four Chromium141 fixtures, OS delivery stubbed.
+Tested frontend artifact is live as index-CA7Q0aG7.js, sha256806a7e88e8b5c1a4c421e12c607cd7412a73c68384a8dc8103f6a0d67493c703.
+Layered ONLY static files on the existing API/CLI base; verified base layers and
+candidate volume, preserved authentication and restored previously running sync.
+Post-update local HTTP confirms the new asset, authenticated/connected=true and
+sync running. No login or profile/permission reset. Owner must Cmd+R in PWA and
+press Prova notifica e badge; request the inline status (and its ON/permission/
+window metadata) if no banner. Do not claim physical OS delivery yet.
+Local Node26 focused runs hit the first-render5s test deadline; clean Node24 CI
+passes all cases. The original stalled-SW regression failed old code as intended.
+Runtime image is fourdock-whatsapp-candidate:preview-646eac5; preserve the private
+frontend-646eac5 compose override when recreating it, or the old source compose
+would select the earlier base image. No durable startup service was installed.
+
+2026-11-11 NOTIFICATION TEST REPAIR: owner enabled the IN-APP toggle
 but test still gives no visible result. Chrome OS entries were previously OFF;
 do not treat enabling them alone as a confirmed banner-delivery pass. Reproduced
 the old test hanging before notification creation when serviceWorker.ready never

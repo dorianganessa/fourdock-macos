@@ -1,0 +1,15 @@
+{
+  "date": "2026-11-11",
+  "frontendSource": "646eac50c3d88b2efd2c38cdcdead3c074bfa763",
+  "workflow": 43045169931,
+  "image": "fourdock-whatsapp-candidate:preview-646eac5",
+  "unitTests": { "api": 558, "web": 491 },
+  "asset": "/assets/index-CA7Q0aG7.js",
+  "sha256": "806a7e88e8b5c1a4c421e12c607cd7412a73c68384a8dc8103f6a0d67493c703",
+  "baseLayersPreserved": true,
+  "candidateVolumePreserved": true,
+  "authenticatedAfterUpdate": true,
+  "connectedAfterUpdate": true,
+  "syncAfterUpdate": "running",
+  "ownerBannerConfirmed": false
+}

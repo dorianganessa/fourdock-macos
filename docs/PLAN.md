@@ -36,10 +36,12 @@ Current notification repair: owner enabled the actual in-app toggle but the test
 still does nothing. The old SW-ready test can wait forever (reproduced), unlike
 the page Notification path used by incoming messages. Replacement uses that path,
 shows browser feedback with an eight-second bound and keeps badge restoration
-independent. Validate tests/CI, deploy its tested web-only artifact onto the same
-candidate API/CLI, preserve the authenticated volume and restore running sync.
-Owner then reloads and reports the inline status and any actual banner. Do not
-reset/re-pair or assume registration/physical banner delivery from API success.
+independent. CI43045169931 passes at646eac5: 558 API +491 web tests and four
+browser checks. Deployed that exact web artifact on the existing API/CLI base,
+verified base layers and the candidate volume, then restored prior running sync.
+Post-update HTTP confirms the new asset and authenticated/connected/running state.
+Owner now reloads and reports the inline status and any actual banner. Do not
+reset/re-pair or assume physical banner delivery from browser/API success.
 
 1. Diagnose notification delivery before recommending a per-PWA macOS setting:
    owner reports no Fourdock entry, matching preference metadata confirms only
