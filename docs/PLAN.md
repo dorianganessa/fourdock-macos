@@ -8,10 +8,15 @@ Owner requested direct sending, address-book notification names and emoji; prefe
 repairing Ferdium's original WhatsApp Web, with our integration as fallback.
 Implemented first-Enter immediate dispatch, optional confirmation preference and
 bounded cached contact lookup; focused83 tests and recipe badge fixture pass.
-Build/full CI/deployment pending. The original Mac passkey path still has no
+CI43209200704 atfb84e2d passes 562 API +499 web tests, three installer cases,
+one recipe case and six browser flows. Tested static web is live, asset hash/base
+layers/volume verified, authenticated/connected sync and sending preserved.
+Owner reloads with Cmd+R. The original Mac passkey path still has no
 verified recipe-only fix; Linux-only Ferdium support and open Electron hybrid
-patches are not a target pass. An optional recipe is prepared to load the current
-authenticated client without rebuilding Ferdium. See FERDIUM.md.
+patches are not a target pass. The optional recipe is installed to load the current
+authenticated client without rebuilding Ferdium: owner restarts the official app
+and adds Fourdock WhatsApp. Existing services unchanged; its native behavior and
+actual sender/preview naming are owner checks. See FERDIUM.md.
 
 ## Sending enabled by owner
 

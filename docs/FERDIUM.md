@@ -31,7 +31,10 @@ The same backend and private SSH login service remain necessary.
 Ferdium's documented development recipe directory on macOS is
 `~/Library/Application Support/Ferdium/recipes/dev/`. Place the supplied folder
 there, reload/restart Ferdium, then add **Fourdock WhatsApp** from its service list.
-Keep any existing service/profile unchanged. No account-storage file is needed.
+On the owner's Mac the supplied folder is now installed and byte-verified in that
+development directory. Restart Ferdium and add the service to try it. Existing
+services/profiles and the application binary were not changed. No account-storage
+file is needed or copied.
 
 The recipe's loopback restriction and badge updates have a synthetic test.
 Actual native notification delivery, clicks and service switching in Ferdium
@@ -60,3 +63,10 @@ this does not read or import macOS Contacts or fetch an external address book.
 
 Emoji are ordinary Unicode text, including composed emoji and skin tones.
 Use the macOS character picker (Control–Command–Space) in the message field.
+
+Delivered from sourcefb84e2d, CI43209200704: 562 API +499 web tests and six
+synthetic browser flows pass, plus three installer and one recipe cases. Tested
+web asset index-CYExnheQ.js is live; SHA256 and previous image layers/owned volume
+verified. Session remains authenticated/connected, sync running and sends enabled.
+Reload the PWA with Cmd+R to activate it. Actual owner notices/contact names and
+Ferdium native behavior remain manual checks.

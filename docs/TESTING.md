@@ -19,9 +19,18 @@ Sanitized automated results: [evidence/ui-results.json](evidence/ui-results.json
   alias/address-book priority, group speaker name, cached lookup and fallback.
 - PASS AUTOMATICO: optional Ferdium recipe's exact loopback URL, title-derived
   unread badge, zero-count reset and foreign-origin rejection. No account access.
-- NON ESEGUITO: full CI/browser fixture, deployment and owner actual sends/names;
-  original Ferdium Mac passkey repair and fallback native OS behavior. No real
-  message, credential/profile read or custom native executable was used.
+- PASS AUTOMATICO: CI43209200704 atfb84e2d, 562 API +499 web tests, three
+  installer cases, one recipe case and six Chromium141 flows. The browser's
+  first Enter sends composed emoji exactly once without a dialog; the synthetic
+  send endpoint is intercepted. [Evidence](evidence/client-ux-ui.json).
+- PASS AUTOMATICO: tested static artifact deployed over the current API/CLI;
+  SHA256/live asset and retained base layers/volume/automatic startup verified.
+  HTTP authenticated/connected/sync running, readOnly=false and pairing inactive.
+  Optional Ferdium recipe installed in recipes/dev, file bytes verified; existing
+  services and app binary unchanged. [Target checks](evidence/client-ux-target.json).
+- NON ESEGUITO: owner actual sends/address-book names; original Ferdium Mac
+  passkey repair and fallback native OS behavior. No real message, credential/
+  account-content read or custom native executable was used.
 
 ## Automatic startup, 2026-11-12
 

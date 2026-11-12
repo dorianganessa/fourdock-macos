@@ -6,11 +6,19 @@ WhatsApp Web first, with our client integration as fallback. Source implements
 direct immediate sends (optional settings checkbox restores confirmation), shared
 existing dispatcher with StrictMode guard/manual failure retry, and bounded cached
 sender-contact name resolution. Unicode emoji need no protocol change. Focused
-83 web tests pass; build/full CI/deployment pending. No real send or account read.
+83 focused web tests pass. CI43209200704 atfb84e2d passes 562 API +499 web tests,
+three installer cases, one recipe test and six Chromium141 flows. Browser's first
+Enter sends composed emoji exactly once to an intercepted synthetic endpoint.
+Tested static web deployed atop autostart-31abb3c as ux-fb84e2d; base layers and
+own volume preserved, live asset SHA256 verified, automatic startup retained.
+Local health authenticated/connected/sync running and readOnly=false; no pairing,
+real send or account-content inspection. Owner reloads PWA with Cmd+R next.
 Original Ferdium recipe has no hybrid fix: upstream2337 is Linux-only; Electron
 55427/55426 remain open/unmerged. Do not claim an original Mac WhatsApp repair.
-Fallback recipe prepared under integrations/ferdium, synthetic badge test passes;
-no Ferdium binary/profile/service modified yet. See docs/FERDIUM.md. This latest
+Fallback recipe under integrations/ferdium is installed in the documented user
+recipes/dev folder; no existing recipe/service/storage or Ferdium binary changed.
+Owner restarts Ferdium and adds Fourdock WhatsApp to try the existing client;
+native notifications/clicks/badges there remain untested. See docs/FERDIUM.md. This latest
 owner direction supersedes historical exclusion of Ferdium for this investigation.
 
 2026-11-12 OWNER ENABLED ALL CLIENT SENDS: owner explicitly requested enabling
