@@ -11,6 +11,11 @@ Respect persisted sleep mode and manual container stops. This changes startup
 behavior for the owned candidate, without changing the production monitor or
 the native executable hold. Recover an offline PWA navigation without chat caching.
 
+Delivered from tested source31abb3c (CI43191917441). Mac connection process
+restart and graceful candidate restart both recovered the same authenticated
+running session. Read-only mode remains enabled. Full owner PWA/login/sleep-wake
+checks and real incoming previews remain open; see AUTOSTART.md.
+
 ## 2026-11-11 — Implement the existing Mission Control UI with a pairing adapter
 
 Owner accepted this route and requested implementation. Reuse the upstream MIT

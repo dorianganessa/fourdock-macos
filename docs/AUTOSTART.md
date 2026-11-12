@@ -48,9 +48,11 @@ the container remains respected. It does not modify Docker's other containers.
 
 `FOURDOCK_AUTO_SYNC=1` permits automatic sync only when the owned store already
 contains a regular session.db and a bounded **read-only auth status** command
-confirms authenticated=true. The default is0. Missing, partial, revoked, invalid
-or unreadable sessions stay stopped; startup never invokes auth/pair or creates a
-QR. Upstream sleep mode remains respected. Sending/read-only mode is unchanged.
+confirms authenticated=true. The default is0. Missing, partial, invalid or
+unreadable sessions stay stopped when this local check fails. A remotely revoked
+session may still pass the local check and then fail to connect; startup never
+invokes auth/pair or creates a QR. Upstream sleep mode remains respected.
+Sending/read-only mode is unchanged.
 
 `Dockerfile.runtime-update` layers the tested API and web artifacts onto an
 explicit existing candidate image, retaining its CLI/dependencies. Keep the
@@ -65,6 +67,20 @@ This does not add push notifications after every PWA window has been closed.
 The Mac launch agent has been installed normally and its own SSH process restarted
 once: it recreated the connection and HTTP health stayed authenticated/connected
 with sync running. Config/plist safety tests and saved-session startup tests pass.
-Backend restart and the offline-page browser fixture are pending deployment/CI.
-Full Mac login, physical sleep/wake and server reboot remain owner checks; no
-global reboot or network change is performed by the agent.
+Workflow43191917441 at31abb3c passes 562 API and491 web tests, three installer
+cases and five synthetic Chromium141 browser flows. The initial browser-offline
+emulation did not reach the fallback; the passing fixture stops and restarts its
+actual synthetic API and observes the offline page return to the app.
+[Browser evidence](evidence/autostart-ui.json).
+
+The tested API/web artifacts are deployed as autostart-31abb3c atop the previous
+preview image, preserving its CLI/base layers and the candidate volume. The
+private runtime override selects this image, restart unless-stopped and explicit
+auto-sync opt-in. After deployment and again after one graceful candidate-only
+restart, health confirmed authenticated/connected/sync running without a manual
+sync request. Read-only mode remains enabled; no message was sent or inspected.
+The live worker's SHA256 matches the tested artifact.
+[Sanitized target checks](evidence/autostart-target.json).
+
+PWA full close/reopen, full Mac login, physical sleep/wake and server reboot remain
+owner checks; no global reboot or network change was performed by the agent.

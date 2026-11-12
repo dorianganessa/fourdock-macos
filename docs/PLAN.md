@@ -8,10 +8,13 @@ Owner accepted this next step. System SSH now runs under a private per-user Mac
 launch agent; a controlled job restart recreated its connection with the same
 authenticated/running backend. No browser/profile/key was replaced. Backend
 saved-session-only startup, restart policy and network-only offline-page recovery
-are implemented and undergoing CI/deployment. Four saved-session cases, existing
-sleep checks and three installer safety tests pass locally; both builds pass.
-Next: deploy tested API/web while retaining CLI/volume; verify candidate restart
-automatically resumes sync; owner then closes/reopens the PWA. See AUTOSTART.md.
+are deployed. CI43191917441 at31abb3c passes 562 API +491 web tests, three
+installer safety cases and five synthetic browser flows. Tested API/web retain
+the CLI/base layers and own volume. Deployment and one graceful candidate-only
+restart both resumed authenticated/connected sync automatically; no manual POST,
+new pairing or messaging action. Next: owner closes/reopens the PWA from the Dock,
+then observes a genuine incoming preview with the window minimized. Full Mac
+login/sleep-wake/server reboot are still manual checks. See AUTOSTART.md.
 
 ## Current implementation: reused Mission Control WhatsApp candidate
 
@@ -61,10 +64,11 @@ Do not reset/re-pair or repeat the already completed permission/test setup.
    DESKTOP NOTIFICATIONS toggle has been enabled; preserve that setting/session.
 2. Owner closes/reopens the PWA and confirms the existing session returns;
    preserve the now authenticated store, without pairing or resetting again.
-3. Make tunnel/startup behavior suitable for daily use after those checks.
+3. Confirm full Mac login/sleep-wake behavior during normal use; the connection
+   and backend restart recovery are now installed/tested as described above.
 
-The tunnel is currently a running process, not an automatically installed login
-service. No production monitor service/session or regular Chrome profile changed.
+The tunnel is now a user login service. No production monitor service/session or
+regular Chrome profile changed.
 
 First live attempt: owner completed passkey; safe status reached
 assertion_submitted while awaiting the next WhatsApp confirmation. Owner

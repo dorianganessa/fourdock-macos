@@ -1,0 +1,32 @@
+{
+  "date": "2026-11-12",
+  "source": "31abb3c2085271c9ef9478565b674ea5534b1fda",
+  "ciRun": 43191917441,
+  "candidateImage": "fourdock-whatsapp-candidate:autostart-31abb3c",
+  "baseLayersPreserved": true,
+  "artifactHashesVerified": true,
+  "ownVolumePreserved": true,
+  "productionMonitorChanged": false,
+  "autoSyncOptIn": true,
+  "restartPolicy": "unless-stopped",
+  "dockerDaemonAlreadyEnabled": true,
+  "macUserAgentInstalled": true,
+  "macAgentProcessRestartRecovered": true,
+  "automaticSyncAfterDeployment": true,
+  "automaticSyncAfterGracefulCandidateRestart": true,
+  "manualSyncRequestUsed": false,
+  "health": {
+    "authenticated": true,
+    "connected": true,
+    "storedSession": true,
+    "pairingActive": false,
+    "processState": "running",
+    "readOnly": true
+  },
+  "serviceWorkerSha256": "570efe8564df6bd2a40efa593e2c8646b4916449175dce1c7b34d1b2870e00c1",
+  "realMessagesSentOrInspected": false,
+  "fullPwaReopenTested": false,
+  "macLoginTested": false,
+  "physicalSleepWakeTested": false,
+  "serverRebootTested": false
+}

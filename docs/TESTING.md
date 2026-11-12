@@ -1,6 +1,6 @@
 # Testing ledger
 
-Updated: 2026-11-11. Automated baseline: 2026-11-06. Target: managed macOS 27.0.1 arm64. Synthetic UI runtime:
+Updated: 2026-11-12. Automated baseline: 2026-11-06. Target: managed macOS 27.0.1 arm64. Synthetic UI runtime:
 Chrome for Testing 157.0.8103.38, Playwright 1.56.1, Node 26.4.0. Profiles are
 temporary. External DNS is blocked only in the synthetic browser; attached page
 navigations are fulfilled from fixtures. Automated checks use no real credentials
@@ -22,9 +22,22 @@ Sanitized automated results: [evidence/ui-results.json](evidence/ui-results.json
   Only the old owned temporary forward was replaced. Restarted the named job;
   new SSH PID and restored local HTTP authenticated/connected/sync-running state
   confirm process reconnection. Private config references the existing key only.
-- NON ESEGUITO: full CI/browser offline recovery, candidate auto-sync after restart,
-  full Mac login/physical sleep-wake/server reboot. No global network/reboot,
-  real messages, account inspection, auth retry or native Fourdock execution.
+- PASS AUTOMATICO: CI43191917441 at31abb3c, clean Node24 build, 562 API +491 web
+  tests, three installer cases and five Chromium141 flows. The first offline-
+  emulation fixture43191380731 timed out waiting for the fallback. The corrected
+  fixture stops/restarts its actual synthetic API and observes automatic return
+  to the chat list. OS notifications remain stubbed; no real authentication.
+  [Browser evidence](evidence/autostart-ui.json).
+- PASS AUTOMATICO: tested API/web deployment retained CLI/base layers and own
+  volume; checked artifact SHA256. Both deployment and a subsequent graceful
+  candidate-only restart resumed sync automatically: authenticated/connected=true,
+  pairing inactive and readOnly=true, without a manual sync POST. Live service-
+  worker SHA256 matches the artifact. Restart policy unless-stopped and auto-sync
+  opt-in verified; Docker daemon already enabled. Production monitor untouched.
+  [Sanitized target checks](evidence/autostart-target.json).
+- NON ESEGUITO: owner PWA full close/reopen, full Mac login/physical sleep-wake/
+  server reboot. No global network/reboot, real messages, account inspection,
+  auth retry or native Fourdock execution.
 
 ## Mission Control candidate implementation, 2026-11-11
 
