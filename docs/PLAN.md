@@ -16,6 +16,10 @@ new pairing or messaging action. Next: owner closes/reopens the PWA from the Doc
 then observes a genuine incoming preview with the window minimized. Full Mac
 login/sleep-wake/server reboot are still manual checks. See AUTOSTART.md.
 
+Owner subsequently reports seeing notifications for now. Visible delivery is
+confirmed manually; exact preview/click behavior and full PWA reopen remain
+unreported. Continue normal use without repeating notification setup.
+
 ## Current implementation: reused Mission Control WhatsApp candidate
 
 Owner accepted the reuse proposal and authorized implementation. The public MIT

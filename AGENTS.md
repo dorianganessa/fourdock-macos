@@ -1,5 +1,11 @@
 # Fourdock
 
+2026-11-12 OWNER NOTIFICATION OBSERVATION: owner reports seeing notifications
+for now. Visible notification delivery is manually confirmed; do not repeat
+permission/test-button setup. Exact sender/preview text, click destination and
+full PWA close/reopen were not individually reported. Continue normal use and
+preserve the working session/settings; no new diagnostic or runtime change needed.
+
 2026-11-12 OWNER ACCEPTED AUTOMATIC START/RECONNECTION: implementing only the
 independent WhatsApp candidate's startup. Mac launch agent dev.fourdock.whatsapp-
 tunnel is installed/running using system SSH, private0600 config outside Git and

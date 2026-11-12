@@ -14,6 +14,10 @@ Sanitized automated results: [evidence/ui-results.json](evidence/ui-results.json
 
 ## Automatic startup, 2026-11-12
 
+- PASS MANUALE CONFERMATO: owner reports seeing notifications for now after the
+  startup update. This confirms visible delivery; exact sender/preview, click
+  destination and full PWA reopen were not individually reported. No additional
+  account inspection, test message or settings change was performed.
 - PASS AUTOMATICO: API/web production builds; 21 focused API tests (saved-session
   startup plus existing sleep behavior) and three installer tests. They verify
   explicit opt-in, read-only bounded auth check, rejection of partial/invalid/
