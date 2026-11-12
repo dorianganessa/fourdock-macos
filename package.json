@@ -11,6 +11,7 @@
     "mission:build": "npm run build --prefix clients/mission-control",
     "mission:demo": "npm start --prefix clients/mission-control",
     "mission:test": "npm test --prefix clients/mission-control",
+    "mission:autostart": "node scripts/mission-autostart.mjs",
     "start": "bash scripts/start.sh",
     "build": "bash scripts/build.sh",
     "build:webkit": "bash scripts/build-webkit-probe.sh",

@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { savedSyncAllowed } from './saved-sync.js';
 
 // Run before upstream modules initialize stores. Never discover an existing
 // wacli installation/session implicitly; normal startup is a synthetic demo.
@@ -27,9 +28,11 @@ if (!process.env.VITEST) {
   } else if (!process.env.WACLI_BIN || !path.isAbsolute(process.env.WACLI_BIN)) {
     throw new Error('Live mode needs an explicit absolute WACLI_BIN with auth pair support');
   }
-  // Only the bundled synthetic process may start automatically. Real pairing
-  // and real synchronization remain explicit actions in live mode.
-  process.env.WACLI_DISABLE_SYNC = mode === 'demo' ? '0' : '1';
+  // A fresh live candidate stays stopped. Explicit opt-in may resume only an
+  // authenticated saved session; upstream startup still respects sleep mode.
+  const resumeSaved = savedSyncAllowed({ mode, enabled: process.env.FOURDOCK_AUTO_SYNC,
+    bin: process.env.WACLI_BIN, store: process.env.WACLI_STORE_DIR });
+  process.env.WACLI_DISABLE_SYNC = mode === 'demo' || resumeSaved ? '0' : '1';
   process.env.WACLI_UPDATE_CHECK = '0';
   process.env.PORT ||= '4702';
   process.env.LOG_LEVEL ||= 'ERROR';

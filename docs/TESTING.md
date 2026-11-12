@@ -12,6 +12,20 @@ Only the explicitly confirmed manual subtests are passed. Fixture subtests do no
 pass real-account requirements.
 Sanitized automated results: [evidence/ui-results.json](evidence/ui-results.json).
 
+## Automatic startup, 2026-11-12
+
+- PASS AUTOMATICO: API/web production builds; 21 focused API tests (saved-session
+  startup plus existing sleep behavior) and three installer tests. They verify
+  explicit opt-in, read-only bounded auth check, rejection of partial/invalid/
+  symlinked sessions, private plist/config/logs and no foreign-agent overwrite.
+- PASS AUTOMATICO: installed the user launch agent via launchctl with system SSH.
+  Only the old owned temporary forward was replaced. Restarted the named job;
+  new SSH PID and restored local HTTP authenticated/connected/sync-running state
+  confirm process reconnection. Private config references the existing key only.
+- NON ESEGUITO: full CI/browser offline recovery, candidate auto-sync after restart,
+  full Mac login/physical sleep-wake/server reboot. No global network/reboot,
+  real messages, account inspection, auth retry or native Fourdock execution.
+
 ## Mission Control candidate implementation, 2026-11-11
 
 Notification-test repair in progress: owner enabled the app toggle; no visible

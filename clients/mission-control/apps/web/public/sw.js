@@ -4,7 +4,20 @@ self.addEventListener('activate', event => event.waitUntil(self.clients.claim())
 self.addEventListener('fetch', event => {
   if (event.request.mode !== 'navigate') return;
   event.respondWith(fetch(event.request).catch(() => new Response(
-    '<!doctype html><title>Fourdock offline</title><h1>Fourdock non è raggiungibile</h1><p>Riapri il collegamento al client e ricarica questa finestra.</p>',
+    `<!doctype html><meta name="viewport" content="width=device-width, initial-scale=1"><title>Fourdock offline</title>
+    <body style="background:#12151b;color:#eef2f7;font:18px system-ui;padding:48px">
+    <h1>Riconnessione a Fourdock…</h1><p>La finestra tornerà disponibile appena il collegamento sarà ripristinato.</p>
+    <script>
+    (function retry() {
+      setTimeout(async () => {
+        try {
+          const response = await fetch('/', {method: 'HEAD', cache: 'no-store'});
+          if (response.ok) { location.reload(); return; }
+        } catch {}
+        retry();
+      }, 2000);
+    })();
+    </script>`,
     { headers: { 'Content-Type': 'text/html; charset=utf-8' } },
   )));
 });

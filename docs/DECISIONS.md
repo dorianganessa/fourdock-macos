@@ -1,5 +1,16 @@
 # Decisions and authentication evidence
 
+## 2026-11-12 — Automate only the existing candidate's saved connection
+
+Owner accepted automatic startup/reconnection. Use a user launch agent with the
+system SSH binary and private connection config, preserving strict host checks,
+the existing key, Chrome permissions and the authenticated candidate store.
+Enable backend sync at boot only by explicit opt-in plus a bounded read-only
+authenticated-session check; missing/failed sessions never trigger pairing.
+Respect persisted sleep mode and manual container stops. This changes startup
+behavior for the owned candidate, without changing the production monitor or
+the native executable hold. Recover an offline PWA navigation without chat caching.
+
 ## 2026-11-11 — Implement the existing Mission Control UI with a pairing adapter
 
 Owner accepted this route and requested implementation. Reuse the upstream MIT

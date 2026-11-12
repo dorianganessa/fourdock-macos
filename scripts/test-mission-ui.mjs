@@ -118,6 +118,13 @@ try {
   assert.deepEqual(outcome, { ok: true, valid: true, error: false });
   results.push('Loaded Chrome connector delegates to HTTPS-origin fixture after trusted click; initial tab navigation is attached by the fixture, no real WebAuthn ceremony');
   await page.bringToFront();
+  await page.waitForFunction(() => navigator.serviceWorker.controller);
+  await context.setOffline(true);
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await page.getByRole('heading', { name: 'Riconnessione a Fourdock…' }).waitFor();
+  await context.setOffline(false);
+  await page.getByText('Alice · demo', { exact: true }).first().waitFor();
+  results.push('Network-only offline page automatically returns to the synthetic app when connectivity resumes; no chat caching');
   await mkdir('dist', { recursive: true });
   await page.screenshot({ path: 'dist/mission-control-synthetic.png' });
   await writeFile('dist/mission-control-ui.json', JSON.stringify({ date: new Date().toISOString(), fixture: true,

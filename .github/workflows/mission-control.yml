@@ -2,9 +2,9 @@ name: Fourdock WhatsApp candidate
 on:
   push:
     branches: [main]
-    paths: ['clients/mission-control/**', 'scripts/test-mission-ui.mjs', '.github/workflows/mission-control.yml']
+    paths: ['clients/mission-control/**', 'scripts/test-mission-ui.mjs', 'scripts/mission-autostart.mjs', 'tests/mission-autostart.test.mjs', '.github/workflows/mission-control.yml']
   pull_request:
-    paths: ['clients/mission-control/**', 'scripts/test-mission-ui.mjs', '.github/workflows/mission-control.yml']
+    paths: ['clients/mission-control/**', 'scripts/test-mission-ui.mjs', 'scripts/mission-autostart.mjs', 'tests/mission-autostart.test.mjs', '.github/workflows/mission-control.yml']
   workflow_dispatch:
 permissions:
   contents: read
@@ -29,11 +29,17 @@ jobs:
         env:
           FOURDOCK_WACLI_IMAGE: local-test-source:unused
       - run: npm test --prefix clients/mission-control
+      - run: node --test tests/mission-autostart.test.mjs
       # Install the browser only; the actual launch/fixture below verifies the
       # runner's runtime libraries without a redundant system package install.
       - run: npx playwright install chromium
         timeout-minutes: 4
       - run: xvfb-run node scripts/test-mission-ui.mjs
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: Fourdock-WhatsApp-api
+          path: clients/mission-control/apps/api/dist
+          if-no-files-found: error
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: Fourdock-WhatsApp-web

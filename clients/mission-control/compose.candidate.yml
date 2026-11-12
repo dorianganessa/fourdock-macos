@@ -10,7 +10,9 @@ services:
     # Linux homeserver only. The app binds 127.0.0.1, reached by a private
     # SSH loopback tunnel; no public router or all-interface listener.
     network_mode: host
-    restart: "no"
+    restart: unless-stopped
+    environment:
+      FOURDOCK_AUTO_SYNC: ${FOURDOCK_AUTO_SYNC:-0}
     mem_limit: 768m
     cpus: 1
     pids_limit: 160

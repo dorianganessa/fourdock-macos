@@ -6,6 +6,8 @@ UI and adds the browser-assisted pairing method. Start with synthetic data:
 `npm run mission:setup`, `npm run mission:build`, `npm run mission:demo`, then
 http://127.0.0.1:4702. See [candidate instructions](clients/mission-control/FOURDOCK.md).
 This does not replace the four-service Chrome workspace or use existing sessions.
+Automatic connection setup for the candidate is described in
+[AUTOSTART.md](docs/AUTOSTART.md); it uses system SSH and saved-session-only startup.
 **Working baseline (2026-11-10): the Chrome workspace remains available.**
 Version 0.2.0 adds global service shortcuts and a notification relay that retains
 sender/preview while adding Fourdock and the service name. macOS attribution

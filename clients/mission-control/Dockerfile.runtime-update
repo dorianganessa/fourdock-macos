@@ -1,0 +1,5 @@
+# Keep the explicitly selected existing CLI/dependencies and update tested code.
+ARG FOURDOCK_BASE_IMAGE
+FROM ${FOURDOCK_BASE_IMAGE}
+COPY --chown=node:node api/ /app/apps/api/dist/
+COPY --chown=node:node web/ /app/apps/web/dist/

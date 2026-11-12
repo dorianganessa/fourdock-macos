@@ -1,5 +1,19 @@
 # Fourdock
 
+2026-11-12 OWNER ACCEPTED AUTOMATIC START/RECONNECTION: implementing only the
+independent WhatsApp candidate's startup. Mac launch agent dev.fourdock.whatsapp-
+tunnel is installed/running using system SSH, private0600 config outside Git and
+the existing key (not copied). Only the verified old temporary tunnel was stopped.
+Restarted the new job once: new SSH PID and local HTTP authenticated/connected/
+sync running confirmed. No normal Chrome/profile/native security changes.
+Source adds explicit FOURDOCK_AUTO_SYNC=1 saved-session-only startup with bounded
+read-only auth status, no pairing/QR; default0 and sleep controls remain. This
+supersedes historical no-auto-sync wording only for this owned opt-in candidate.
+Backend CI/deployment pending; preserve the working preview-646eac5 base/volume
+and production monitor. New runtime update will retain CLI, replace tested API/web,
+set candidate restart unless-stopped and verify automatic sync without manual POST.
+See docs/AUTOSTART.md. No other service, messaging action or native retry authorized.
+
 2026-11-11 NOTIFICATION TEST FIX DEPLOYED: CI43045169931 passes at646eac5:
 558 API +491 web tests and four Chromium141 fixtures, OS delivery stubbed.
 Tested frontend artifact is live as index-CA7Q0aG7.js, sha256806a7e88e8b5c1a4c421e12c607cd7412a73c68384a8dc8103f6a0d67493c703.

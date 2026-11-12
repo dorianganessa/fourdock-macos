@@ -1,6 +1,17 @@
 # Plan and handoff
 
-Updated: 2026-11-11. **Prototype; not ready for daily use.**
+Updated: 2026-11-12. **Prototype; daily-use recovery checks in progress.**
+
+## Automatic startup and reconnection
+
+Owner accepted this next step. System SSH now runs under a private per-user Mac
+launch agent; a controlled job restart recreated its connection with the same
+authenticated/running backend. No browser/profile/key was replaced. Backend
+saved-session-only startup, restart policy and network-only offline-page recovery
+are implemented and undergoing CI/deployment. Four saved-session cases, existing
+sleep checks and three installer safety tests pass locally; both builds pass.
+Next: deploy tested API/web while retaining CLI/volume; verify candidate restart
+automatically resumes sync; owner then closes/reopens the PWA. See AUTOSTART.md.
 
 ## Current implementation: reused Mission Control WhatsApp candidate
 
