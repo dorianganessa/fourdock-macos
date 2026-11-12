@@ -120,6 +120,27 @@ try {
   assert.deepEqual(outcome, { ok: true, valid: true, error: false });
   results.push('Loaded Chrome connector delegates to HTTPS-origin fixture after trusted click; initial tab navigation is attached by the fixture, no real WebAuthn ceremony');
   await page.bringToFront();
+  let directSends = 0;
+  let directPayload;
+  await page.route('**/api/send/text', async route => {
+    directSends++;
+    directPayload = route.request().postDataJSON();
+    await route.fulfill({ json: { success: true, data: { sent: true, messageId: 'synthetic-send' }, error: null } });
+  });
+  await page.evaluate(async () => {
+    localStorage.removeItem('fourdock_confirm_sends');
+    await fetch('/api/mode', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ readOnly: false }) });
+  });
+  const messageBox = page.getByPlaceholder(/Message Bob/);
+  await messageBox.fill('Demo 👋🏽 ❤️‍🔥');
+  await messageBox.press('Enter');
+  await messageBox.waitFor();
+  for (let attempt = 0; attempt < 50 && directSends === 0; attempt++) await page.waitForTimeout(100);
+  assert.equal(directSends, 1);
+  assert.equal(directPayload.message, 'Demo 👋🏽 ❤️‍🔥');
+  assert.equal(directPayload.confirm, true);
+  assert.equal(await page.getByRole('dialog').count(), 0);
+  results.push('First Enter dispatches Unicode emoji text exactly once without confirmation; send endpoint is intercepted and no message leaves the fixture');
   await page.waitForFunction(() => navigator.serviceWorker.controller);
   // Stop the synthetic backend itself: browser offline emulation need not
   // interrupt a service worker's separate network context.

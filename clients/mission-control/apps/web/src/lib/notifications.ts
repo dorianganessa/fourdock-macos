@@ -1,4 +1,4 @@
-import type { UnifiedChat, UnifiedMessage } from '../types.ts';
+import type { UnifiedChat, UnifiedContact, UnifiedMessage } from '../types.ts';
 import { messagePreviewText } from './messagePreview.ts';
 
 export const NOTIFICATIONS_STORAGE_KEY = 'wacli_notifications_enabled';
@@ -88,6 +88,21 @@ export interface MessageNotification {
   title: string;
   body: string;
   tag: string;
+}
+
+/** Prefer this user's synced address-book name over a phone or a push name. */
+export function withNotificationNames(
+  msg: UnifiedMessage, chat?: UnifiedChat, contact?: UnifiedContact,
+): UnifiedMessage {
+  const name = (...values: Array<string | undefined>) => values
+    .map(value => (value ?? '').trim())
+    .find(value => value && !value.includes('@') && !/^[+\d\s().-]+$/.test(value));
+  const group = msg.chatJid.endsWith('@g.us');
+  const saved = name(contact?.alias, contact?.systemName, contact?.name);
+  return { ...msg,
+    chatName: chat?.name || msg.chatName,
+    senderName: saved || (group ? name(msg.senderName) : name(chat?.name, msg.chatName, msg.senderName)) || msg.senderName,
+  };
 }
 
 /** The notification's own copy, separated from the decision to show one. */

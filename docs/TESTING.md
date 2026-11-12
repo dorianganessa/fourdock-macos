@@ -12,6 +12,17 @@ Only the explicitly confirmed manual subtests are passed. Fixture subtests do no
 pass real-account requirements.
 Sanitized automated results: [evidence/ui-results.json](evidence/ui-results.json).
 
+## Client usability / Ferdium, 2026-11-12
+
+- PASS AUTOMATICO: 83 focused web cases, including direct send, composed Unicode
+  emoji, StrictMode single dispatch, attachment failure/manual retry, contact
+  alias/address-book priority, group speaker name, cached lookup and fallback.
+- PASS AUTOMATICO: optional Ferdium recipe's exact loopback URL, title-derived
+  unread badge, zero-count reset and foreign-origin rejection. No account access.
+- NON ESEGUITO: full CI/browser fixture, deployment and owner actual sends/names;
+  original Ferdium Mac passkey repair and fallback native OS behavior. No real
+  message, credential/profile read or custom native executable was used.
+
 ## Automatic startup, 2026-11-12
 
 - PASS AUTOMATICO: owner-authorized sending enablement via existing /api/mode.

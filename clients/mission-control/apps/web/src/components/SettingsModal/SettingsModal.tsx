@@ -16,6 +16,18 @@ import {
 import { isHeartbeatStale } from '../../lib/heartbeat.ts';
 import { useAppStore } from '../../store/appStore.ts';
 import { useModalDialog } from '../../hooks/useModalDialog.ts';
+import { sendConfirmationEnabled, setSendConfirmationEnabled } from '../../lib/sendConfirmation.ts';
+
+const SendConfirmationToggle: React.FC = () => {
+  const [enabled, setEnabled] = useState(sendConfirmationEnabled);
+  return <label className="flex items-center gap-3 p-3 bg-mc-bg rounded border border-mc-border text-mc-text">
+    <input type="checkbox" checked={enabled} onChange={event => {
+      setEnabled(event.target.checked);
+      setSendConfirmationEnabled(event.target.checked);
+    }} />
+    Chiedi conferma prima di inviare
+  </label>;
+};
 
 /**
  * Desktop notifications are opt-in twice over: the operator has to switch them
@@ -169,6 +181,7 @@ export const SettingsModal: React.FC = () => {
           </div>
 
           <NotificationToggle />
+          <SendConfirmationToggle />
 
           {sleeping && (
             <p className="text-[11px] text-mc-textMuted font-sans">

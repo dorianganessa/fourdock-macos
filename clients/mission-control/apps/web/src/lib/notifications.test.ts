@@ -5,8 +5,9 @@ import {
   notificationsEnabled,
   setNotificationsEnabled,
   shouldNotify,
+  withNotificationNames,
 } from './notifications.ts';
-import type { UnifiedChat, UnifiedMessage } from '../types.ts';
+import type { UnifiedChat, UnifiedContact, UnifiedMessage } from '../types.ts';
 
 function message(overrides: Partial<UnifiedMessage> = {}): UnifiedMessage {
   return {
@@ -115,6 +116,26 @@ describe('shouldNotify', () => {
 });
 
 describe('messageNotificationContent', () => {
+  const contact: UnifiedContact = { jid: 'alice@s.whatsapp.net', phone: '1234',
+    name: 'Push name', alias: '', systemName: 'Alice in address book', updatedAt: null, tags: [] };
+
+  it('prefers the address-book name to a push name or phone number', () => {
+    const resolved = withNotificationNames(message({ senderName: '1234' }), chat(), contact);
+    expect(messageNotificationContent(resolved).title).toBe('Alice in address book');
+    expect(messageNotificationContent(withNotificationNames(message(), chat(), { ...contact, alias: 'My alias' })).title).toBe('My alias');
+  });
+
+  it('keeps the group subject while naming the participant from the address book', () => {
+    const resolved = withNotificationNames(message({ chatJid: 'team@g.us', chatName: 'Old subject' }),
+      chat({ jid: 'team@g.us', kind: 'group', name: 'Team' }), contact);
+    expect(messageNotificationContent(resolved)).toMatchObject({ title: 'Team', body: 'Alice in address book: ping' });
+  });
+
+  it('uses the known chat name when contact details are missing', () => {
+    expect(messageNotificationContent(withNotificationNames(message({ senderName: '1234' }), chat())).title).toBe('Alice');
+    expect(messageNotificationContent(withNotificationNames(message({ senderName: '1234', chatName: '1234' }))).title).toBe('1234');
+  });
+
   it('titles a direct message with the sender', () => {
     const content = messageNotificationContent(message());
     expect(content.title).toBe('Alice');

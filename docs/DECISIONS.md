@@ -1,5 +1,15 @@
 # Decisions and authentication evidence
 
+## 2026-11-12 — Direct sends and contact names; investigate Ferdium again
+
+The owner's latest direction reopens Ferdium, preferring the original web client.
+No verified Mac recipe fix is established by the current upstream work; prepare
+an optional recipe for the already authenticated Fourdock UI as the fallback,
+without rebuilding its signed app. Improve the active client meanwhile: immediate
+Enter/click dispatch, optional extra confirmation, synced address-book notice names
+and unchanged Unicode text for emoji. Keep server live-mode checks, scheduling
+time selection, failed drafts and explicit manual retries. See FERDIUM.md.
+
 ## 2026-11-12 — Enable the candidate's existing send controls
 
 Owner explicitly requested all client sending. Use the existing persisted mode

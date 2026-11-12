@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
+import { api } from '../api/client.ts';
 import { useAppStore } from '../store/appStore.ts';
 import { chatFromMessage } from '../lib/chatFromMessage.ts';
 import { markChatAsRead } from '../lib/chatRead.ts';
@@ -10,11 +11,12 @@ import {
   notificationsSupported,
   shouldNotify,
   showMessageNotification,
+  withNotificationNames,
 } from '../lib/notifications.ts';
 import { sameWhatsAppUser } from '../lib/presence.ts';
 import { patchMessages, prependMessage, type MessagePages } from '../lib/messagePages.ts';
 import { withReceipt } from '../lib/deliveryStatus.ts';
-import type { MissionControlEvent, MissionControlStatus, UnifiedChat } from '../types.ts';
+import type { MissionControlEvent, MissionControlStatus, UnifiedChat, UnifiedContact } from '../types.ts';
 
 /**
  * How long to hold a chat-list refetch open so a burst of messages from chats
@@ -233,15 +235,30 @@ export function useWebSocket() {
             });
 
             if (notify.show) {
-              showMessageNotification(newMsg, () => {
-                const target = railChat ?? chatFromMessage(newMsg);
-                useAppStore.getState().setSelectedChat({ ...target, unread: false, unreadCount: 0 });
-                try {
-                  localStorage.setItem('wacli_selected_chat', target.jid);
-                } catch {
-                  // Selection still applies for this session.
-                }
-              });
+              const show = (contact?: UnifiedContact) => {
+                // The user may have opened this chat while its name was loading.
+                if (!shouldReconnect || !shouldNotify({ msg: newMsg, chat: railChat,
+                  isViewingChat: useAppStore.getState().selectedChat?.jid === newMsg.chatJid,
+                  documentVisible: operatorIsLooking(), enabled: notificationsEnabled(),
+                  supported: notificationsSupported(), permission: notificationPermission(),
+                }).show) return;
+                showMessageNotification(withNotificationNames(newMsg, railChat, contact), () => {
+                  const target = railChat ?? chatFromMessage(newMsg);
+                  useAppStore.getState().setSelectedChat({ ...target, unread: false, unreadCount: 0 });
+                  try {
+                    localStorage.setItem('wacli_selected_chat', target.jid);
+                  } catch {
+                    // Selection still applies for this session.
+                  }
+                });
+              };
+              if (newMsg.senderJid) {
+                // Read only this sender's already-synced contact, cached per JID.
+                void queryClient.fetchQuery({ queryKey: ['contact', newMsg.senderJid],
+                  queryFn: () => api.getContact({ jid: newMsg.senderJid }, AbortSignal.timeout(1500)),
+                  staleTime: 300_000, retry: false,
+                }).then(contact => show(contact)).catch(() => show());
+              } else show();
             }
           } else if (payload.type === 'message.receipt') {
             const { chatJid, messageIds, status } = payload.data;

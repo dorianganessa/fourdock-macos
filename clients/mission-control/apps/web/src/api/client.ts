@@ -169,8 +169,8 @@ export const api = {
     request<ConversationExport>('/api/messages/export', {}, params),
 
   /** One contact's local metadata, including this machine's own tags. */
-  getContact: (params: { jid: string }) =>
-    request<UnifiedContact>('/api/contacts/show', {}, params),
+  getContact: (params: { jid: string }, signal?: AbortSignal) =>
+    request<UnifiedContact>('/api/contacts/show', { signal }, params),
 
   getGroups: (params: { query?: string } = {}) =>
     request<UnifiedGroup[]>('/api/groups', {}, params),

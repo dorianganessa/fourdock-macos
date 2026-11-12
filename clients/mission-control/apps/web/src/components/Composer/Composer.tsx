@@ -5,6 +5,7 @@ import { detectTextDirection } from '../../lib/textDirection.ts';
 import { useUiCommand } from '../../hooks/useUiCommand.ts';
 import { useAppStore } from '../../store/appStore.ts';
 import type { UnifiedMessage } from '../../types.ts';
+import { sendConfirmationEnabled } from '../../lib/sendConfirmation.ts';
 
 /** What the confirm dialog shows instead of a bare wamid. */
 function describeReplyTarget(msg: UnifiedMessage): { sender: string; text: string } {
@@ -70,7 +71,7 @@ export const Composer: React.FC = () => {
     }
   }, [focusComposerTrigger]);
 
-  /** Hands the draft to the confirmation step; nothing is sent from here. */
+  /** Hands the draft to the shared dispatcher, or to the scheduling dialog. */
   const stageForConfirm = (scheduleMode: boolean) => {
     if (!selectedChat) return;
     if (!composerDraft.trim() && !composerFile) return;
@@ -83,6 +84,7 @@ export const Composer: React.FC = () => {
       replyToPreview: replyingTo ? describeReplyTarget(replyingTo) : undefined,
       fileAttachment: composerFile ?? undefined,
       scheduleMode,
+      autoSend: !scheduleMode && !sendConfirmationEnabled(),
     });
     setActiveModal('send-confirm');
   };
@@ -137,6 +139,7 @@ export const Composer: React.FC = () => {
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.nativeEvent.isComposing || e.repeat) return;
     if (e.key === 'Enter' && !e.shiftKey && !e.metaKey && !e.ctrlKey) {
       e.preventDefault();
       stageForConfirm(false);
@@ -314,7 +317,7 @@ export const Composer: React.FC = () => {
           title={
             !hasContent
               ? 'Type a message or select an attachment to send'
-              : 'Send message (opens confirmation)'
+              : sendConfirmationEnabled() ? 'Send message (opens confirmation)' : 'Send message'
           }
         >
           <Send size={14} />

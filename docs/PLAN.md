@@ -2,6 +2,17 @@
 
 Updated: 2026-11-12. **Prototype; daily-use recovery checks in progress.**
 
+## Client usability and Ferdium
+
+Owner requested direct sending, address-book notification names and emoji; prefers
+repairing Ferdium's original WhatsApp Web, with our integration as fallback.
+Implemented first-Enter immediate dispatch, optional confirmation preference and
+bounded cached contact lookup; focused83 tests and recipe badge fixture pass.
+Build/full CI/deployment pending. The original Mac passkey path still has no
+verified recipe-only fix; Linux-only Ferdium support and open Electron hybrid
+patches are not a target pass. An optional recipe is prepared to load the current
+authenticated client without rebuilding Ferdium. See FERDIUM.md.
+
 ## Sending enabled by owner
 
 Owner requested enabling all sends from the independent client. Its existing

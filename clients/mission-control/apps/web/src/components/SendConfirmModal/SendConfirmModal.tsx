@@ -39,7 +39,8 @@ const SendConfirmDialog: React.FC<{ sendConfirmData: SendConfirmRequest }> = ({
   // Opened again by a send that failed after the dialog closed: say why.
   const [errorMessage, setErrorMessage] = useState<string | null>(sendConfirmData.error ?? null);
 
-  const dialogRef = useModalDialog<HTMLDivElement>(true, () => setActiveModal(null));
+  const dialogRef = useModalDialog<HTMLDivElement>(!sendConfirmData.autoSend, () => setActiveModal(null));
+  const autoStarted = useRef(false);
 
   // The "scheduled" tick is held on screen for a moment before the dialog closes
   // itself. That timer writes shared app state, so it has to die with the
@@ -98,6 +99,12 @@ const SendConfirmDialog: React.FC<{ sendConfirmData: SendConfirmRequest }> = ({
     // before anything is dispatched, rather than leaving the console claiming
     // live sends while the server still refuses them.
     if (isReadOnly) {
+      if (data.autoSend) {
+        const error = 'Read-only mode is active. Unlock sending before retrying.';
+        setErrorMessage(error);
+        setSendConfirmData({ ...data, autoSend: false, error });
+        return;
+      }
       try {
         await setSafeMode(false);
       } catch (err: unknown) {
@@ -180,6 +187,7 @@ const SendConfirmDialog: React.FC<{ sendConfirmData: SendConfirmRequest }> = ({
       if (store.activeModal === null) {
         store.setSendConfirmData({
           ...data,
+          autoSend: false,
           error: err instanceof Error ? err.message : String(err),
         });
         store.setActiveModal('send-confirm');
@@ -198,6 +206,13 @@ const SendConfirmDialog: React.FC<{ sendConfirmData: SendConfirmRequest }> = ({
     queryClient.invalidateQueries({ queryKey: ['messages', jid] });
     queryClient.invalidateQueries({ queryKey: ['chats'] });
   };
+
+  useEffect(() => {
+    if (!sendConfirmData.autoSend || autoStarted.current) return;
+    // StrictMode replays effects; the same click must dispatch only once.
+    autoStarted.current = true;
+    void dispatchNow();
+  }, [sendConfirmData.autoSend]);
 
   const handleConfirmSend = async () => {
     setErrorMessage(null);
@@ -282,6 +297,8 @@ const SendConfirmDialog: React.FC<{ sendConfirmData: SendConfirmRequest }> = ({
     e.preventDefault();
     if (canSubmit) void handleConfirmSend();
   };
+
+  if (sendConfirmData.autoSend) return null;
 
   return (
     <div className="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4">

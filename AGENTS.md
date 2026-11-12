@@ -1,5 +1,18 @@
 # Fourdock
 
+2026-11-12 CLIENT UX / FERDIUM: owner asks to remove per-send confirmation,
+prefer address-book names in notices, use emoji and repair original Ferdium
+WhatsApp Web first, with our client integration as fallback. Source implements
+direct immediate sends (optional settings checkbox restores confirmation), shared
+existing dispatcher with StrictMode guard/manual failure retry, and bounded cached
+sender-contact name resolution. Unicode emoji need no protocol change. Focused
+83 web tests pass; build/full CI/deployment pending. No real send or account read.
+Original Ferdium recipe has no hybrid fix: upstream2337 is Linux-only; Electron
+55427/55426 remain open/unmerged. Do not claim an original Mac WhatsApp repair.
+Fallback recipe prepared under integrations/ferdium, synthetic badge test passes;
+no Ferdium binary/profile/service modified yet. See docs/FERDIUM.md. This latest
+owner direction supersedes historical exclusion of Ferdium for this investigation.
+
 2026-11-12 OWNER ENABLED ALL CLIENT SENDS: owner explicitly requested enabling
 all sending in the independent Fourdock client. Set its existing /api/mode
 readOnly=false, verified mode/health, then one graceful candidate-only restart

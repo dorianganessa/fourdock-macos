@@ -10,9 +10,10 @@ import { flattenMessagePages, type MessagePages } from '../lib/messagePages.ts';
 import type { MissionControlEvent, UnifiedChat, UnifiedMessage } from '../types.ts';
 
 const markChatRead = vi.hoisted(() => vi.fn().mockResolvedValue(undefined));
+const getContact = vi.hoisted(() => vi.fn().mockResolvedValue(undefined));
 
 vi.mock('../api/client.ts', () => ({
-  api: { markChatRead },
+  api: { markChatRead, getContact },
   ApiClientError: class extends Error {},
 }));
 
@@ -314,6 +315,7 @@ class FakeNotification {
 
 describe('useWebSocket desktop notifications', () => {
   beforeEach(() => {
+    getContact.mockReset().mockResolvedValue(undefined);
     vi.useFakeTimers({ shouldAdvanceTime: true });
     FakeWebSocket.instances = [];
     FakeNotification.instances = [];
@@ -332,7 +334,7 @@ describe('useWebSocket desktop notifications', () => {
     localStorage.clear();
   });
 
-  it('raises a notification for an incoming message', () => {
+  it('raises a notification for an incoming message', async () => {
     queryClient.setQueryData(['chats', '', 'all'], [chat()]);
     const { socket, unmount } = mount();
 
@@ -340,10 +342,31 @@ describe('useWebSocket desktop notifications', () => {
       socket.emit({ type: 'message.new', data: message(), ts: '2026-09-01T11:00:00Z' });
     });
 
-    expect(FakeNotification.instances).toHaveLength(1);
+    await waitFor(() => expect(FakeNotification.instances).toHaveLength(1));
     expect(FakeNotification.instances[0].title).toBe('Alice');
     expect(FakeNotification.instances[0].options.body).toBe('the newest line');
 
+    unmount();
+  });
+
+  it('looks up and caches the sender address-book name before notifying', async () => {
+    getContact.mockResolvedValue({ jid: 'alice@s.whatsapp.net', systemName: 'Saved Alice', alias: '', name: 'Push' });
+    queryClient.setQueryData(['chats', '', 'all'], [chat()]);
+    const { socket, unmount } = mount();
+    act(() => { socket.emit({ type: 'message.new', data: message({ senderName: '1234' }), ts: 'now' }); });
+    await waitFor(() => expect(FakeNotification.instances[0]?.title).toBe('Saved Alice'));
+    act(() => { socket.emit({ type: 'message.new', data: message({ msgId: 'MSG-2' }), ts: 'now' }); });
+    await waitFor(() => expect(FakeNotification.instances).toHaveLength(2));
+    expect(getContact).toHaveBeenCalledTimes(1);
+    unmount();
+  });
+
+  it('still notifies with a known chat name when the contact lookup fails', async () => {
+    getContact.mockRejectedValue(new Error('Contact unavailable'));
+    queryClient.setQueryData(['chats', '', 'all'], [chat()]);
+    const { socket, unmount } = mount();
+    act(() => { socket.emit({ type: 'message.new', data: message({ senderName: '1234' }), ts: 'now' }); });
+    await waitFor(() => expect(FakeNotification.instances[0]?.title).toBe('Alice'));
     unmount();
   });
 
@@ -372,7 +395,7 @@ describe('useWebSocket desktop notifications', () => {
     unmount();
   });
 
-  it('selects the chat when the notification is clicked', () => {
+  it('selects the chat when the notification is clicked', async () => {
     queryClient.setQueryData(['chats', '', 'all'], [chat()]);
     const { socket, unmount } = mount();
 
@@ -380,16 +403,15 @@ describe('useWebSocket desktop notifications', () => {
       socket.emit({ type: 'message.new', data: message(), ts: '2026-09-01T11:00:00Z' });
     });
 
-    act(() => {
-      FakeNotification.instances[0].onclick?.();
-    });
+    await waitFor(() => expect(FakeNotification.instances).toHaveLength(1));
+    act(() => { FakeNotification.instances[0].onclick?.(); });
 
     expect(useAppStore.getState().selectedChat?.jid).toBe('alice@s.whatsapp.net');
     expect(FakeNotification.instances[0].closed).toBe(true);
     unmount();
   });
 
-  it('can still open a chat the rail has never listed', () => {
+  it('can still open a chat the rail has never listed', async () => {
     queryClient.setQueryData(['chats', '', 'all'], [chat()]);
     const { socket, unmount } = mount();
 
@@ -401,9 +423,8 @@ describe('useWebSocket desktop notifications', () => {
       });
     });
 
-    act(() => {
-      FakeNotification.instances[0].onclick?.();
-    });
+    await waitFor(() => expect(FakeNotification.instances).toHaveLength(1));
+    act(() => { FakeNotification.instances[0].onclick?.(); });
 
     expect(useAppStore.getState().selectedChat?.jid).toBe('stranger@s.whatsapp.net');
     expect(useAppStore.getState().selectedChat?.name).toBe('Stranger');

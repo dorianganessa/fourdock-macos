@@ -30,6 +30,7 @@ jobs:
           FOURDOCK_WACLI_IMAGE: local-test-source:unused
       - run: npm test --prefix clients/mission-control
       - run: node --test tests/mission-autostart.test.mjs
+      - run: node --test tests/ferdium-recipe.test.mjs
       # Install the browser only; the actual launch/fixture below verifies the
       # runner's runtime libraries without a redundant system package install.
       - run: npx playwright install chromium

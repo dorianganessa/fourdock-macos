@@ -1,0 +1,12 @@
+{
+  "id": "fourdock-whatsapp",
+  "name": "Fourdock WhatsApp",
+  "version": "0.1.0",
+  "type": "commonjs",
+  "license": "MIT",
+  "repository": "https://github.com/dorianganessa/fourdock-macos",
+  "config": {
+    "serviceURL": "http://127.0.0.1:4702/",
+    "hasNotificationSound": true
+  }
+}

@@ -109,6 +109,8 @@ interface AppState {
     replyToPreview?: { sender: string; text: string };
     fileAttachment?: File;
     scheduleMode?: boolean;
+    /** User already pressed Send; immediate sends need no second dialog. */
+    autoSend?: boolean;
     scheduledAt?: string;
     /**
      * Why the last try at this same send failed. The dialog closes once a send

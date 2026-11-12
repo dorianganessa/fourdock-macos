@@ -8,6 +8,7 @@ import { SendConfirmModal } from './SendConfirmModal.tsx';
 import { useAppStore } from '../../store/appStore.ts';
 import { flattenMessagePages, prependMessage, type MessagePages } from '../../lib/messagePages.ts';
 import type { UnifiedChat, UnifiedMessage } from '../../types.ts';
+import { setSendConfirmationEnabled } from '../../lib/sendConfirmation.ts';
 
 const getMode = vi.hoisted(() => vi.fn());
 const setMode = vi.hoisted(() => vi.fn());
@@ -36,7 +37,8 @@ const CHAT: UnifiedChat = {
 };
 
 /** Composer and dialog together, as App mounts them: one drives the other. */
-function renderConsole(client = new QueryClient({ defaultOptions: { queries: { retry: false } } })) {
+function renderConsole(client = new QueryClient({ defaultOptions: { queries: { retry: false } } }), confirm = true) {
+  setSendConfirmationEnabled(confirm);
   return render(
     <QueryClientProvider client={client}>
       <Composer />
@@ -56,6 +58,51 @@ const confirmButton = () =>
 /** For a dialog staged after render, which has to be waited for. */
 const confirmButtonWhenOpen = async () =>
   within(await screen.findByRole('dialog')).getByRole('button', { name: /CONFIRM & SEND/i });
+
+describe('Fourdock direct sending', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    localStorage.setItem('wacli_safe_mode', 'false');
+    getMode.mockResolvedValue({ readOnly: false });
+    sendText.mockResolvedValue({ sent: true, messageId: 'wamid.direct' });
+    sendFile.mockResolvedValue({ sent: true, messageId: 'wamid.file' });
+    useAppStore.setState({ selectedChat: CHAT, activeModal: null, sendConfirmData: null,
+      composerDrafts: {}, composerFiles: {}, replyingToByChat: {} });
+  });
+  afterEach(() => { localStorage.clear(); useAppStore.setState({ selectedChat: null, activeModal: null, sendConfirmData: null }); });
+
+  it('sends emoji text on the first Enter, without a confirmation dialog', async () => {
+    const user = userEvent.setup();
+    renderConsole(undefined, false);
+    await user.type(await composerBox(), 'Ciao 👋🏽 ❤️‍🔥');
+    await user.keyboard('{Enter}');
+    await waitFor(() => expect(sendText).toHaveBeenCalledTimes(1));
+    expect(sendText).toHaveBeenCalledWith(expect.objectContaining({ message: 'Ciao 👋🏽 ❤️‍🔥', confirm: true }));
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+
+  it('does not duplicate a direct send when StrictMode replays effects', async () => {
+    setSendConfirmationEnabled(false);
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(<React.StrictMode><QueryClientProvider client={client}><Composer /><SendConfirmModal /></QueryClientProvider></React.StrictMode>);
+    const user = userEvent.setup();
+    await user.type(await composerBox(), 'once');
+    await user.keyboard('{Enter}');
+    await waitFor(() => expect(sendText).toHaveBeenCalledTimes(1));
+  });
+
+  it('sends an attachment directly and retains a failed draft for manual retry', async () => {
+    sendFile.mockRejectedValue(new Error('Upload failed'));
+    useAppStore.setState({ composerFiles: { [CHAT.jid]: new File(['fixture'], 'demo.txt') } });
+    renderConsole(undefined, false);
+    const user = userEvent.setup();
+    await user.click(screen.getByRole('button', { name: /^SEND$/ }));
+    await waitFor(() => expect(screen.getByText('Upload failed')).toBeInTheDocument());
+    expect(sendFile).toHaveBeenCalledTimes(1);
+    expect(useAppStore.getState().composerFiles[CHAT.jid]?.name).toBe('demo.txt');
+    expect(useAppStore.getState().sendConfirmData?.autoSend).toBe(false);
+  });
+});
 
 describe('SendConfirmModal keyboard flow', () => {
   beforeEach(() => {
