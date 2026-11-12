@@ -1,5 +1,6 @@
 import { chromium } from 'playwright';
 import { spawn } from 'node:child_process';
+import { once } from 'node:events';
 import { mkdtemp, readFile, writeFile, mkdir } from 'node:fs/promises';
 import path from 'node:path';
 import os from 'node:os';
@@ -8,9 +9,10 @@ import assert from 'node:assert/strict';
 if (process.env.CI !== 'true') throw new Error('Run the browser fixture on CI; target PWA/OS checks are owner-controlled.');
 const client = path.resolve('clients/mission-control');
 const temp = await mkdtemp(path.join(os.tmpdir(), 'fourdock-mission-'));
-const app = spawn(process.execPath, ['apps/api/dist/index.js'], {
+const startApp = () => spawn(process.execPath, ['apps/api/dist/index.js'], {
   cwd: client, env: { ...process.env, FOURDOCK_MODE: 'demo', FOURDOCK_DATA_DIR: path.join(temp, 'data'), PORT: '4702' }, stdio: 'ignore',
 });
+let app = startApp();
 let context;
 const results = [];
 try {
@@ -119,10 +121,14 @@ try {
   results.push('Loaded Chrome connector delegates to HTTPS-origin fixture after trusted click; initial tab navigation is attached by the fixture, no real WebAuthn ceremony');
   await page.bringToFront();
   await page.waitForFunction(() => navigator.serviceWorker.controller);
-  await context.setOffline(true);
+  // Stop the synthetic backend itself: browser offline emulation need not
+  // interrupt a service worker's separate network context.
+  const stopped = once(app, 'exit');
+  app.kill('SIGTERM');
+  await stopped;
   await page.reload({ waitUntil: 'domcontentloaded' });
   await page.getByRole('heading', { name: 'Riconnessione a Fourdock…' }).waitFor();
-  await context.setOffline(false);
+  app = startApp();
   await page.getByText('Alice · demo', { exact: true }).first().waitFor();
   results.push('Network-only offline page automatically returns to the synthetic app when connectivity resumes; no chat caching');
   await mkdir('dist', { recursive: true });
