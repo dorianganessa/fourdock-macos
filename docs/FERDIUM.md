@@ -37,8 +37,13 @@ services/profiles and the application binary were not changed. No account-storag
 file is needed or copied.
 
 The recipe's loopback restriction and badge updates have a synthetic test.
-Actual native notification delivery, clicks and service switching in Ferdium
-remain owner checks. Its storage/notification permission is separate from the PWA:
+The owner now confirms the embedded client loads, the service/sidebar badge
+updates, and a notification arrives after enabling Fourdock Desktop Notifications
+inside Ferdium (it was initially OFF). Click routing and exact preview remain
+owner checks. Only the Dock icon counter is reported missing: next check is
+System Settings -> Notifications -> Ferdium -> Badge application icon.
+[Apple notification settings](https://support.apple.com/en-ca/guide/mac-help/mh40583/mac).
+Its storage/notification permission is separate from the PWA:
 enable the client Desktop Notifications toggle there and permit Ferdium notices
 if requested. Keep only one client window active when checking duplicate notices.
 No new WhatsApp login should be needed with the existing backend session.

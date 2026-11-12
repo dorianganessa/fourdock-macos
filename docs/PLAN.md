@@ -4,6 +4,12 @@ Updated: 2026-11-12. **Prototype; daily-use recovery checks in progress.**
 
 ## Client usability and Ferdium
 
+Owner now confirms the embedded client works, the sidebar service badge updates,
+and a notification arrived after enabling Fourdock Desktop Notifications inside
+Ferdium (it had been OFF). Only the app icon's Dock counter remains unresolved.
+Check macOS Ferdium Badge application icon first; the recipe transport already
+works. No code/runtime change was deployed during this diagnostic follow-up.
+
 Owner requested direct sending, address-book notification names and emoji; prefers
 repairing Ferdium's original WhatsApp Web, with our integration as fallback.
 Implemented first-Enter immediate dispatch, optional confirmation preference and

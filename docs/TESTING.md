@@ -14,6 +14,13 @@ Sanitized automated results: [evidence/ui-results.json](evidence/ui-results.json
 
 ## Client usability / Ferdium, 2026-11-12
 
+- PASS MANUALE CONFERMATO: owner loaded the embedded client and clarified the
+  service/sidebar badge updates. Fourdock Desktop Notifications in Ferdium was
+  OFF; after switching it on, the owner reports receiving a notification.
+  Exact preview text and click destination were not individually reported.
+- FAIL (owner report): only the Ferdium Dock icon counter does not update.
+  macOS Badge application icon state is unreported; no recipe/count-transport
+  failure follows from this. No code/runtime/session change was deployed.
 - PASS AUTOMATICO: 83 focused web cases, including direct send, composed Unicode
   emoji, StrictMode single dispatch, attachment failure/manual retry, contact
   alias/address-book priority, group speaker name, cached lookup and fallback.

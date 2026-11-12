@@ -1,5 +1,16 @@
 # Fourdock
 
+2026-11-12 FERDIUM OWNER CHECK: embedded client works. Owner clarified only the
+Ferdium DOCK icon badge fails; the service/sidebar badge updates. Do not diagnose
+a broken recipe/count transport from the earlier generic report. Fourdock's
+Desktop Notifications toggle inside Ferdium was OFF; after enabling it the owner
+explicitly received a notification. Embedding, sidebar count and native banner
+delivery now have manual confirmation. Dock counter remains open. Next focused
+check: macOS Notifications -> Ferdium -> Badge application icon. Do not infer its
+current toggle from undocumented/cached preference flags. No deployed code,
+session or security changes were made for this check; speculative direct-bridge
+edits were discarded after the owner's clarification. Preserve the working recipe.
+
 2026-11-12 CLIENT UX / FERDIUM: owner asks to remove per-send confirmation,
 prefer address-book names in notices, use emoji and repair original Ferdium
 WhatsApp Web first, with our client integration as fallback. Source implements
