@@ -1,5 +1,14 @@
 # Decisions and authentication evidence
 
+## 2026-11-12 — Enable the candidate's existing send controls
+
+Owner explicitly requested all client sending. Use the existing persisted mode
+setting readOnly=false for this candidate only; text/replies, files, reactions
+and scheduling share that switch. Verified through mode/health after a graceful
+candidate restart. This is permission configuration, with no code change or
+production-monitor policy change. The agent sends no real test content; actual
+delivery is still owner-controlled and unverified.
+
 ## 2026-11-12 — Automate only the existing candidate's saved connection
 
 Owner accepted automatic startup/reconnection. Use a user launch agent with the

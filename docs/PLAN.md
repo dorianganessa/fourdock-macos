@@ -2,6 +2,16 @@
 
 Updated: 2026-11-12. **Prototype; daily-use recovery checks in progress.**
 
+## Sending enabled by owner
+
+Owner requested enabling all sends from the independent client. Its existing
+read-only setting is now false, exposing the supported text/reply/file/reaction
+and scheduling controls. A graceful candidate restart confirmed the choice is
+persisted and authenticated/connected sync resumes. No real outbound action was
+performed by the agent; end-to-end delivery remains an owner check. The production
+monitor's policy is unchanged. Owner reports the App Store official app still
+fails linking, so that trial does not replace the working candidate.
+
 ## Automatic startup and reconnection
 
 Owner accepted this next step. System SSH now runs under a private per-user Mac

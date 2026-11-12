@@ -1,6 +1,6 @@
 # Authentication investigation
 
-Updated 2026-11-10. **All four services' logins and session persistence after a
+Updated 2026-11-12. **All four services' logins and session persistence after a
 full dedicated-browser restart are owner-confirmed. The original WhatsApp
 QR/passkey acceptance remains open.**
 Phone test environment reported by owner: Android, standard WhatsApp; version not
@@ -10,6 +10,13 @@ Only anonymous stages/results are recorded. No identifiers, QR images, credentia
 assertions, cookies, account screenshots or chat content belong in this repository.
 
 ## Official macOS app and public reports, 2026-11-10
+
+2026-11-12 follow-up: after checking recent official release availability, the
+owner tried the App Store distribution and reports the same linking failure.
+The installed App Store version/error screen was not independently inspected.
+This records an unsuccessful second distribution, without establishing the
+root cause or a general outage. Preserve the working Fourdock/wacli session;
+no further official-client retry, reset or replacement is requested.
 
 The owner clarified that the newly mentioned native-app failure concerns
 **official WhatsApp for macOS**, not our Swift probe. Do not conflate this with

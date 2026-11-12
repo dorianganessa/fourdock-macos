@@ -1,5 +1,16 @@
 # Fourdock
 
+2026-11-12 OWNER ENABLED ALL CLIENT SENDS: owner explicitly requested enabling
+all sending in the independent Fourdock client. Set its existing /api/mode
+readOnly=false, verified mode/health, then one graceful candidate-only restart
+confirmed persistence and automatic authenticated/connected sync recovery. This
+unlocks existing text/replies/files/reactions/scheduling; no new capabilities
+were implemented. No real message/attachment/reaction/job was created or sent
+by the agent, no chats read, no monitor policy changed. Historical readOnly=true
+checks below describe earlier states. Owner may need to refresh the PWA once.
+Owner also reports the App Store WhatsApp still has the same linking error;
+no further official-client retry/reset is requested. See AUTHENTICATION.md.
+
 2026-11-12 OWNER NOTIFICATION OBSERVATION: owner reports seeing notifications
 for now. Visible notification delivery is manually confirmed; do not repeat
 permission/test-button setup. Exact sender/preview text, click destination and

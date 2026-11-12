@@ -14,6 +14,13 @@ Sanitized automated results: [evidence/ui-results.json](evidence/ui-results.json
 
 ## Automatic startup, 2026-11-12
 
+- PASS AUTOMATICO: owner-authorized sending enablement via existing /api/mode.
+  GET mode and filtered health confirm readOnly=false. One graceful candidate
+  restart confirms persistence plus authenticated/connected/sync-running state.
+  No real outbound message, file, reaction or scheduled job was created/tested;
+  actual delivery is NON ESEGUITO. Earlier readOnly=true checks are historical.
+- FAIL (owner report): official WhatsApp App Store installation still gives the
+  same linking failure. Its installed version was not independently reread.
 - PASS MANUALE CONFERMATO: owner reports seeing notifications for now after the
   startup update. This confirms visible delivery; exact sender/preview, click
   destination and full PWA reopen were not individually reported. No additional
