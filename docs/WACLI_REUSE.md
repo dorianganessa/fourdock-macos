@@ -6,6 +6,56 @@ deferred wacli idea, then clarified: reuse the authentication method and existin
 software instead of writing a chat client from scratch. The working Chrome
 Fourdock remains available. No homeserver, account or session changes were made.
 
+## More complete clients, reviewed 2026-11-13
+
+The owner now wants a daily messenger closer to official WhatsApp, after finding
+photo albums and chat avatars absent from Mission Control. The current client
+remains working; this follow-up is research, not a migration or login request.
+Mission Control is an operator console, so its successful authentication does not
+establish consumer-client feature parity. No mature, verified drop-in replacement
+for its existing wacli API/session was found in this review.
+
+| Candidate | Evidence and practical fit | Integration limit |
+|---|---|---|
+| Beeper | Existing macOS chat product, actively maintained desktop releases, WhatsApp support. Official docs also support running mautrix-whatsapp bridges on one's own Linux host through bbctl | Separate Beeper product/account, not a frontend for our wacli API. Self-hosting a bridge does not remove Beeper's infrastructure from the architecture. Exact owner passkey success and desktop photo-album parity untested |
+| Element Web + mautrix-whatsapp | Established open-source Matrix web client; independently hosted UI is possible. Bridge authentication docs explicitly cover extra passkey verification through browser/devtools or mautrix-manager | Requires Matrix homeserver/bridge infrastructure and its own owner-assisted linked session. Web delivery is a candidate for the current Ferdium/browser host, not target-tested. It changes the backend rather than merely restyling wacli |
+| Whats4Linux | Inspected its published UI image and React source: closer WhatsApp layout, cached avatars, emoji picker, media/reply/reaction components. Go/whatsmeow backend, Wails bindings, AGPL-3.0 | Linux-first, only nightly prerelease found; history sync remains TODO in README. Its message list still renders one message item per row; no album renderer found there. Frontend requires a Wails-to-HTTP adapter for browser/Ferdium use; not a direct wacli replacement |
+
+The noteworthy authentication finding is present in actual released bridge code:
+mautrix-whatsapp v0.2610.0 contains PairPasskeyRequest/Confirmation handling and
+LoginProcessWebAuthn, independently of whether the release-note summary lists it.
+This establishes an implemented/documented route, not success on this owner's
+account. Its browser-origin/passkey ceremony and handoff still need acceptance.
+
+Other candidates reviewed: Rust Meow explicitly calls itself private-testing,
+and its current UI is migrating to Tauri; it is not a production-ready substitute.
+Quapp advertises a richer Windows UI but this review did not establish a usable
+license/release/authentication path. ZapTide has a GTK4/libadwaita Linux interface,
+so it is not a browser frontend to drop into Ferdium. None was installed or run.
+
+Assessment: Beeper is the strongest ready-product candidate to evaluate; Element
+plus mautrix is the more established self-hosted route. Whats4Linux is a source
+reuse candidate if WhatsApp-like visual design matters more than release maturity.
+Do not promise exact official albums, feature parity, existing-session import or
+phone-passkey compatibility merely because a project uses whatsmeow. Any future
+prototype should use synthetic data first and keep the working candidate/store.
+
+Primary sources:
+
+- [Beeper product/platforms](https://www.beeper.com/),
+  [desktop changelog](https://www.beeper.com/changelog),
+  [self-hosting bridges](https://developers.beeper.com/bridges/self-hosting/),
+  [on-device/cloud distinction](https://help.beeper.com/en_US/troubleshooting/beeper-on-device-vs-beeper-cloud-what-goes-to-beeper-servers).
+- [Element Web support/deployment](https://github.com/element-hq/element-web),
+  [mautrix authentication](https://docs.mau.fi/bridges/go/whatsapp/authentication.html),
+  [released passkey implementation](https://github.com/mautrix/whatsapp/blob/v0.2610.0/pkg/connector/login.go).
+- [Whats4Linux](https://github.com/lugvitc/whats4linux),
+  [avatar implementation](https://github.com/lugvitc/whats4linux/blob/b42db9dc86c642784e1f52e7e21803806820bf59/frontend/src/lib/useCachedAvatar.ts),
+  [message-list implementation](https://github.com/lugvitc/whats4linux/blob/b42db9dc86c642784e1f52e7e21803806820bf59/frontend/src/components/chat/MessageList.tsx),
+  [prereleases](https://github.com/lugvitc/whats4linux/releases).
+- [Rust Meow](https://github.com/thinkter/rust-meow),
+  [Quapp](https://github.com/govu/quapp), [ZapTide](https://github.com/luminusOS/zaptide).
+
 ## Finding
 
 We can reuse an existing client engine and UI, then integrate browser-assisted

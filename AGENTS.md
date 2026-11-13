@@ -1,5 +1,18 @@
 # Fourdock
 
+2026-11-13 POLISHED CLIENT RESEARCH: owner asks for more complete alternatives
+to Mission Control. See new section in docs/WACLI_REUSE.md: Beeper ready product
+(also documented self-hosted mautrix bridge), Element Web + mautrix-whatsapp as
+the more established self-hosted UI route, Whats4Linux as a younger React/Wails
+source-reuse candidate. Its avatar code exists, but only nightly prerelease found
+and no photo-album grouping in the inspected message-list renderer. Rust Meow
+explicitly private-testing. Released mautrix-whatsapp v0.2610.0 login.go DOES
+implement extra passkey request/confirmation/WebAuthn, matching authentication
+docs. This is source evidence, not owner auth success. None is a verified drop-in
+frontend for our wacli API/session. No installation, dependency execution, native
+build, new pairing, account/store inspection, monitor or runtime change. Preserve
+the working client; a research request does not authorize migrating its session.
+
 2026-11-13 PHOTO/AVATAR GAP REVIEW: owner asks why photos appear individually
 and the chat rail has no avatars. Read-only source inspection confirms these are
 missing client features, not an established Ferdium/auth regression: ThreadView

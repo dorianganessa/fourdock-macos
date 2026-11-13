@@ -12,6 +12,14 @@ Only the explicitly confirmed manual subtests are passed. Fixture subtests do no
 pass real-account requirements.
 Sanitized automated results: [evidence/ui-results.json](evidence/ui-results.json).
 
+## Alternative-client research, 2026-11-13
+
+Primary documentation/source/release review only; NON ESEGUITO for target runtime,
+passkey authentication, exact album behavior and session reuse. Inspected released
+mautrix v0.2610.0 login handlers and Whats4Linux React avatar/message-list source;
+viewed its public promotional screenshot. No candidate application, dependency,
+native build, login or account/session data was run/opened. See WACLI_REUSE.md.
+
 ## Photo albums and avatars, 2026-11-13
 
 Source review only: ThreadView renders one MessageRow per message; adapter types

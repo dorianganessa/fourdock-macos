@@ -2,6 +2,15 @@
 
 Updated: 2026-11-12. **Prototype; daily-use recovery checks in progress.**
 
+## More complete UI alternatives, researched 2026-11-13
+
+Owner asks for a more polished client. Primary-source comparison is saved in
+WACLI_REUSE.md: Beeper for a ready product; Element Web + mautrix for an established
+self-hosted route; Whats4Linux as a younger UI reuse candidate. The released
+mautrix bridge implements the extra passkey flow, but no target login has been
+tested. All require integration/new account-session evaluation rather than a
+verified direct swap of Mission Control. No migration, install or live trial made.
+
 ## Reported presentation gaps, 2026-11-13
 
 Owner asks about photo albums and chat avatars. Source review confirms individual
