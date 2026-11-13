@@ -1,5 +1,26 @@
 # Fourdock
 
+2026-11-13 LATEST OWNER RETEST / REMAINING TELEGRAM AND WARNING: owner reports
+everything now seems to work and confirms a fresh retest of the current Element
+media/GIF/reaction work. This is an overall manual acceptance, not an individually
+enumerated checklist or proof that all legacy placeholders were repaired. No
+further reaction cleanup or real test sends were performed. Earlier pending UI
+notes below are historical to that overall report.
+Telegram is running/healthy,0 restarts,0 linked logins at the latest metadata-only
+check. API credentials are already saved; do not ask for them again. Owner step:
+DM @telegrambot:<configured-server>, send `login qr`, scan with Telegram phone
+Settings -> Devices -> Link Desktop. Initial history remains1000 per chat/15 dialogs.
+The red dot means Element's per-message sender/device mismatch, not the Dock badge.
+A private research module passes synthetic scoping with Module API2.3 and actual
+Compound10.4 tooltips, preserving other warnings and restoring on logout/reason
+changes. HOWEVER installed official Element1.12.35's packaged script-src policy
+blocks external modules. Normal dynamic-import + identical CSP regression confirms
+refusal before an external request, even with CORS. No module/user config/gateway
+asset was installed, no runtime deploy or app restart occurred, and no binary,
+signing, CSP, crypto or trust policy was changed. Warning remains UNRESOLVED in the
+installed client. Research code alone is not a usable Desktop fix. See
+docs/evidence/element-warning-research.json. Preserve working sessions/Hermes.
+
 2026-11-13 ELEMENT PHOTOS/GIFS DEPLOYED, OWNER CHECKS PENDING: owner requests receive/send/search-and-
 select GIFs, reports photo attachments rendered as unsupported, and wants DMs and
 groups in one sidebar list. Exact pinned wacli a4f23ee serializes webhook Media

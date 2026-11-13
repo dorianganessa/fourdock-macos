@@ -1,0 +1,42 @@
+{
+  "date": "2026-11-13",
+  "scope": "cosmetic_sender_device_mismatch_only",
+  "installed_client": "official_Element_Desktop_1.12.35",
+  "prototype_location": "private_homeserver_matrix_research_element_ui",
+  "synthetic_test": {
+    "module_api_loader": "2.3.0",
+    "compound_tooltip": "10.4.0",
+    "known_local_bridge_warning_hidden": "pass",
+    "other_and_unknown_warnings_preserved": "pass",
+    "reason_change_and_logout_restore": "pass",
+    "body_tooltip_spoof_rejected": "pass",
+    "original_renderers_untouched": "pass",
+    "packaged_csp_refuses_external_import": "pass_blocker_reproduced",
+    "external_module_requests_before_refusal": 0
+  },
+  "deployment": {
+    "status": "blocked_by_packaged_desktop_csp",
+    "module_installed": false,
+    "mac_user_config_changed": false,
+    "gateway_asset_or_runtime_deployed": false,
+    "application_bundle_modified": false,
+    "application_restarted": false,
+    "crypto_trust_or_csp_policy_changed": false,
+    "actual_warning_removed": false
+  },
+  "telegram": {
+    "container": "healthy",
+    "restarts": 0,
+    "linked_logins": 0,
+    "api_credentials_already_saved": true,
+    "owner_action": "login_qr_in_bridge_dm_then_scan_with_telegram_phone",
+    "history_per_chat": 1000,
+    "initial_dialogs": 15
+  },
+  "sources": [
+    "https://web-docs.element.dev/config.html",
+    "https://github.com/element-hq/element-web/blob/v1.12.35/apps/web/src/vector/init.tsx",
+    "https://github.com/element-hq/element-web/blob/v1.12.35/apps/web/src/vector/index.html"
+  ],
+  "real_messages_contacts_tokens_or_keys_in_evidence": false
+}

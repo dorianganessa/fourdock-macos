@@ -12,6 +12,26 @@ Only the explicitly confirmed manual subtests are passed. Fixture subtests do no
 pass real-account requirements.
 Sanitized automated results: [evidence/ui-results.json](evidence/ui-results.json).
 
+## Latest owner retest and module deployment gate, 2026-11-13
+
+- PASS MANUALE CONFERMATO (overall only): owner reports all seems to work now and
+  confirms a fresh retest. Individual GIF/media/reaction subtests and every legacy
+  placeholder were not enumerated; no new agent real-account sends or cleanup.
+- PASS AUTOMATICO: Telegram metadata shows running/healthy,0 restarts;0 linked
+  logins means real Telegram import/use is NON ESEGUITO. Owner login step pending.
+- PASS AUTOMATICO, synthetic: real Module API2.3 loader/Compound10.4 tooltip fixture
+  hides only local bridge mismatch, keeps foreign/unknown/other security warnings,
+  restores on reason changes/logout and rejects message-body tooltip spoofing.
+- BLOCCATO for installed Desktop: read-only inspection of official Element1.12.35
+  webapp confirms CSP script-src excludes external modules. Its normal dynamic
+  import is refused by an identical-policy browser regression before any external
+  request, even with valid CORS. Presentation-fixture success is not app acceptance.
+- NON ESEGUITO: installing/loading the research module in the user's app. No Mac
+  config, gateway route, container, binary, trust/crypto/CSP policy or session was
+  changed; no Element restart. The real per-message warning remains unresolved.
+
+Evidence: [element-warning-research.json](evidence/element-warning-research.json).
+
 ## Element sender/device identity warning, 2026-11-13
 
 Additional current verification: installed official Element1.12.35 setting registry,

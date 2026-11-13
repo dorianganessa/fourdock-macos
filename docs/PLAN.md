@@ -2,6 +2,26 @@
 
 Updated: 2026-11-13. **Prototype; daily-use recovery checks in progress.**
 
+## Latest owner retest; Telegram and warning remain, 2026-11-13
+
+Owner reports a successful fresh retest of the current Element features overall.
+Specific media/GIF/reaction subtests were not enumerated; do not infer complete
+legacy-notice cleanup from that report. No further cleanup or test sends were made.
+This report supersedes the earlier overall UI-pending notes below.
+
+Telegram runtime is healthy,0 restarts,0 linked logins. Credentials are already
+saved. Owner must DM the configured Telegram bridge bot, send `login qr`, then
+scan in Telegram phone Settings -> Devices -> Link Desktop. Await owner completion
+before checking connection/history metadata; do not send account commands for them.
+
+The per-message red sender/device dot is still unresolved in installed Element.
+A scoped cosmetic module works with the real Module API2.3 and Compound10.4 in a
+synthetic browser, but the official Desktop1.12.35 package's CSP blocks importing
+external modules. A transport regression reproduces the refusal before a request.
+The prototype stays private research; no runtime/gateway asset, user config, vendor
+binary, signature, crypto policy or CSP was changed. It is not an installed fix.
+Evidence: [warning research](evidence/element-warning-research.json).
+
 ## Element photos, GIFs and sidebar, 2026-11-13
 
 Owner requests GIF receive/send/search-and-select. Source confirms nested webhook

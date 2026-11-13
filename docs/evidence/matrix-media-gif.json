@@ -56,7 +56,7 @@
     "picker_provider": "GIPHY",
     "provider_key_configured": true,
     "real_catalogue_search": "pass_authenticated_200_24_results",
-    "element_ui_receive_send_picker": "not_run",
+    "element_ui_receive_send_picker": "owner_overall_retest_pass_individual_subtests_not_enumerated",
     "real_whatsapp_test_sends_by_agent": 0,
     "sender_device_warning": "unresolved_no_supported_specific_hide_toggle_found"
   },
@@ -123,8 +123,14 @@
     "bytes": 1387162,
     "width": 400,
     "height": 200,
-    "actual_element_ui": "not_run",
+    "actual_element_ui": "owner_overall_retest_pass_individual_subtests_not_enumerated",
     "real_whatsapp_test_sends_by_agent": 0,
     "credentials_or_media_identifiers_in_evidence": false
+  },
+  "owner_retest": {
+    "status": "pass_overall_owner_reported",
+    "fresh_retest_confirmed": true,
+    "individual_subtests_enumerated": false,
+    "all_legacy_notices_repaired": "unconfirmed"
   }
 }
