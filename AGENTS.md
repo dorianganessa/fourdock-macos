@@ -8,20 +8,26 @@ and drops it. Private homeserver PR147 hydrates events through messages/show,
 infers media MIME/name, converts MP4/GifPlayback to GIF previews and repairs only
 known legacy Matrix placeholder notices via edits, without WA sends or reimport.
 GIF picker uses Element's normal widget/OpenID API and a privately entered GIPHY
-key; owner was asked to create one, not to disclose it in chat. No key supplied
-yet. Live owner OpenID verification succeeds and safely returns503 without a key.
+key. Owner reports key added; live verification confirms a nonempty private key
+file, correct account widget and enabled sticker button. Real authenticated
+search returns200/24 GIFs. Selecting one public result prepares local Matrix
+media successfully:200,image/gif,1387162bytes,400x200. No real WhatsApp send was
+performed. No key/token/URI/title is printed or recorded. Actual Element UI and
+provider delivery still need owner acceptance. Earlier missing-key503 is historical.
 Final check found the legacy config lacks gif_api_key_file: private PR149 adds a
 runtime default, with a red/green regression and late-key-loading test. Its CI
 43492750130 atd7d5b5b passes all5 jobs; merged at32a66c3 and deploy43494567469
 passes. Final adapter image matches32a66c3, healthy,0 restarts,1 CONNECTED login,
 no error/fatal logs in last2min; candidate image and Hermes remain unchanged by
 the followups. Counts7483/898 version1/0 edits remain metadata, not proof of old
-photo repair. Do not claim catalogue/picker fully active without the owner's key.
+photo repair. Catalogue/search and selection preparation now pass live; visual
+picker/real provider delivery remain unconfirmed.
 Mac helper scripts/setup-matrix-giphy.sh uses the existing private SSH config,
 discovers canonical repo/state from Matrix metadata and calls element.py's hidden
-key input. Bash syntax and read-only repo/state discovery pass; no actual key entry.
-Owner creates a GIPHY key and runs the helper from a real Terminal; this enables
-Element's sticker-picker button. No key in chat/repo or vendor app modification.
+key input. Bash syntax and read-only repo/state discovery pass. Private key and
+account integration are now verified after the owner's setup. Open Element's
+sticker button, activate GIF search and select in an intentionally chosen chat:
+selection sends immediately. No key in chat/repo or vendor app modification.
 Outgoing GIF support adds conversion and GifPlayback in the existing CLI;
 an opt-in homeserver CI hook updates only the candidate in its original Compose
 project/named volume, over the checked prior image. Monitor patch hash matches

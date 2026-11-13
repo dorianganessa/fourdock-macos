@@ -54,8 +54,8 @@
     "incoming_gif_preview": "480px_12fps_first30s_with_original_mp4_fallback_on_conversion_failure",
     "outgoing_gif_max_bytes": 16777216,
     "picker_provider": "GIPHY",
-    "provider_key_configured": false,
-    "real_catalogue_search": "not_run",
+    "provider_key_configured": true,
+    "real_catalogue_search": "pass_authenticated_200_24_results",
     "element_ui_receive_send_picker": "not_run",
     "real_whatsapp_test_sends_by_agent": 0,
     "sender_device_warning": "unresolved_no_supported_specific_hide_toggle_found"
@@ -109,6 +109,22 @@
     "local_script": "scripts/setup-matrix-giphy.sh",
     "shell_syntax": "pass",
     "key_entry": "human_terminal_hidden_input",
-    "credential_entry_test": "not_run_no_real_key_supplied"
+    "credential_entry_test": "owner_reported_added_private_file_and_widget_verified"
+  },
+  "giphy_live_acceptance": {
+    "private_nonempty_key_file": true,
+    "widget_installed": true,
+    "sticker_button_enabled": true,
+    "owner_authenticated_search_http": 200,
+    "search_result_count": 24,
+    "selection_preparation_http": 200,
+    "local_matrix_media_prepared": true,
+    "mime_type": "image/gif",
+    "bytes": 1387162,
+    "width": 400,
+    "height": 200,
+    "actual_element_ui": "not_run",
+    "real_whatsapp_test_sends_by_agent": 0,
+    "credentials_or_media_identifiers_in_evidence": false
   }
 }

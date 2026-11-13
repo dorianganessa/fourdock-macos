@@ -54,11 +54,16 @@ logs in the sampled last2min. Candidate image is unchanged by the followups;
 same account/volume and Hermes container identity/start time checks still PASS.
 Final metadata counts7483/898 version1/0 edits remain aggregate observations.
 Mac key-entry helper: bash syntax PASS; read-only discovery of canonical server
-repo/state PASS. Real hidden key entry and GIPHY catalogue search NON ESEGUITO.
+repo/state PASS. Owner now reports API key added. Live metadata confirms private,
+nonempty key file, installed account widget and enabled sticker button. Actual
+owner-OpenID GIPHY search PASS200/24 results. Selection preparation PASS200 with
+local Matrix media,image/gif,1387162bytes,400x200. Credentials, tokens, media IDs
+and titles are not retrieved into evidence. No WhatsApp test send performed.
 Real Element receive/send/picker and legacy-notice repair are NON ESEGUITO; metadata
 counts7480/895 version1/0 edits do not constitute a visual repair acceptance.
-GIPHY key not configured; no catalogue request with real credentials or real
-WhatsApp test send. Recovery targets known bridge notices; expired media may remain unavailable.
+GIPHY key is configured privately. Catalogue and media preparation pass; actual
+Element rendering and a deliberate user send remain unconfirmed. Recovery targets
+known bridge notices; expired media may remain unavailable.
 
 - PASS AUTOMATICO: private homeserver CI43471352213 at9c707a8, all5 jobs. Includes
   Go race tests/vet,10 Matrix config cases,15 existing cases and canonical Compose.

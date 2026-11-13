@@ -12,7 +12,10 @@ updates only the candidate's CLI for native GifPlayback sends, preserving its
 existing named volume/project/auto-sync and the exact existing monitor patch.
 Hermes services remain excluded. A private owner-OpenID GIPHY widget provides
 search and selection through Element's existing sticker-picker integration.
-GIPHY key setup is pending the owner; credentials never enter this repository.
+Owner has supplied the GIPHY key privately. Live owner-authenticated search returns
+24 GIFs, and selection prepares a valid local Matrix GIF attachment successfully.
+Credentials never enter this repository; actual Element UI/provider send remains
+unconfirmed.
 
 Local unit/race/vet, synthetic picker protocol and isolated GIF CLI Docker tests
 pass. PR147/148 are merged; both full5-job CIs pass and deploy43490118558 succeeds.
@@ -30,11 +33,13 @@ Incoming GIF preview limit480px/12fps/30s with MP4 fallback; sends limit16MiB.
 No supported official Element toggle found to hide only the known identity shield;
 shared-bot warning remains. No vendor binary patch or weaker encryption proposed.
 
-Next owner steps: create a personal GIPHY API key, then run
+Key setup is complete. The helper remains available for future key changes as
 `bash ~/personal/fourdock-macos/scripts/setup-matrix-giphy.sh` in a real Terminal.
 It asks for hidden input on the server and enables Element's existing sticker
-picker. Helper syntax and canonical repo/state discovery pass; real catalogue,
-actual Element picker, provider sends and legacy photo repair await owner checks.
+picker. Helper discovery, private key permissions, installed widget, real catalogue
+search and selection preparation pass. Next: open Element's sticker picker and
+activate GIF search. A selection sends immediately in the open chat. Actual
+Element UI, provider sends and legacy photo repair await owner checks.
 Do not put credentials in chat or this repository. See
 [sanitized evidence](evidence/matrix-media-gif.json).
 
