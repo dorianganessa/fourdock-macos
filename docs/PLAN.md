@@ -11,10 +11,14 @@ synthetic signed-device encrypted receive/send, adapter restart and snapshot
 backup. Deploy43472196309 succeeds at32aa06b; live service/API metadata, Mac
 HTTPS private-route checks and consistent SQLite snapshots pass. The candidate
 remains connected and all three existing WhatsApp containers retain IDs/start
-times. New adapter connection count is0 until the owner runs login existing.
+times. Owner now reports login existing completed; backend shows1 CONNECTED
+adapter login,15 created rooms and counts rising837 ->1961 ->6635. All15 rooms
+contain messages at the third observation. Owner explicitly confirms readable
+chat/messages in Element. Import completion and genuine new incoming/outgoing/
+notification acceptance remain open.
 No account relinking, WA session import, candidate/Hermes source or runtime
-changes, or real sends. The new bot's login existing
-command is the next owner action; no QR or phone step.
+changes, or agent real sends. Owner has confirmed Element's readability; no new login, QR or phone step is
+requested.
 
 Implemented API mappings: text/emoji, replies, files, reactions, incoming
 edits/deletions/receipts and bounded initial/catchup history, with a persisted

@@ -15,11 +15,17 @@ reused for encryption/rooms/identities. Listener binds the private Matrix Docker
 host interface because Synapse's internal network has no default route; host
 networking is used to reach the existing loopback API. Owner-only permission and
 private gateway/CF rejection remain. Existing candidate/Hermes/wacli are preserved;
-baseline compared privately before/after deployment. No adapter login exists yet.
-Owner activation:
-DM the NEW Fourdock bridge bot and send login existing; do not request QR/passkey.
-Actual Element messages/notifications/badges and avatars/album parity are not
-confirmed. Current API has no avatar endpoint; no album implementation added.
+baseline compared privately before/after deployment. Owner reports login existing
+completed; authenticated metadata now shows1 CONNECTED adapter login. All15 Matrix
+rooms exist; counts rose837 ->1961 ->6635 across three observations; all15 rooms
+now contain messages. Import completion is not established. Owner explicitly
+confirms chat/messages are readable in Element (manual readability PASS).
+No error logs or restarts observed. Warnings: long event handling, two missing
+reply targets and one duplicate member; no speculative runtime changes. No
+message content was requested. Do not repeat
+login/QR/passkey or restart/reset the working clients to check import progress.
+New live Element receive/send, notifications/badges and avatars/album parity
+remain unconfirmed. Current API has no avatar endpoint; no album implementation added.
 No real account sends/content retrieval by the agent. See docs/evidence/matrix-fourdock-adapter.json.
 
 2026-11-13 WHATSAPP QR AND PHONE-CODE TIMEOUT: both owner-controlled flows fail.

@@ -30,9 +30,16 @@ Sanitized automated results: [evidence/ui-results.json](evidence/ui-results.json
   remain unchanged; candidate authenticated/connected/readOnly=false. Synapse,
   gateway and Matrix WA/TG were recreated; Postgres preserved. No external
   account session was read/copied and no real content was requested by the agent.
-  New adapter connection count0: actual owner activation is still pending.
-- NON ESEGUITO: owner activates the new Fourdock bot with login existing, verifies
-  actual chat contents, own deliberate sending, Element banners/preview/Dock,
+- PASS MANUALE CONFERMATO / PASS AUTOMATICO: owner completed login existing. New
+  adapter state CONNECTED,1 login; all15 rooms created. Stored-message counts
+  rose837 ->1961 ->6635 across observations;all15 rooms contain messages.
+  Completion is not established. No error-level logs or restarts; warnings report long event
+  handling, missing reply targets and a duplicate member. No runtime edits.
+  The agent queried only aggregate counters, health and sanitized log categories.
+- PASS MANUALE CONFERMATO: owner says chat and messages are readable in Element.
+  This confirms imported-history readability, not a separate live incoming event.
+- NON ESEGUITO: new live incoming event and own deliberate sending,
+  Element banners/preview/Dock,
   media and physical Mac lifecycle. Synthetic passes do not establish these.
 
 The API adapter does not repair mautrix-whatsapp's516 or introduce a new WhatsApp

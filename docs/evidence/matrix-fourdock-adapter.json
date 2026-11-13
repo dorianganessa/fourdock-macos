@@ -30,8 +30,8 @@
   },
   "target_acceptance": {
     "adapter_readiness": "pass",
-    "owner_login_existing": "not confirmed",
-    "real_element_messages_notifications_badges": "not confirmed",
+    "owner_login_existing": "owner reported complete; authenticated metadata pass",
+    "real_element_messages_notifications_badges": "imported-history readability confirmed; new live incoming/outgoing/notifications/badges not confirmed",
     "authenticated_new_bot_and_existing_flow": "pass",
     "anonymous_mac_https_status": 401,
     "cf_origin_status": 403,
@@ -39,11 +39,28 @@
     "existing_whatsapp_containers_preserved": true,
     "candidate_authenticated_and_connected": true,
     "candidate_read_only": false,
-    "adapter_api_connections": 0,
+    "adapter_api_connections": 1,
     "matrix_reconciliation": {
       "postgres": "unchanged",
       "synapse_gateway_whatsapp_telegram": "recreated; healthy"
-    }
+    },
+    "connection_state": "CONNECTED",
+    "created_matrix_rooms": 15,
+    "rooms_with_messages": 15,
+    "imported_messages_observed": [
+      837,
+      1961,
+      6635
+    ],
+    "import_state": "progressing; completion not established",
+    "error_level_logs_observed": 0,
+    "adapter_restart_count": 0,
+    "element_readability": "pass — owner explicitly confirms readable chats and messages",
+    "warning_categories": [
+      "event handling taking long",
+      "reply target not found",
+      "duplicate member in list"
+    ]
   },
   "limitations": [
     "current API lacks avatars and album metadata",
