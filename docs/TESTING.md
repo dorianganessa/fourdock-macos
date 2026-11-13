@@ -14,6 +14,12 @@ Sanitized automated results: [evidence/ui-results.json](evidence/ui-results.json
 
 ## Element sender/device identity warning, 2026-11-13
 
+Additional current verification: installed official Element1.12.35 setting registry,
+sidebar store and shield-state source inspected. No supported setting found for
+hiding only this specific warning. RoomList.showSections=false is written and read
+back from account settings, preserving other preferences with a private backup;
+visual sidebar acceptance remains NON ESEGUITO.
+
 - FAIL MANUALE: owner screenshot shows a red sender/device mismatch indicator on
   messages, despite readable text. Screenshot and private content are not stored.
 - VERIFIED SOURCE/TARGET METADATA: standard SDK shared-bot encryption with ghost
@@ -27,6 +33,32 @@ Sanitized automated results: [evidence/ui-results.json](evidence/ui-results.json
   [SDK PR605](https://github.com/mautrix/go/pull/605).
 
 ## Existing Fourdock API to Matrix, 2026-11-13
+
+Current media/GIF work is tracked separately in private homeserver PR147:
+14 Matrix/update tests,15 existing tests, Go race tests/vet, synthetic widget
+OpenID/search/select/single-send protocol and isolated candidate Docker GIF flag/
+persisted-media tests PASS locally. CI43486078708 at1cc539f and CI43487864134 ata4238c7
+PASS all5 jobs, including encrypted photo/GIF receive/decrypt/send/restart and DB
+metadata. Compatibility run needed one retry for unrelated image-registry429.
+Deploy43490118558 atfcf333c PASS. Candidate same account/volume, connected with
+send mode enabled; Hermes container IDs/start times unchanged. Adapter1 CONNECTED
+login, healthy, one instance. Initial listener bind/AS-check errors caused2 automatic
+restarts and35 queue-full logs; later2min window has zero error/fatal logs.
+Private widget/script200, anonymous search/select401, CF-source403; actual owner
+OpenID is accepted and missing catalogue key returns503 without contacting GIPHY.
+Legacy config key path was found missing. PR149 regression fails before and passes
+after the fallback, including key loading after startup. CI43492750130 atd7d5b5b
+PASS all5 jobs; merged at32a66c3. Final deploy43494567469 PASS. Final adapter image
+matches the source, healthy with0 restarts,1 CONNECTED login, and zero error/fatal
+logs in the sampled last2min. Candidate image is unchanged by the followups;
+same account/volume and Hermes container identity/start time checks still PASS.
+Final metadata counts7483/898 version1/0 edits remain aggregate observations.
+Mac key-entry helper: bash syntax PASS; read-only discovery of canonical server
+repo/state PASS. Real hidden key entry and GIPHY catalogue search NON ESEGUITO.
+Real Element receive/send/picker and legacy-notice repair are NON ESEGUITO; metadata
+counts7480/895 version1/0 edits do not constitute a visual repair acceptance.
+GIPHY key not configured; no catalogue request with real credentials or real
+WhatsApp test send. Recovery targets known bridge notices; expired media may remain unavailable.
 
 - PASS AUTOMATICO: private homeserver CI43471352213 at9c707a8, all5 jobs. Includes
   Go race tests/vet,10 Matrix config cases,15 existing cases and canonical Compose.

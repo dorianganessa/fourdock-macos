@@ -2,6 +2,42 @@
 
 Updated: 2026-11-13. **Prototype; daily-use recovery checks in progress.**
 
+## Element photos, GIFs and sidebar, 2026-11-13
+
+Owner requests GIF receive/send/search-and-select. Source confirms nested webhook
+media is discarded by the current flat Fourdock normalizer. Private homeserver
+PR147 adds API hydration, MIME/name inference, bounded MP4-to-GIF previews and
+Matrix edits of known legacy placeholder notices. An opt-in canonical deploy hook
+updates only the candidate's CLI for native GifPlayback sends, preserving its
+existing named volume/project/auto-sync and the exact existing monitor patch.
+Hermes services remain excluded. A private owner-OpenID GIPHY widget provides
+search and selection through Element's existing sticker-picker integration.
+GIPHY key setup is pending the owner; credentials never enter this repository.
+
+Local unit/race/vet, synthetic picker protocol and isolated GIF CLI Docker tests
+pass. PR147/148 are merged; both full5-job CIs pass and deploy43490118558 succeeds.
+Target has one CONNECTED login, healthy adapter and same candidate account/volume;
+Hermes container identities/start times are preserved. Startup listener/AS failures
+caused2 auto-restarts, now stable with no new errors. Real Element acceptance and
+legacy notice repair are unconfirmed. Live owner OpenID and private route guards
+pass. PR149 fixes the missing GIF key path in legacy configs; its red/green and
+late-key-loading regression passes. CI43492750130 passes all5 jobs and final
+deploy43494567469 at32a66c3 succeeds. Final adapter is healthy with0 restarts,
+one CONNECTED login and no recent error/fatal logs. Candidate image/account/volume
+and Hermes are unchanged by the followups. Account-level RoomList.showSections=false is written and verified with
+other settings preserved/private backup; visual sidebar check remains open.
+Incoming GIF preview limit480px/12fps/30s with MP4 fallback; sends limit16MiB.
+No supported official Element toggle found to hide only the known identity shield;
+shared-bot warning remains. No vendor binary patch or weaker encryption proposed.
+
+Next owner steps: create a personal GIPHY API key, then run
+`bash ~/personal/fourdock-macos/scripts/setup-matrix-giphy.sh` in a real Terminal.
+It asks for hidden input on the server and enables Element's existing sticker
+picker. Helper syntax and canonical repo/state discovery pass; real catalogue,
+actual Element picker, provider sends and legacy photo repair await owner checks.
+Do not put credentials in chat or this repository. See
+[sanitized evidence](evidence/matrix-media-gif.json).
+
 ## Element identity warning, 2026-11-13
 
 Owner reports the sender/device mismatch warning on each message. Upstream FAQ

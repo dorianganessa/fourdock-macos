@@ -1,5 +1,58 @@
 # Fourdock
 
+2026-11-13 ELEMENT PHOTOS/GIFS DEPLOYED, OWNER CHECKS PENDING: owner requests receive/send/search-and-
+select GIFs, reports photo attachments rendered as unsupported, and wants DMs and
+groups in one sidebar list. Exact pinned wacli a4f23ee serializes webhook Media
+as a nested object; existing API normalizeWebhookMessage reads flat MediaType
+and drops it. Private homeserver PR147 hydrates events through messages/show,
+infers media MIME/name, converts MP4/GifPlayback to GIF previews and repairs only
+known legacy Matrix placeholder notices via edits, without WA sends or reimport.
+GIF picker uses Element's normal widget/OpenID API and a privately entered GIPHY
+key; owner was asked to create one, not to disclose it in chat. No key supplied
+yet. Live owner OpenID verification succeeds and safely returns503 without a key.
+Final check found the legacy config lacks gif_api_key_file: private PR149 adds a
+runtime default, with a red/green regression and late-key-loading test. Its CI
+43492750130 atd7d5b5b passes all5 jobs; merged at32a66c3 and deploy43494567469
+passes. Final adapter image matches32a66c3, healthy,0 restarts,1 CONNECTED login,
+no error/fatal logs in last2min; candidate image and Hermes remain unchanged by
+the followups. Counts7483/898 version1/0 edits remain metadata, not proof of old
+photo repair. Do not claim catalogue/picker fully active without the owner's key.
+Mac helper scripts/setup-matrix-giphy.sh uses the existing private SSH config,
+discovers canonical repo/state from Matrix metadata and calls element.py's hidden
+key input. Bash syntax and read-only repo/state discovery pass; no actual key entry.
+Owner creates a GIPHY key and runs the helper from a real Terminal; this enables
+Element's sticker-picker button. No key in chat/repo or vendor app modification.
+Outgoing GIF support adds conversion and GifPlayback in the existing CLI;
+an opt-in homeserver CI hook updates only the candidate in its original Compose
+project/named volume, over the checked prior image. Monitor patch hash matches
+server source; Hermes/whatsapp-api/whatsapp-sync remain excluded. Candidate WAS
+recreated for this feature; account and named volume are unchanged and both
+Hermes container IDs/start times remain unchanged. Prior no-restart evidence
+applies to PR146 only.
+14 Matrix/update tests,15 existing tests, Go race/vet, widget protocol fixture and
+isolated candidate Docker GIF/protobuf/persistence tests pass locally. PR147 CI
+43486078708 at1cc539f passes all5 jobs, including encrypted photo/GIF receive,
+download/decrypt, GIF sticker/file send, restart and DB metadata. PR147 merged
+atd0253a4. Initial deploy43487416342 failed BEFORE service changes because the
+server's Python3.8 lacks removeprefix. PR148 fixes it;14 synthetic tests also pass
+on the actual Python3.8 interpreter with mocked Docker. CI43487864134 ata4238c7
+passes all5 jobs after retrying only an unrelated registry429 check. PR148 merged
+atfcf333c; deploy43490118558 succeeds. Target: one adapter/one candidate,1 CONNECTED
+login, healthy, candidate authenticated/connected/readOnlyfalse, same account/volume.
+Startup had2 adapter auto-restarts: listener address-in-use and AS check refused,
+plus35 queue-full errors; underlying port ownership not established. Current
+health is good and no error/fatal logs in last2min; do not restart to speculate.
+Metadata counts7480 messages/895 conversion-version1/0 edits do NOT prove legacy
+notice repair; owner visual confirmation was requested and remains pending.
+Private HTTPS widget/script200, anonymous search/select401, CF-source403; live
+owner OpenID accepted. Real Element UI/provider delivery remain unconfirmed. Never run
+the synthetic fixture against local Fourdock; isolated CI guard remains required.
+Account preference RoomList.showSections=false was written/read back privately;
+other settings preserved and backup600 saved. Actual unified-list UI unconfirmed.
+Official installed Element1.12.35 settings/source inspected: no supported toggle
+found to hide only the sender/device warning. No binary patch/E2EE weakening.
+Preserve real sessions; no agent messages, new pairing, QR or key/store copying.
+
 2026-11-13 ELEMENT SENDER/DEVICE WARNING: owner screenshot shows the per-message
 warning "The sender of the event does not match the owner of the device that sent
 it". Do not publish the private screenshot/contact/message content. This is the
