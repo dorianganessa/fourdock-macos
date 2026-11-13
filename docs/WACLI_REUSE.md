@@ -15,6 +15,13 @@ Mission Control is an operator console, so its successful authentication does no
 establish consumer-client feature parity. No mature, verified drop-in replacement
 for its existing wacli API/session was found in this review.
 
+Owner follow-up: Beeper standard fails during QR/passkey linking on this account.
+Its UI quality does not pass the authentication gate; do not recommend it as an
+already working replacement. Exact error/root cause remains unreported. A separate
+self-hosted mautrix bridge could allow a different, controllable login flow while
+using Beeper's UI, but is untested, needs its own linking and is not our wacli
+backend/session. No deployment or additional account test follows from this report.
+
 | Candidate | Evidence and practical fit | Integration limit |
 |---|---|---|
 | Beeper | Existing macOS chat product, actively maintained desktop releases, WhatsApp support. Official docs also support running mautrix-whatsapp bridges on one's own Linux host through bbctl | Separate Beeper product/account, not a frontend for our wacli API. Self-hosting a bridge does not remove Beeper's infrastructure from the architecture. Exact owner passkey success and desktop photo-album parity untested |
@@ -33,8 +40,9 @@ Quapp advertises a richer Windows UI but this review did not establish a usable
 license/release/authentication path. ZapTide has a GTK4/libadwaita Linux interface,
 so it is not a browser frontend to drop into Ferdium. None was installed or run.
 
-Assessment: Beeper is the strongest ready-product candidate to evaluate; Element
-plus mautrix is the more established self-hosted route. Whats4Linux is a source
+Assessment: standard Beeper has now failed the owner's linking check. A Beeper
+self-hosted bridge remains a separate untested path; Element plus mautrix is
+another self-hosted route. Whats4Linux is a source
 reuse candidate if WhatsApp-like visual design matters more than release maturity.
 Do not promise exact official albums, feature parity, existing-session import or
 phone-passkey compatibility merely because a project uses whatsmeow. Any future

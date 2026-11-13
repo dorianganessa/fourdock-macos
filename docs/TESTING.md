@@ -14,6 +14,10 @@ Sanitized automated results: [evidence/ui-results.json](evidence/ui-results.json
 
 ## Alternative-client research, 2026-11-13
 
+- FAIL (owner report): standard Beeper during QR/passkey linking. Exact error,
+  substage and root cause were not reported. Separate self-hosted bridge/Element
+  authentication remains NON ESEGUITO; no new trial or session change was made.
+
 Primary documentation/source/release review only; NON ESEGUITO for target runtime,
 passkey authentication, exact album behavior and session reuse. Inspected released
 mautrix v0.2610.0 login handlers and Whats4Linux React avatar/message-list source;

@@ -4,6 +4,11 @@ Updated: 2026-11-12. **Prototype; daily-use recovery checks in progress.**
 
 ## More complete UI alternatives, researched 2026-11-13
 
+Owner now reports standard Beeper fails at QR/passkey linking. No confirmed
+replacement exists for this account yet. A separate mautrix bridge with Beeper
+or Element would need its own isolated authentication check; neither is a proven
+reuse of the current wacli session. Preserve working Fourdock; no migration made.
+
 Owner asks for a more polished client. Primary-source comparison is saved in
 WACLI_REUSE.md: Beeper for a ready product; Element Web + mautrix for an established
 self-hosted route; Whats4Linux as a younger UI reuse candidate. The released

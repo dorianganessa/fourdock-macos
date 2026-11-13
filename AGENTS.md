@@ -1,5 +1,14 @@
 # Fourdock
 
+2026-11-13 BEEPER OWNER RESULT: owner reports Beeper does not work and clarifies
+the failure is during QR/passkey linking. Standard Beeper is NOT a working
+ready-product recommendation for this account. Exact error/substage/root cause
+was not reported. Distinguish its normal login from a separate self-hosted
+mautrix-whatsapp bridge: that could offer a different, controllable auth flow
+while keeping Beeper's UI, but is untested and is not reuse of our wacli session.
+No bridge deployment, new pairing, session migration or native retry authorized
+by this feedback. Preserve the working Fourdock client/store.
+
 2026-11-13 POLISHED CLIENT RESEARCH: owner asks for more complete alternatives
 to Mission Control. See new section in docs/WACLI_REUSE.md: Beeper ready product
 (also documented self-hosted mautrix bridge), Element Web + mautrix-whatsapp as
