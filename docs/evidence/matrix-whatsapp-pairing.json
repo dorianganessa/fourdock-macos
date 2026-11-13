@@ -4,24 +4,46 @@
     "qr_scanned": true,
     "phone_state": "accesso in corso",
     "new_fourdock_matrix_device_present": false,
-    "bot_result": "login failed: timed out waiting"
+    "bot_result": "login failed: timed out waiting",
+    "phone_code_result": "login failed: timed out waiting",
+    "phone_whatsapp_version": "2.26.44.75",
+    "phone_beta_status": "not reported",
+    "linked_device_count": 2,
+    "existing_linked_clients": "wacli; Fourdock Mission Control still works"
   },
   "sanitized_backend_observations": {
     "pair_success_then_stream_516_observed": true,
-    "matching_attempts": 2,
+    "matching_attempts": 4,
     "socket_eof_after_stream_error": true,
     "passkey_event_observed": false,
-    "all_matrix_services_healthy": true
+    "all_matrix_services_healthy": true,
+    "qr_attempts": 3,
+    "phone_code_attempts": 1,
+    "phone_code_pair_success_then_stream_516": true
   },
   "source_review": {
     "bridge_release": "v0.2610.0",
     "whatsmeow_commit": "0b0a1cdac3e2",
     "post_pair_waits_for": "515 / ManualLoginReconnect",
     "stream_516_handled_as_success": false,
-    "underlying_reason_for_516": "not established"
+    "underlying_reason_for_516": "not established",
+    "upstream_rotation_fix": {
+      "url": "https://github.com/mautrix/whatsapp/pull/1010",
+      "merged": "2026-10-30",
+      "scope": "RotateADVSecret can prematurely complete login before scan",
+      "target_applicability": "not established; observed PairSuccess followed by stream516 is a different path",
+      "deployed": false
+    }
   },
   "provider_authentication": "not confirmed",
-  "next_controlled_check": "owner login phone in bridge; no agent-generated pairing",
+  "next_controlled_check": "No further pairing requested. Preserve working clients; no verified stream516 fix found.",
   "runtime_or_configuration_changed": false,
-  "privacy": "No device identifiers, phone numbers, QR, codes, challenges, messages or credentials included"
+  "privacy": "No device identifiers, phone numbers, QR, codes, challenges, messages or credentials included",
+  "public_protocol_metadata": {
+    "cached_version": "2.3000.1054468000",
+    "live_public_version": "2.3000.1054468000",
+    "match": true,
+    "method": "Public web page with upstream GetLatestVersion request headers; only version retained",
+    "version_fetch_error_observed_in_bridge_logs": false
+  }
 }

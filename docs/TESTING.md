@@ -15,21 +15,27 @@ Sanitized automated results: [evidence/ui-results.json](evidence/ui-results.json
 ## Alternative-client research, 2026-11-13
 
 - PASS MANUALE CONFERMATO: owner scanned the QR after the media-route fix.
-- FAIL MANUALE: WhatsApp bot login timed out afterward; phone showed "accesso in
-  corso" and owner reports no new Fourdock Matrix linked-device entry. Sanitized
-  event categories show PairSuccess then stream516/EOF, twice, with no observed
-  passkey request. Release source waits for515 after PairSuccess; this establishes
-  the timeout mechanism, not516's underlying cause or a repair. No config, runtime,
-  session or account changes were made. Phone-code alternative remains NON ESEGUITO.
-  See [sanitized pairing evidence](evidence/matrix-whatsapp-pairing.json).
+- FAIL MANUALE: both QR and phone-code bot logins time out. Sanitized metadata
+  shows four PairSuccess ->516/EOF sequences: three QR, one phone-code; no passkey
+  request. Phone initially showed "accesso in corso"; no new Matrix device appears.
+  Owner reports WhatsApp2.26.44.75, two linked wacli devices and working Fourdock
+  Mission Control; beta status unknown. No new attempt is requested.
+- PASS AUTOMATICO (public metadata only): cached Web version2.3000.1054468000
+  matches a fresh public WhatsApp page fetched with upstream request headers.
+  A preliminary urllib request with fewer headers returned400; the equivalent
+  upstream-header curl request returned200. No response body was retained.
+- SOURCE REVIEW: released bridge waits for515;516's cause/repair remain unknown.
+  Upstream PR1010 fixes ADV rotation before scanning, a different documented path;
+  it was not deployed and is not a verified fix for this case. No runtime, config,
+  session or account changes. See [sanitized pairing evidence](evidence/matrix-whatsapp-pairing.json).
 
 QR media delivered: PASS AUTOMATICO CI43453427842 at05c32fd (all4 jobs,9 config
 cases) and deployment43453909823 at63e5a08. Live synthetic pixel upload/download
 matches via prefixed AND Desktop origin-root HTTPS routes; anonymous401,
 CF-origin403 and unrelated proxy-container403. Only matrix-gateway was recreated;
 other Matrix/WhatsApp container IDs and start times are preserved. Same Nginx
-digest, canonical reference only. NON ESEGUITO: actual owner QR rendering and
-phone/passkey completion. No owner QR/media URI or contents were retrieved.
+digest, canonical reference only. PASS MANUALE: owner rendered/scanned the QR.
+Phone/passkey completion remains FAIL/NOT CONFIRMED as detailed above. No owner QR/media URI or contents were retrieved.
 [Sanitized media evidence](evidence/matrix-media-route.json).
 
 Initial QR media checkpoint: owner screenshot shows bot instructions plus image-download

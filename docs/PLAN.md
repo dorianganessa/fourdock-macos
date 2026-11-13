@@ -4,14 +4,16 @@ Updated: 2026-11-13. **Prototype; daily-use recovery checks in progress.**
 
 ## Authorized Matrix backend implementation, 2026-11-13
 
-Current acceptance: QR rendering/scan now owner-confirmed. WhatsApp linking fails
-after initial PairSuccess, with stream516/EOF while the bridge waits for515. Phone
-stays "accesso in corso" and owner sees no new linked device; no passkey event is
-observed. No authenticated-provider pass is established. No runtime/config change
-was made for this diagnosis. Next owner check is the documented login phone flow
-(number only in the bridge chat, displayed code only on the phone), which had an
-owner-confirmed success in the earlier Chrome test. That result does not prove
-this bridge alternative will succeed. Preserve all working sessions.
+Current acceptance: QR rendering/scan owner-confirmed, but both QR and phone-code
+WhatsApp linking fail. Four sanitized attempts (three QR, one phone-code) show
+PairSuccess -> stream516/EOF while the bridge waits for515; no passkey event.
+Owner reports WhatsApp2.26.44.75, two linked wacli devices and continued Fourdock
+Mission Control access. Cached Web protocol version matches a fresh public-page
+fetch. Upstream PR1010 fixes a different premature completion caused by ADV secret
+rotation; it is not a verified516 repair and was not deployed. No runtime/config
+change, authenticated-provider pass or reason for516 is established. Stop repeated
+pairing requests and preserve working sessions. A confirmed upstream repair or
+new evidence is needed before another controlled authentication trial.
 
 Owner reached the WhatsApp bot in Element1.12.35, but its QR image failed:
 Traefik established a Desktop origin-root media404 while prefixed APIs worked.

@@ -1,19 +1,19 @@
 # Fourdock
 
-2026-11-13 WHATSAPP POST-QR TIMEOUT: owner now scanned the visible QR (QR rendering
-has manual confirmation), then phone stayed "accesso in corso" and bot timed out.
-Owner reports no new Fourdock Matrix entry in linked devices. Sanitized logs show
-PairSuccess followed ~1-2s later by unknown stream:error516/EOF, twice; no passkey
-event observed. Released mautrix-whatsapp v0.2610.0 waits specifically for515 after
-PairSuccess; whatsmeow0b0a1cdac3e2/main handles515 but not516. This explains the
-timeout path, not the server's reason for516. Do not treat516 as515 or PairSuccess
-as an authenticated session. Published reports disagree on516/recovery and do not
-establish a target fix. Existing working wacli source also rejects unknown stream
-errors; its store/process was not touched. No runtime/config changes or new agent
-pairing were made. Next controlled owner check: bot login phone, enter number in
-Element and its displayed pairing code on the phone. This documented alternative
-uses the phone-code flow; stop and collect exact stage if it also fails. No unlink,
-store deletion, cookie/session copy, timeout increase or speculative upgrade.
+2026-11-13 WHATSAPP QR AND PHONE-CODE TIMEOUT: both owner-controlled flows fail.
+Sanitized logs show four PairSuccess -> stream516/EOF sequences (three QR, one
+phone-code); no passkey event. Phone-code attempt at16:02:57Z fails at16:02:59Z.
+Owner reports phone WhatsApp2.26.44.75, two linked wacli devices and working
+Fourdock Mission Control; beta status not reported. No new Matrix device appears.
+Bridge cached public Web version2.3000.1054468000 matches a fresh public-page
+metadata fetch with upstream headers. Release v0.2610.0 waits for515;516 is not
+handled as success. Upstream PR1010 fixes an ADV rotation premature-completion
+bug before scanning, not an established repair for our PairSuccess ->516 path;
+it is not deployed. Do not equate516 with515, extend timeouts, delete/copy stores,
+unlink working devices, touch Hermes/wacli or start another pairing. No runtime
+or configuration changes made. Underlying reason for516 and a verified fix remain
+unknown. Preserve working clients and stop owner retry loop; evidence is in
+docs/evidence/matrix-whatsapp-pairing.json.
 
 2026-11-13 QR MEDIA FIX DEPLOYED: homeserver PR145 merged; CI43453427842 at05c32fd
 passes all4 jobs including9 config cases and synthetic media upload/download.
