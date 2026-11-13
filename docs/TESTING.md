@@ -1,6 +1,6 @@
 # Testing ledger
 
-Updated: 2026-11-12. Automated baseline: 2026-11-06. Target: managed macOS 27.0.1 arm64. Synthetic UI runtime:
+Updated: 2026-11-13. Automated baseline: 2026-11-06. Target: managed macOS 27.0.1 arm64. Synthetic UI runtime:
 Chrome for Testing 157.0.8103.38, Playwright 1.56.1, Node 26.4.0. Profiles are
 temporary. External DNS is blocked only in the synthetic browser; attached page
 navigations are fulfilled from fixtures. Automated checks use no real credentials
@@ -13,6 +13,18 @@ pass real-account requirements.
 Sanitized automated results: [evidence/ui-results.json](evidence/ui-results.json).
 
 ## Alternative-client research, 2026-11-13
+
+Matrix follow-up: documentation and released source review only, not runtime
+tests. Verified current Telegram v0.2610.0 roadmap/config, initial/catchup versus
+standard Matrix historical insertion limits, WhatsApp album-notice conversion,
+Element encrypted-search FAQ and v1.12.35 Desktop Dock code, Cinny v4.12.8 server
+search implementation, FluffyChat search source/v2.11.5 assets, and email bridge
+scope. NON ESEGUITO: new authentication, Telegram import, real encrypted-history
+search, names/avatars, exact album display, notification preview/click/Dock,
+global service hotkeys and restart/recovery in any proposed Matrix setup.
+No dependencies installed, candidate run, native retry, session/database read,
+account pairing or runtime change. Existing tests were not rerun for this
+documentation-only phase. See WACLI_REUSE.md for sources and acceptance gates.
 
 - FAIL (owner report): standard Beeper during QR/passkey linking. Exact error,
   substage and root cause were not reported. Separate self-hosted bridge/Element

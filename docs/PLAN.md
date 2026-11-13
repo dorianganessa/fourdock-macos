@@ -1,6 +1,21 @@
 # Plan and handoff
 
-Updated: 2026-11-12. **Prototype; daily-use recovery checks in progress.**
+Updated: 2026-11-13. **Prototype; daily-use recovery checks in progress.**
+
+## Matrix/Telegram history and client fit, researched 2026-11-13
+
+See WACLI_REUSE.md for the source-backed bridge/client comparison. Current Go
+mautrix-telegram supports initial history and missed-message catchup, but default
+backfill is OFF and standard Matrix cannot insert older messages into existing
+chronology. Configure import before creating rooms; do not promise full archival
+or immunity to synced deletions. Element Desktop is the first candidate for
+encrypted-history search and a distinct app/Dock identity; Element Web lacks the
+documented Desktop encrypted-search capability. Cinny/FluffyChat Web are UI
+alternatives with unresolved archive-search/album/host integration details.
+WhatsApp's released passkey support remains untested on the owner's account;
+exact native-style albums and global per-service hotkeys are not established.
+Keep official Gmail/Fastmail interfaces and Hermes/wacli unchanged. Research only:
+no pilot, install, pairing, backend/account access or migration performed.
 
 ## More complete UI alternatives, researched 2026-11-13
 

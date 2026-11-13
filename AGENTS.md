@@ -1,5 +1,18 @@
 # Fourdock
 
+2026-11-13 MATRIX HISTORY RESEARCH: owner asks about Telegram history and bridges/
+clients matching known needs. See docs/WACLI_REUSE.md. Current Go mautrix/telegram
+(v0.2610.0; telegramgo archived) supports initial/catchup history. Backfill default
+OFF; standard Matrix cannot insert older history into populated rooms. Plan import
+before portals; synced edits/deletions mean this is not immutable archival.
+Element Desktop first candidate for encrypted search and own Dock identity; Web
+does not have the documented Desktop encrypted-search capability. Cinny/FluffyChat
+Web alternatives remain untested. WhatsApp passkey source support is not owner
+success; released album conversion creates notice, not proof of album-grid parity.
+Global service hotkeys remain integration work. Preserve official webmail and
+Hermes/wacli. Research only: no install, trial, pairing, store/account inspection,
+native retry, runtime migration or real send. All proposed Matrix checks unrun.
+
 2026-11-13 BEEPER OWNER RESULT: owner reports Beeper does not work and clarifies
 the failure is during QR/passkey linking. Standard Beeper is NOT a working
 ready-product recommendation for this account. Exact error/substage/root cause
