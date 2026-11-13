@@ -1,5 +1,20 @@
 # Fourdock
 
+2026-11-13 WHATSAPP POST-QR TIMEOUT: owner now scanned the visible QR (QR rendering
+has manual confirmation), then phone stayed "accesso in corso" and bot timed out.
+Owner reports no new Fourdock Matrix entry in linked devices. Sanitized logs show
+PairSuccess followed ~1-2s later by unknown stream:error516/EOF, twice; no passkey
+event observed. Released mautrix-whatsapp v0.2610.0 waits specifically for515 after
+PairSuccess; whatsmeow0b0a1cdac3e2/main handles515 but not516. This explains the
+timeout path, not the server's reason for516. Do not treat516 as515 or PairSuccess
+as an authenticated session. Published reports disagree on516/recovery and do not
+establish a target fix. Existing working wacli source also rejects unknown stream
+errors; its store/process was not touched. No runtime/config changes or new agent
+pairing were made. Next controlled owner check: bot login phone, enter number in
+Element and its displayed pairing code on the phone. This documented alternative
+uses the phone-code flow; stop and collect exact stage if it also fails. No unlink,
+store deletion, cookie/session copy, timeout increase or speculative upgrade.
+
 2026-11-13 QR MEDIA FIX DEPLOYED: homeserver PR145 merged; CI43453427842 at05c32fd
 passes all4 jobs including9 config cases and synthetic media upload/download.
 Deploy43453909823 at63e5a08 succeeds. Live synthetic image download matches bytes

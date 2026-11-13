@@ -14,6 +14,15 @@ Sanitized automated results: [evidence/ui-results.json](evidence/ui-results.json
 
 ## Alternative-client research, 2026-11-13
 
+- PASS MANUALE CONFERMATO: owner scanned the QR after the media-route fix.
+- FAIL MANUALE: WhatsApp bot login timed out afterward; phone showed "accesso in
+  corso" and owner reports no new Fourdock Matrix linked-device entry. Sanitized
+  event categories show PairSuccess then stream516/EOF, twice, with no observed
+  passkey request. Release source waits for515 after PairSuccess; this establishes
+  the timeout mechanism, not516's underlying cause or a repair. No config, runtime,
+  session or account changes were made. Phone-code alternative remains NON ESEGUITO.
+  See [sanitized pairing evidence](evidence/matrix-whatsapp-pairing.json).
+
 QR media delivered: PASS AUTOMATICO CI43453427842 at05c32fd (all4 jobs,9 config
 cases) and deployment43453909823 at63e5a08. Live synthetic pixel upload/download
 matches via prefixed AND Desktop origin-root HTTPS routes; anonymous401,

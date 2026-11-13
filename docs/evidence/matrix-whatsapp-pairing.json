@@ -1,0 +1,27 @@
+{
+  "date": "2026-11-13",
+  "owner_reports": {
+    "qr_scanned": true,
+    "phone_state": "accesso in corso",
+    "new_fourdock_matrix_device_present": false,
+    "bot_result": "login failed: timed out waiting"
+  },
+  "sanitized_backend_observations": {
+    "pair_success_then_stream_516_observed": true,
+    "matching_attempts": 2,
+    "socket_eof_after_stream_error": true,
+    "passkey_event_observed": false,
+    "all_matrix_services_healthy": true
+  },
+  "source_review": {
+    "bridge_release": "v0.2610.0",
+    "whatsmeow_commit": "0b0a1cdac3e2",
+    "post_pair_waits_for": "515 / ManualLoginReconnect",
+    "stream_516_handled_as_success": false,
+    "underlying_reason_for_516": "not established"
+  },
+  "provider_authentication": "not confirmed",
+  "next_controlled_check": "owner login phone in bridge; no agent-generated pairing",
+  "runtime_or_configuration_changed": false,
+  "privacy": "No device identifiers, phone numbers, QR, codes, challenges, messages or credentials included"
+}
