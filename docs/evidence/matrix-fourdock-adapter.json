@@ -1,0 +1,54 @@
+{
+  "date": "2026-11-13",
+  "source": {
+    "repository": "private homeserver",
+    "pull_request": 146,
+    "reviewed_head": "9c707a8",
+    "merge_commit": "32aa06b"
+  },
+  "ci": {
+    "run_id": 43471352213,
+    "all_jobs": "pass",
+    "job_count": 5,
+    "synthetic_encrypted_receive_send_restart": "pass",
+    "sqlite_snapshot_backup": "pass",
+    "offline_config_identity_preservation": "pass"
+  },
+  "deployment": {
+    "run_id": 43472196309,
+    "status": "pass",
+    "commit": "32aa06b"
+  },
+  "design": {
+    "matrix_framework": "mautrix-go bridgev2 v0.32.0",
+    "whatsapp_transport": "existing Fourdock HTTP/WebSocket API",
+    "new_whatsapp_pairing": false,
+    "whatsapp_session_store_mounted": false,
+    "remote_whatsapp_logout": false,
+    "deployment_owner": "canonical homeserver Compose and CI",
+    "outbound_retry": "persisted claim; uncertain delivery is not automatically resent"
+  },
+  "target_acceptance": {
+    "adapter_readiness": "pass",
+    "owner_login_existing": "not confirmed",
+    "real_element_messages_notifications_badges": "not confirmed",
+    "authenticated_new_bot_and_existing_flow": "pass",
+    "anonymous_mac_https_status": 401,
+    "cf_origin_status": 403,
+    "private_consistent_sqlite_snapshots": "pass",
+    "existing_whatsapp_containers_preserved": true,
+    "candidate_authenticated_and_connected": true,
+    "candidate_read_only": false,
+    "adapter_api_connections": 0,
+    "matrix_reconciliation": {
+      "postgres": "unchanged",
+      "synapse_gateway_whatsapp_telegram": "recreated; healthy"
+    }
+  },
+  "limitations": [
+    "current API lacks avatars and album metadata",
+    "no calls or outgoing edits/deletions/read-receipt writes",
+    "initial/catchup bounded to 1000 local messages per chat"
+  ],
+  "privacy": "No account IDs, contacts, message bodies, session keys, tokens or raw target logs included"
+}

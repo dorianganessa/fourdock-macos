@@ -1,5 +1,27 @@
 # Fourdock
 
+2026-11-13 FOURDOCK -> MATRIX ADAPTER: owner explicitly authorized implementation
+and requires deployment through homeserver repo/CI. Private homeserver PR146 is
+merged at32aa06b; CI43471352213 at9c707a8 passes all5 jobs, including a synthetic
+encrypted roundtrip with a signed owner device, adapter restart and SQLite backup.
+Deploy43472196309 succeeds at32aa06b. Live adapter health, authenticated bot/flow
+metadata, Mac HTTPS401 without auth/CF-origin403 and two consistent private
+SQLite snapshots pass. All three existing WhatsApp containers keep IDs/start times
+and the candidate stays authenticated/connected with sending enabled. Synapse,
+gateway and Matrix WA/TG were recreated by reconciliation; Postgres stayed intact.
+New matrix-fourdock uses the existing loopback Fourdock API, not another WhatsApp library/session; it has no
+wacli binary, WA store mount, pairing or remote logout. Matrix SDK bridgev2 is
+reused for encryption/rooms/identities. Listener binds the private Matrix Docker
+host interface because Synapse's internal network has no default route; host
+networking is used to reach the existing loopback API. Owner-only permission and
+private gateway/CF rejection remain. Existing candidate/Hermes/wacli are preserved;
+baseline compared privately before/after deployment. No adapter login exists yet.
+Owner activation:
+DM the NEW Fourdock bridge bot and send login existing; do not request QR/passkey.
+Actual Element messages/notifications/badges and avatars/album parity are not
+confirmed. Current API has no avatar endpoint; no album implementation added.
+No real account sends/content retrieval by the agent. See docs/evidence/matrix-fourdock-adapter.json.
+
 2026-11-13 WHATSAPP QR AND PHONE-CODE TIMEOUT: both owner-controlled flows fail.
 Sanitized logs show four PairSuccess -> stream516/EOF sequences (three QR, one
 phone-code); no passkey event. Phone-code attempt at16:02:57Z fails at16:02:59Z.

@@ -12,6 +12,33 @@ Only the explicitly confirmed manual subtests are passed. Fixture subtests do no
 pass real-account requirements.
 Sanitized automated results: [evidence/ui-results.json](evidence/ui-results.json).
 
+## Existing Fourdock API to Matrix, 2026-11-13
+
+- PASS AUTOMATICO: private homeserver CI43471352213 at9c707a8, all5 jobs. Includes
+  Go race tests/vet,10 Matrix config cases,15 existing cases and canonical Compose.
+- PASS AUTOMATICO (synthetic only): signed-owner-device Matrix client decrypts
+  initial history, sends an encrypted message to the fake Fourdock API and receives
+  another after adapter restart. SQLite snapshot backup follows successfully.
+  No real WhatsApp network, account, contact or message is used in this fixture.
+- PASS AUTOMATICO (offline only): repeated SDK registration/config preparation
+  preserves the configured owner, tokens and keys with private file modes. The
+  prefixed-upgrader regression first failed, then passed with the precise fix.
+- PASS AUTOMATICO TARGET: deploy43472196309 at32aa06b, adapter healthy; new bot
+  and sole existing login flow verified through authenticated metadata. Mac HTTPS
+  route returns401 without auth and403 for CF-origin traffic. Two private SQLite
+  snapshots pass quick_check. All3 existing WhatsApp container IDs/start times
+  remain unchanged; candidate authenticated/connected/readOnly=false. Synapse,
+  gateway and Matrix WA/TG were recreated; Postgres preserved. No external
+  account session was read/copied and no real content was requested by the agent.
+  New adapter connection count0: actual owner activation is still pending.
+- NON ESEGUITO: owner activates the new Fourdock bot with login existing, verifies
+  actual chat contents, own deliberate sending, Element banners/preview/Dock,
+  media and physical Mac lifecycle. Synthetic passes do not establish these.
+
+The API adapter does not repair mautrix-whatsapp's516 or introduce a new WhatsApp
+login. Hermes/wacli and the working candidate remain separate. Evidence:
+[evidence/matrix-fourdock-adapter.json](evidence/matrix-fourdock-adapter.json).
+
 ## Alternative-client research, 2026-11-13
 
 - PASS MANUALE CONFERMATO: owner scanned the QR after the media-route fix.

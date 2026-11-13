@@ -2,6 +2,28 @@
 
 Updated: 2026-11-13. **Prototype; daily-use recovery checks in progress.**
 
+## Existing Fourdock to Element, 2026-11-13
+
+Owner authorized an API adapter so Element can reuse the working server-side
+Fourdock connection. Deployment must use the homeserver repo and existing CI.
+Private PR146 merged at32aa06b; CI43471352213 at9c707a8 passes all5 jobs, including
+synthetic signed-device encrypted receive/send, adapter restart and snapshot
+backup. Deploy43472196309 succeeds at32aa06b; live service/API metadata, Mac
+HTTPS private-route checks and consistent SQLite snapshots pass. The candidate
+remains connected and all three existing WhatsApp containers retain IDs/start
+times. New adapter connection count is0 until the owner runs login existing.
+No account relinking, WA session import, candidate/Hermes source or runtime
+changes, or real sends. The new bot's login existing
+command is the next owner action; no QR or phone step.
+
+Implemented API mappings: text/emoji, replies, files, reactions, incoming
+edits/deletions/receipts and bounded initial/catchup history, with a persisted
+outbound claim to refuse automatic resend after uncertain delivery. Status and
+newsletter messages do not create live portals. No avatar API or album metadata
+is added. Calls, outgoing edits/deletions and read/typing writes remain unsupported.
+A real Element incoming message, deliberate send, notifications/badge/click,
+large-media behavior and normal user lifecycle remain owner acceptance checks.
+
 ## Authorized Matrix backend implementation, 2026-11-13
 
 Current acceptance: QR rendering/scan owner-confirmed, but both QR and phone-code
