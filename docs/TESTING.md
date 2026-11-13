@@ -12,6 +12,20 @@ Only the explicitly confirmed manual subtests are passed. Fixture subtests do no
 pass real-account requirements.
 Sanitized automated results: [evidence/ui-results.json](evidence/ui-results.json).
 
+## Element sender/device identity warning, 2026-11-13
+
+- FAIL MANUALE: owner screenshot shows a red sender/device mismatch indicator on
+  messages, despite readable text. Screenshot and private content are not stored.
+- VERIFIED SOURCE/TARGET METADATA: standard SDK shared-bot encryption with ghost
+  sender identities; allow/require/self_sign/msc4190 enabled. Upstream FAQ lists
+  the exact warning and says self_sign does not remove it. Encryption decryption
+  CI does not test Element's device-owner trust UI. No runtime/key/client changes.
+- NON ESEGUITO: end-to-end MSC4350 support for this installed stack. Proposal and
+  SDK PR605 are open; no experimental patch is deployed or claimed to fix it.
+  Sources: [upstream FAQ](https://github.com/mautrix/docs/blob/master/bridges/general/troubleshooting.md),
+  [MSC4350](https://github.com/matrix-org/matrix-spec-proposals/pull/4350),
+  [SDK PR605](https://github.com/mautrix/go/pull/605).
+
 ## Existing Fourdock API to Matrix, 2026-11-13
 
 - PASS AUTOMATICO: private homeserver CI43471352213 at9c707a8, all5 jobs. Includes

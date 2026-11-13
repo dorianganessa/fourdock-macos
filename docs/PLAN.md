@@ -2,6 +2,17 @@
 
 Updated: 2026-11-13. **Prototype; daily-use recovery checks in progress.**
 
+## Element identity warning, 2026-11-13
+
+Owner reports the sender/device mismatch warning on each message. Upstream FAQ
+identifies this as shared bridge-bot encryption under ghost sender identities;
+source and target flags match that mechanism. self_sign is already enabled and
+is explicitly not a fix for these warnings. MSC4350 and mautrix/go PR605 remain
+open; no full fix for the installed Element/server/SDK combination is established.
+Readable history does not establish a warning-free native-like experience. No
+runtime changes, key resets or new authentication attempts. Do not weaken
+cryptographic checks or patch a signed Mac client to hide the warning.
+
 ## Existing Fourdock to Element, 2026-11-13
 
 Owner authorized an API adapter so Element can reuse the working server-side

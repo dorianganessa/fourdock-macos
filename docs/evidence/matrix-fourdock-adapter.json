@@ -60,12 +60,25 @@
       "event handling taking long",
       "reply target not found",
       "duplicate member in list"
-    ]
+    ],
+    "element_sender_device_warning": "owner-reported on messages; expected shared bridge-bot encryption limitation",
+    "warning_free_element_ui": "fail — manual screenshot"
   },
   "limitations": [
     "current API lacks avatars and album metadata",
     "no calls or outgoing edits/deletions/read-receipt writes",
-    "initial/catchup bounded to 1000 local messages per chat"
+    "initial/catchup bounded to 1000 local messages per chat",
+    "Element shows sender/device mismatch warnings with shared bridge-bot encryption"
   ],
-  "privacy": "No account IDs, contacts, message bodies, session keys, tokens or raw target logs included"
+  "privacy": "No account IDs, contacts, message bodies, session keys, tokens or raw target logs included",
+  "identity_warning_review": {
+    "mechanism": "ghost event sender differs from bridge bot device owner",
+    "self_sign_already_enabled": true,
+    "self_sign_removes_this_warning": false,
+    "msc4350_proposal": "open",
+    "mautrix_go_pr_605": "open; not deployed",
+    "complete_target_fix": "not established",
+    "runtime_or_key_changes": false,
+    "source": "https://github.com/mautrix/docs/blob/master/bridges/general/troubleshooting.md"
+  }
 }

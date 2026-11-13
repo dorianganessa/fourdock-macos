@@ -1,5 +1,21 @@
 # Fourdock
 
+2026-11-13 ELEMENT SENDER/DEVICE WARNING: owner screenshot shows the per-message
+warning "The sender of the event does not match the owner of the device that sent
+it". Do not publish the private screenshot/contact/message content. This is the
+standard mautrix shared-bot encryption limitation, documented verbatim in upstream
+troubleshooting: ghost user is the event sender, bridge bot owns the encrypting
+device. Target metadata confirms encryption allow/require/self_sign/msc4190 true,
+appservice sync false. SDK0.32.0 ASIntent uses Connector.Crypto.Encrypt then sends
+as each ghost. self_sign is already active and does not remove this warning.
+MSC4350 proposal and mautrix/go PR605 remain open; no complete target client fix
+is established. Do not infer support from code-search absence or stale mirror PR
+labels. Earlier CI proves decryption/roundtrip, NOT absence of Element identity
+warnings. Readable messages remain confirmed; polished warning-free UI fails.
+No config/code/runtime change, new pairing, key reset, encryption weakening or
+client binary patch. Sources: mautrix/docs troubleshooting and matrix-spec-proposals
+PR4350. Record this limitation before proposing Element as native-quality parity.
+
 2026-11-13 FOURDOCK -> MATRIX ADAPTER: owner explicitly authorized implementation
 and requires deployment through homeserver repo/CI. Private homeserver PR146 is
 merged at32aa06b; CI43471352213 at9c707a8 passes all5 jobs, including a synthetic
