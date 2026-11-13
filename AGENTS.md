@@ -1,5 +1,15 @@
 # Fourdock
 
+2026-11-13 PHOTO/AVATAR GAP REVIEW: owner asks why photos appear individually
+and the chat rail has no avatars. Read-only source inspection confirms these are
+missing client features, not an established Ferdium/auth regression: ThreadView
+maps each message to MessageRow; the adapter types expose no album identifier.
+ChatList has no avatar rendering and UnifiedChat no avatar field; no profile-photo
+retrieval/cache endpoint exists in this adapter. Consecutive-photo grouping can
+be a local presentation feature; exact album membership would need preserved
+metadata rather than an assumed time window. No runtime/account read or change,
+new tests, real sends or implementation was performed for this explanation.
+
 2026-11-12 FERDIUM OWNER CHECK: embedded client works. Owner clarified only the
 Ferdium DOCK icon badge fails; the service/sidebar badge updates. Do not diagnose
 a broken recipe/count transport from the earlier generic report. Fourdock's

@@ -2,6 +2,15 @@
 
 Updated: 2026-11-12. **Prototype; daily-use recovery checks in progress.**
 
+## Reported presentation gaps, 2026-11-13
+
+Owner asks about photo albums and chat avatars. Source review confirms individual
+MessageRow rendering with no album identifier in the adapter types, and no avatar
+field/rendering/profile-photo retrieval in the current chat list. These remain
+unimplemented client features. Local grouping of consecutive photos is distinct
+from exact WhatsApp album membership; do not promise fidelity without its metadata.
+This was an explanation/review only, with no runtime or account changes.
+
 ## Client usability and Ferdium
 
 Owner now confirms the embedded client works, the sidebar service badge updates,

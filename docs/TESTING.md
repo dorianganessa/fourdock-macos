@@ -12,6 +12,14 @@ Only the explicitly confirmed manual subtests are passed. Fixture subtests do no
 pass real-account requirements.
 Sanitized automated results: [evidence/ui-results.json](evidence/ui-results.json).
 
+## Photo albums and avatars, 2026-11-13
+
+Source review only: ThreadView renders one MessageRow per message; adapter types
+do not expose an album ID. ChatList has no avatar component/field or corresponding
+profile-photo endpoint. Both requested behaviors are NON ESEGUITO/unimplemented,
+not a failed real-account authentication or Ferdium compatibility test. No private
+photos, messages or contact data were read, and no code/runtime change was made.
+
 ## Client usability / Ferdium, 2026-11-12
 
 - PASS MANUALE CONFERMATO: owner loaded the embedded client and clarified the
