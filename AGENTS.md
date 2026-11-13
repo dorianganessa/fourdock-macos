@@ -1,5 +1,44 @@
 # Fourdock
 
+2026-11-13 MATRIX BACKEND DEPLOYED: private homeserver PR143 and PR144 are merged.
+Canonical Compose/CI owns all five matrix-* services; no independent project is
+running. CI43423705680 at6ce8a3e passes all4 jobs; deployment43424119726 at e0842b1
+succeeds. Synapse/Postgres/WhatsApp/Telegram/gateway are healthy. Owner supplied
+Telegram API credentials through the private interactive server command. Both
+provider sessions remain UNLINKED; no QR/passkey attempt, import or real send.
+Strict HTTPS from this Mac and authenticated metadata for both bridges pass;
+CF-origin and unrelated proxy-container probes return403. Host Docker translates
+Mac Tailscale source to proxy gateway: allow only that single host gateway in
+addition to Tail ranges, plus independent CF-header rejection. Never allow the
+whole Docker subnet. Backup helper produces3 validated private dumps; full Restic
+run/restore and Element/recovery-key/provider acceptance remain untested. Existing
+Hermes/wacli and Fourdock container IDs AND start times stayed unchanged through
+deployment. See docs/evidence/matrix-backend-target.json. Runtime state is private
+under the homeserver's normal Docker configuration directory; no secrets here.
+
+2026-11-13 INITIAL MATRIX CHECKPOINT (historical): owner requests server implementation and
+specifically integration in the existing homeserver Compose/CI, not an ad-hoc
+standalone deployment. Source is now in the private homeserver repository,
+PR143 on feat/matrix-backend (local checkout ../homeserver-matrix). Known choices:
+stable server identity provided privately, Tailscale-only access, initial Telegram
+history 1,000 messages per selected chat; owner has no Telegram API app yet.
+Eight config tests, fifteen existing homeserver tests and canonical Compose
+profiles validate. New CI backend smoke is in progress, not passed; first run's
+gateway tmpdir failure was reproduced offline and fixed without weakening its
+read-only root. No production Matrix services or provider pairing started yet.
+Preserve existing wacli/Hermes/Fourdock. Prototype server source was moved out of
+this public repository; runtime configs/secrets stay private. Update evidence
+when CI/deploy completes. Historical research-only limits below are superseded
+only for this new, separate server backend; owner performs real authentication.
+
+2026-11-13 EXACT MAC PASSKEY EVIDENCE: no verified end-to-end Element Desktop on
+macOS + mautrix WhatsApp passkey success report found in targeted primary sources.
+Distinguish merged bridge support from owner success. Auth can be delegated to
+external browser independently of Element WebAuthn. Manager v0.2.1 publishes
+arm64 DMG and native @beeper/webauthn-authenticator/caBLE code; release/workflow
+declare signing/notarization, not independently inspected. No install, Mac launch,
+pairing or artifact signature check done. See docs/WACLI_REUSE.md.
+
 2026-11-13 MATRIX HISTORY RESEARCH: owner asks about Telegram history and bridges/
 clients matching known needs. See docs/WACLI_REUSE.md. Current Go mautrix/telegram
 (v0.2610.0; telegramgo archived) supports initial/catchup history. Backfill default

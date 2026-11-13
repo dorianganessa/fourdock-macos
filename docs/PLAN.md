@@ -2,7 +2,37 @@
 
 Updated: 2026-11-13. **Prototype; daily-use recovery checks in progress.**
 
+## Authorized Matrix backend implementation, 2026-11-13
+
+Owner chose implementation on the homeserver and clarified that it must join
+its canonical Compose/CI. Private homeserver PR143 contains Synapse/PostgreSQL,
+two current mautrix bridges, private HTTPS gateway, bootstrap and CI/backup
+integration. No backend code/credentials are shipped in this public client repo.
+Owner chose Tailscale-only access and 1,000 initial Telegram messages per chat;
+Telegram stays disabled until its API credentials are entered privately.
+Delivered through homeserver PR143/144 and the existing CI deploy. Local8 and
+existing15 cases pass; CI43423705680 at6ce8a3e passes all4 jobs, including isolated
+startup/login/provisioning/restart/backup. Deployment43424119726 at e0842b1 is
+successful and all five services are healthy. Owner supplied Telegram API keys
+privately, enabling its profile for subsequent CI deploys. Neither provider is
+linked yet. The Mac's strict HTTPS and both authenticated bridge APIs pass.
+CF-origin and unrelated proxy-container probes are rejected. The initial source
+translation403 was verified in Traefik logs and fixed with only the exact Docker
+gateway address plus independent public-tunnel rejection, preserving encryption
+and read-only roots. The backup helper produces three validated private dumps.
+Existing Hermes/wacli/Fourdock container IDs and start times stayed unchanged.
+Next: owner opens the official Element client, keeps its recovery key and links
+WhatsApp/Telegram through the bots; actual WhatsApp passkey is still the primary
+acceptance gate. No real message was sent/read and no history imported.
+
 ## Matrix/Telegram history and client fit, researched 2026-11-13
+
+Exact Mac + Element + WhatsApp passkey acceptance remains unproven: targeted
+primary-source search found no end-to-end success report identifying that setup.
+Upstream merged bridge support and Manager v0.2.1 arm64 DMG/native caBLE adapter
+are implementation evidence, not target success. External browser authentication
+avoids depending on Element's embedded WebAuthn. Do not install Manager or relink
+accounts merely to answer this evidence question; see WACLI_REUSE.md.
 
 See WACLI_REUSE.md for the source-backed bridge/client comparison. Current Go
 mautrix-telegram supports initial history and missed-message catchup, but default

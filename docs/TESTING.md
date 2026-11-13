@@ -14,6 +14,35 @@ Sanitized automated results: [evidence/ui-results.json](evidence/ui-results.json
 
 ## Alternative-client research, 2026-11-13
 
+Delivered backend: PASS AUTOMATICO for all4 jobs in homeserver CI43423705680 at
+6ce8a3e and deployment43424119726 at e0842b1. All5 matrix services healthy;
+strict Mac HTTPS200, both authenticated bridge APIs (WA2/TG4 available flows),
+CF-origin403 and unrelated proxy-container403, three logical backup dumps with
+private modes and unchanged existing WhatsApp container IDs/start times.
+The Mac403 source translation was established in Traefik logs and fixed through
+PR144/CI without permitting the entire Docker subnet. Telegram keys were entered
+by owner privately; both external session lists are empty. These metadata reads
+did not start login, inspect messages/contacts or send anything. Full Restic run,
+restore/decryption drill, Element target launch, provider pairing/passkey, real
+history/search/album/notification/hotkey behavior remain NON ESEGUITO.
+[Sanitized target evidence](evidence/matrix-backend-target.json).
+
+Initial implementation checkpoint (historical; new backend was authorized):
+private homeserver PR143 adds canonical Compose/CI integration. PASS AUTOMATICO:
+8 focused configuration cases, 15 existing homeserver cases, shell syntax and
+Compose with both Matrix profiles. The first isolated CI startup failed because
+Nginx tried creating fastcgi_temp on its read-only root; an offline container
+reproduced that exact error, and nginx -t now passes with all temp paths in tmpfs.
+Full backend CI/restart/backup and production deployment are still pending here.
+No WhatsApp/Telegram login, passkey attempt, history import or real send performed.
+
+Exact Mac/Element passkey evidence check: no verified full-flow success report
+found. Bridge PR936 merged; Manager v0.2.1 includes passkey support, arm64 Mac DMG
+and a native caBLE adapter, with signing/notarization declared in release/build
+configuration. NON ESEGUITO: artifact signature inspection, Mac execution, owner
+passkey login and Matrix chat delivery. External browser is the documented
+alternative to Manager. Source/API review only, no install or account change.
+
 Matrix follow-up: documentation and released source review only, not runtime
 tests. Verified current Telegram v0.2610.0 roadmap/config, initial/catchup versus
 standard Matrix historical insertion limits, WhatsApp album-notice conversion,

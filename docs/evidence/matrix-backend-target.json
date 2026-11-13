@@ -1,0 +1,25 @@
+{
+  "date": "2026-11-13",
+  "scope": "Independent Matrix backend in existing homeserver Compose and CI",
+  "ci": {"run": 43423705680, "source": "6ce8a3e", "jobs_passed": 4, "configuration_tests": 8, "existing_tests": 15},
+  "deployment": {"run": 43424119726, "source": "e0842b1", "status": "success", "healthy_services": 5},
+  "checks": {
+    "strict_https_from_target_mac": 200,
+    "cloudflare_origin_rejected": 403,
+    "untrusted_proxy_container_rejected": 403,
+    "matrix_owner_login": "pass",
+    "whatsapp_authenticated_api": "pass",
+    "telegram_authenticated_api": "pass",
+    "whatsapp_available_login_flows": 2,
+    "telegram_available_login_flows": 4,
+    "whatsapp_linked": false,
+    "telegram_linked": false,
+    "telegram_api_credentials_owner_supplied": true,
+    "distinct_database_owners": true,
+    "logical_backup_helper_dumps": 3,
+    "backup_dump_permissions": "0600",
+    "existing_whatsapp_container_ids_and_start_times_unchanged": true
+  },
+  "not_tested": ["Element execution on target", "WhatsApp passkey", "Telegram login", "real message delivery", "history import", "chat decryption", "full Restic backup and restore", "client notifications, albums and global shortcuts"],
+  "privacy": "No provider pairing initiated; no real sends or account message/contact reads; no credentials or private connection details in this evidence"
+}

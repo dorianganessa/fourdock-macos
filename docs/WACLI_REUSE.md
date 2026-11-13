@@ -8,7 +8,51 @@ Fourdock remains available. No homeserver, account or session changes were made.
 
 ## More complete clients, reviewed 2026-11-13
 
+Implementation follow-up: the owner authorized the separate Matrix server
+backend, selected private Tailscale access and 1,000 initial Telegram messages
+per chat, and required integration with the existing homeserver Compose/CI.
+That implementation lives in the private homeserver repository (PR143), not in
+this client repository. Eight focused config and fifteen existing tests pass.
+CI43421237203 at56dd6b1 passes all four jobs, including an isolated backend's
+startup, local Matrix owner login, authenticated WhatsApp provisioning metadata,
+restart and logical backups. Its two advertised login flows were listed, but
+none was initiated; no provider was paired. Telegram API credentials are still
+an owner setup step. The code is merged; production deployment/HTTPS and actual
+WhatsApp passkey acceptance are separate checks, not proven by this CI result.
+
+Delivery update: PR144 resolves verified Docker translation of the Mac's private
+source address, allowing only the exact proxy gateway alongside Tailscale ranges
+and rejecting CF-origin headers independently. CI43423705680 at6ce8a3e and
+deployment43424119726 at e0842b1 pass. All five services are healthy; strict Mac
+HTTPS, authenticated APIs for both bridges and negative ingress probes pass.
+Owner supplied Telegram keys privately; neither account is linked. Three logical
+dumps are validated; existing Hermes/wacli/Fourdock containers were not restarted.
+Element, recovery-key setup, actual provider passkey and history/UI acceptance
+remain owner steps. No account messages or contacts were inspected.
+
 ### Matrix, Telegram history and client fit: follow-up research
+
+Owner's exact follow-up: do we have evidence for Element Desktop on Mac with
+WhatsApp passkeys? No independently verified end-to-end report identifying that
+combination was found in the targeted primary-source search. Do not promote the
+candidate to a tested solution. Element's embedded WebAuthn support is not the
+proposed authentication dependency: the bridge can complete the ceremony using
+an external browser, then Element consumes ordinary Matrix conversations.
+
+Stronger upstream evidence does exist: WhatsApp bridge PR936 was merged
+2026-07-01; the maintainer's July release post explicitly documents browser JS
+and mautrix-manager hybrid/caBLE routes. Manager v0.2.1 adds passkey login and
+publishes an arm64 Mac DMG. Its pinned `src/webauthn.ts` calls the separate
+`@beeper/webauthn-authenticator` native backend, including caBLE; this is not
+evidence that stock Electron's embedded browser implements the same flow.
+Release notes/build workflow declare Mac signing/notarization. No downloaded
+artifact's signature/notarization or execution was inspected, and no owner Mac
+login was tested. The browser route remains an option without installing Manager.
+[Bridge PR](https://github.com/mautrix/whatsapp/pull/936),
+[maintainer explanation](https://mau.fi/blog/2026-07-mautrix-release/),
+[Manager release](https://github.com/mautrix/manager/releases/tag/v0.2.1),
+[native auth adapter](https://github.com/mautrix/manager/blob/v0.2.1/src/webauthn.ts),
+[signing workflow](https://github.com/mautrix/manager/blob/v0.2.1/.github/workflows/release.yml).
 
 Scope: compare existing bridges/clients for the owner's WhatsApp, Telegram,
 Fastmail and company Gmail needs. This is primary-source research only; no new
