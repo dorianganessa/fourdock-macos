@@ -14,6 +14,28 @@ Sanitized automated results: [evidence/ui-results.json](evidence/ui-results.json
 
 ## Alternative-client research, 2026-11-13
 
+QR media delivered: PASS AUTOMATICO CI43453427842 at05c32fd (all4 jobs,9 config
+cases) and deployment43453909823 at63e5a08. Live synthetic pixel upload/download
+matches via prefixed AND Desktop origin-root HTTPS routes; anonymous401,
+CF-origin403 and unrelated proxy-container403. Only matrix-gateway was recreated;
+other Matrix/WhatsApp container IDs and start times are preserved. Same Nginx
+digest, canonical reference only. NON ESEGUITO: actual owner QR rendering and
+phone/passkey completion. No owner QR/media URI or contents were retrieved.
+[Sanitized media evidence](evidence/matrix-media-route.json).
+
+Initial QR media checkpoint: owner screenshot shows bot instructions plus image-download
+failure after login qr. Read-only Element bundle metadata:1.12.35. Sanitized
+Traefik route/status counts establish root authenticated media404 versus prefixed
+config200. Proposed homeserver PR145 keeps the same private guard/authentication;
+9 configuration tests and CI synthetic media upload/download with anonymous401
+pass. Live HTTPS media and actual QR rendering are pending; no QR payload/URI,
+private image, messages or contacts were fetched by the agent.
+
+- PASS MANUALE CONFERMATO: owner says "sono dentro" after official Element Mac
+  installation/custom-homeserver login instructions. Actual version/signature,
+  recovery-key backup, WhatsApp/Telegram linking, passkey and chat delivery are
+  not individually confirmed. No agent-initiated pairing or outbound action.
+
 Delivered backend: PASS AUTOMATICO for all4 jobs in homeserver CI43423705680 at
 6ce8a3e and deployment43424119726 at e0842b1. All5 matrix services healthy;
 strict Mac HTTPS200, both authenticated bridge APIs (WA2/TG4 available flows),

@@ -1,5 +1,37 @@
 # Fourdock
 
+2026-11-13 QR MEDIA FIX DEPLOYED: homeserver PR145 merged; CI43453427842 at05c32fd
+passes all4 jobs including9 config cases and synthetic media upload/download.
+Deploy43453909823 at63e5a08 succeeds. Live synthetic image download matches bytes
+through BOTH prefixed and Desktop root HTTPS routes; unauthenticated requests401,
+CF-origin403 and unrelated proxy-container403. Only matrix-gateway was recreated;
+the four stateful Matrix services and three existing WhatsApp containers retain
+their IDs/start times. Nginx remains on the identical pinned digest; removing its
+mutable tag fixed a separately reproduced manifest-check failure. No owner QR,
+message or attachment was retrieved. Actual QR rendering and phone/passkey remain
+owner checks: send login qr once for a fresh QR after deployment. Evidence is in
+docs/evidence/matrix-media-route.json; do not infer provider linking from media.
+
+2026-11-13 QR MEDIA ROUTING (initial checkpoint): owner sent login qr in Element; bot responded but
+the image failed to download. Installed Element metadata is1.12.35. Sanitized
+Traefik evidence shows prefixed media config200 but origin-root authenticated
+media download404. This is before phone/passkey acceptance. Private homeserver
+PR145 adds only the root /_matrix/client/v1/media/ route with the same private
+guard, CF rejection and Synapse authentication. CI synthetic image probe passes
+with anonymous401; nine config tests pass. Final CI/deploy/live probe pending at
+this checkpoint. Do not retrieve the owner's QR, publish its URI/screenshot,
+restart bridges or reset any sessions to diagnose this route failure.
+
+2026-11-13 ELEMENT OWNER LOGIN: after the official Mac Element/custom homeserver
+instructions, owner confirms "sono dentro". Element access on the target is now
+PASS MANUALE within that reported scope. Version/signature and recovery-key setup
+were not individually confirmed. Next owner action: DM the local WhatsApp bridge
+bot and send login qr, then phone linking. No provider passkey success, chats,
+history, notification or new session persistence is established by Matrix login.
+The agent has not initiated pairing or sent a management message on the owner's
+behalf. Preserve existing clients and sessions; handle any extra passkey step in
+the documented external browser path, without assuming embedded WebAuthn works.
+
 2026-11-13 MATRIX BACKEND DEPLOYED: private homeserver PR143 and PR144 are merged.
 Canonical Compose/CI owns all five matrix-* services; no independent project is
 running. CI43423705680 at6ce8a3e passes all4 jobs; deployment43424119726 at e0842b1

@@ -4,6 +4,23 @@ Updated: 2026-11-13. **Prototype; daily-use recovery checks in progress.**
 
 ## Authorized Matrix backend implementation, 2026-11-13
 
+Owner reached the WhatsApp bot in Element1.12.35, but its QR image failed:
+Traefik established a Desktop origin-root media404 while prefixed APIs worked.
+Homeserver PR145 is now merged/deployed, adding the narrow root media route with
+existing private/authentication controls. CI43453427842 at05c32fd passes all4 jobs
+and9 config cases; deployment43453909823 at63e5a08 passes. The live synthetic
+image matches through both HTTPS paths; anonymous401, CF-origin403 and unrelated
+proxy-container403 checks pass. Only the gateway was recreated, preserving all
+bridge/database and original WhatsApp containers. A mutable-tag manifest failure
+was reproduced independently and fixed by retaining the same Nginx digest alone.
+No owner QR/content retrieved. Next owner action: send login qr once for a fresh
+QR, then report the bot's extra passkey instructions if requested.
+
+Owner now confirms access inside Element after the Mac/custom-server login
+instructions. This passes target Element login only; recovery-key setup was not
+individually reported. Next: owner starts WhatsApp bot pairing and completes the
+phone/browser passkey ceremony. Provider authentication remains unverified.
+
 Owner chose implementation on the homeserver and clarified that it must join
 its canonical Compose/CI. Private homeserver PR143 contains Synapse/PostgreSQL,
 two current mautrix bridges, private HTTPS gateway, bootstrap and CI/backup

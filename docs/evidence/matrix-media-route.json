@@ -1,0 +1,21 @@
+{
+  "date": "2026-11-13",
+  "element_desktop_version_observed": "1.12.35",
+  "original_failure": "Origin-root authenticated media download returned 404; prefixed media configuration worked",
+  "fix": "Narrow origin-root /_matrix/client/v1/media/ route with existing private guard and Synapse authentication",
+  "ci": {"run": 43453427842, "source": "05c32fd", "jobs_passed": 4, "configuration_tests": 9},
+  "deployment": {"run": 43453909823, "source": "63e5a08", "status": "success"},
+  "target_checks": {
+    "synthetic_pixel_upload_download_prefixed_https": "pass",
+    "synthetic_pixel_upload_download_origin_root_https": "pass",
+    "downloaded_bytes_match_fixture": true,
+    "anonymous_native_media_status": 401,
+    "cloudflare_origin_native_media_status": 403,
+    "untrusted_proxy_container_native_media_status": 403,
+    "only_matrix_gateway_recreated": true,
+    "nginx_pinned_digest_changed": false
+  },
+  "owner_qr_rendering": "not yet confirmed",
+  "phone_passkey": "not yet confirmed",
+  "privacy": "Only synthetic media uploaded/downloaded; no owner QR, attachment, message, media URI, credentials or screenshot published"
+}
