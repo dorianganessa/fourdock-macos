@@ -1,5 +1,33 @@
 # Fourdock
 
+2026-11-14 QUIET PRESENCE FIX AUTHORIZED: owner explicitly requests the fix.
+Private homeserver PR152 at70913fb changes only candidate CLI sync's default from
+normal to quiet; explicit normal remains possible. Existing process-manager
+inherits the default. No UI or Hermes source changes. Local candidate Docker
+build passes GIF/file-send tests, upstream presence cases, and synthetic receive/
+store before and after forced reconnect with only unavailable presence recorded.
+Built CLI help confirms quiet default; all14 Matrix Python tests pass. CI43642955381
+passes all5 jobs; PR152 merged ate1b1b7e. Deploy43643850647 SUCCESS. Live image
+matches merge; CLI default quiet with one running follow daemon/no override,
+authenticated/connected, readOnlyfalse, same account/mounts and0 restarts. Candidate
+was recreated; Hermes whatsapp-api/sync and Matrix Fourdock/Telegram keep IDs and
+start times, with healthy bridges. Real contact-side presence/delivery remains
+unconfirmed. Evidence: docs/evidence/whatsapp-quiet-presence.json. Private baseline records
+candidate/session-volume metadata, account fingerprint and Hermes/adapter IDs.
+Hermes sync independently verified already quiet. Preserve all sessions; normal
+candidate feature deployment is authorized, no pairing/reset or real agent sends.
+
+2026-11-14 WHATSAPP ONLINE PRESENCE INVESTIGATION (BEFORE FIX): owner asks whether the setup
+keeps them online. Read-only live check finds one candidate `wacli sync --follow`,
+no --presence-mode and no --monitor. Installed `sync --help` confirms default
+normal; pinned source normal sends initial PresenceAvailable, quiet suppresses it.
+Candidate process-manager does not supply --presence-mode. This is a concrete
+mechanism for announcing online independently of Element's foreground state;
+actual contacts' displayed online status is not externally verified. A scoped
+candidate quiet-mode change is the next remedy to implement/test through the
+homeserver deployment workflow if requested. No code/runtime/config change,
+restart, presence write, pairing, real send or Hermes change was performed.
+
 2026-11-13 LATEST OWNER RETEST / REMAINING TELEGRAM AND WARNING: owner reports
 everything now seems to work and confirms a fresh retest of the current Element
 media/GIF/reaction work. This is an overall manual acceptance, not an individually

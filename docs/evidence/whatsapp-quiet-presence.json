@@ -1,0 +1,89 @@
+{
+  "date": "2026-11-14",
+  "source": {
+    "repository": "private homeserver",
+    "pull_request": 152,
+    "reviewed_head": "70913fba79ae9dab394891f69a72df81668b5bc2",
+    "merge": "e1b1b7e9bdb8687dff09b5c8e0c48ca7155816ac"
+  },
+  "change": {
+    "candidate_cli_sync_default": "quiet",
+    "scope": "candidate_image_only",
+    "ui_webhooks_delegate_and_reconnect_options_changed": false,
+    "hermes_binaries_or_config_changed": false
+  },
+  "local_validation": {
+    "isolated_candidate_docker_build": "pass",
+    "existing_gif_and_file_sends": "pass_synthetic",
+    "upstream_presence_tests": "pass_synthetic",
+    "quiet_receive_store_before_after_reconnect": "pass_synthetic",
+    "available_presence_calls_in_quiet_fixture": 0,
+    "unavailable_presence_on_cleanup": "pass_synthetic",
+    "built_help_quiet_default": "pass",
+    "matrix_python_tests": 14
+  },
+  "ci": {
+    "run": 43642955381,
+    "status": "pass_all_five_jobs"
+  },
+  "deployment": {
+    "run": 43643850647,
+    "status": "pass"
+  },
+  "before": {
+    "candidate_sync_processes": 1,
+    "candidate_presence_mode": "default_normal",
+    "hermes_presence_mode": "explicit_quiet",
+    "candidate_authenticated_connected": true,
+    "candidate_read_only": false,
+    "private_container_volume_account_fingerprint_baseline_saved": true
+  },
+  "after": {
+    "whatsapp-api": {
+      "same_id": true,
+      "same_start": true,
+      "status": "running",
+      "health": "healthy"
+    },
+    "whatsapp-sync": {
+      "same_id": true,
+      "same_start": true,
+      "status": "running",
+      "health": null
+    },
+    "matrix-fourdock": {
+      "same_id": true,
+      "same_start": true,
+      "status": "running",
+      "health": "healthy"
+    },
+    "matrix-telegram": {
+      "same_id": true,
+      "same_start": true,
+      "status": "running",
+      "health": "healthy"
+    },
+    "candidate": {
+      "recreated": true,
+      "same_mounts": true,
+      "restart_count": 0,
+      "image": "fourdock-candidate-gif:e1b1b7e9bdb8687dff09b5c8e0c48ca7155816ac",
+      "authenticated": true,
+      "connected": true,
+      "process_state": "running",
+      "read_only": false,
+      "same_account": true,
+      "quiet_default": true,
+      "sync_processes": [
+        {
+          "follow": true,
+          "presence_override": null
+        }
+      ]
+    }
+  },
+  "actual_contact_side_presence": "unconfirmed",
+  "real_provider_delivery_after_change": "unconfirmed",
+  "real_messages_sent_by_agent": 0,
+  "accounts_relinked_or_keys_copied": 0
+}

@@ -1,6 +1,32 @@
 # Plan and handoff
 
-Updated: 2026-11-13. **Prototype; daily-use recovery checks in progress.**
+Updated: 2026-11-14. **Prototype; daily-use recovery checks in progress.**
+
+## Authorized quiet presence fix, 2026-11-14
+
+Private homeserver PR152 (head70913fb) defaults sync to quiet in the candidate
+image only. Existing UI daemon/delegate/webhooks/reconnect options are preserved.
+The checked original project/named volume update goes through homeserver CI.
+Hermes is already quiet and is excluded. Local Docker build and14 Matrix tests
+pass, including synthetic quiet receive/store across reconnect and presence
+checks. CI43642955381 passes all5 jobs; PR152 merged ate1b1b7e. Deploy43643850647
+SUCCESS. Live candidate image matches the merge, quiet default is verified, one
+follow daemon is connected/authenticated, readOnlyfalse, same account/mounts,0
+restarts. Only candidate was recreated among the five monitored services; Hermes
+and Matrix Fourdock/Telegram preserve IDs/start times. Actual contact-side status
+and real provider delivery remain owner checks. See
+[evidence](evidence/whatsapp-quiet-presence.json).
+
+## WhatsApp online presence investigation, 2026-11-14
+
+Read-only inspection confirms the persistent candidate sync daemon uses the
+installed default presence mode normal. The process-manager supplies no override;
+pinned CLI source announces PresenceAvailable on normal connection. Closing
+Element does not stop that independent daemon. This can account for online
+presence; no independent contact-side observation was made. The installed CLI
+already supports quiet mode, which suppresses that announcement. No runtime or
+session change was made during that investigation. The authorized deployment
+above now supersedes that initial state.
 
 ## Latest owner retest; Telegram and warning remain, 2026-11-13
 

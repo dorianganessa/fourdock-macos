@@ -12,6 +12,31 @@ Only the explicitly confirmed manual subtests are passed. Fixture subtests do no
 pass real-account requirements.
 Sanitized automated results: [evidence/ui-results.json](evidence/ui-results.json).
 
+## WhatsApp presence metadata, 2026-11-14
+
+Owner now authorizes the fix. Private homeserver PR152 at70913fb: local isolated
+candidate Docker build PASS (GIF/file send, upstream presence behavior, new fake
+receive/store across reconnect with only unavailable presence, installed help
+quiet default). All14 Matrix Python tests PASS. CI43642955381 PASS all5 jobs;
+PR152 merged ate1b1b7e, deploy43643850647 PASS. Live candidate default quiet, one
+follow daemon/no override, authenticated/connected, readOnlyfalse, same account
+and mounts,0 restarts. Hermes whatsapp-api/sync and Matrix Fourdock/Telegram
+container IDs/start times unchanged; both bridges healthy. Contact-side
+presence and real provider delivery remain unconfirmed; this supersedes the no-remedy-requested stage.
+
+- PASS AUTOMATICO READ-ONLY BEFORE FIX: one candidate wacli sync process, follow=true,
+  monitor=false, no presence-mode override. The deployed process-manager source
+  likewise supplies none. Installed CLI help confirms default normal and quiet
+  support; help does not open the account store.
+- VERIFIED SOURCE: normal enables the initial available-presence announcement;
+  quiet suppresses it. This is a plausible cause of the reported online status,
+  not an independent verification of what another contact actually sees.
+- PASS AUTOMATICO TARGET: quiet-mode remedy is deployed through homeserver CI;
+  candidate recreated once with its existing session, no extra diagnostic restart.
+- NON ESEGUITO: real contact-side offline observation and real provider delivery
+  after the change. No agent real sends, account relinking or Hermes changes.
+  Evidence: [quiet presence](evidence/whatsapp-quiet-presence.json).
+
 ## Latest owner retest and module deployment gate, 2026-11-13
 
 - PASS MANUALE CONFERMATO (overall only): owner reports all seems to work now and
