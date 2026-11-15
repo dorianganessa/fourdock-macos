@@ -2,6 +2,16 @@
 
 Updated: 2026-11-15. **Prototype; daily-use recovery checks in progress.**
 
+## Telegram notification choice, 2026-11-15
+
+Owner asks about all-topic notifications in a private community. Current scoped
+push rules mostly fall through to enabled all-message/encrypted-message defaults;
+live mute_only_on_create=true means native Telegram mute changes are not a
+continuous mirror. Explain independent per-topic Matrix notification presets and
+that a whole-community preference must cover its child topics. No preference
+chosen yet, so no push-rule or provider-setting writes. The icon update only
+changed avatar state. Keep private room IDs/names and keyword rules out of evidence.
+
 ## Literal message placeholder investigation, 2026-11-15
 
 Owner identifies a private group/sender whose entries show `(message)`. Read-only

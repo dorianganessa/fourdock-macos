@@ -1,5 +1,17 @@
 # Fourdock
 
+2026-11-15 TELEGRAM NOTIFICATION PREFERENCES: owner asks why an identified
+community's topics notify and whether they can choose. Read-only push-rule
+inspection finds most matching topic rooms have no scoped rule and inherit
+enabled .m.rule.encrypted/.m.rule.message notify defaults; one has an empty-actions
+room rule (do not equate this with a strict no-mentions mute). Live Telegram
+bridge mute_only_on_create=true, so remote mute updates are not continuously
+mirrored into existing rooms. Topics are separate Matrix rooms, not notification
+policy inherited from a space. Explain per-room ... -> Notifications: all,
+mentions/keywords or mute. No push rules/preferences/provider settings changed.
+Icon helper writes only m.room.avatar; no notification-setting writes in that work.
+Never publish private community names, room IDs, keywords or push-rule dumps.
+
 2026-11-15 PLACEHOLDER MESSAGE INVESTIGATION: owner reports literal `(message)` in
 a specified WhatsApp group/sender. Preserve those private names/IDs/content out of
 evidence. Read-only archive metadata confirms blank text/media and literal

@@ -12,6 +12,17 @@ Only the explicitly confirmed manual subtests are passed. Fixture subtests do no
 pass real-account requirements.
 Sanitized automated results: [evidence/ui-results.json](evidence/ui-results.json).
 
+## Telegram notification preferences, 2026-11-15
+
+- PASS AUTOMATICO READ-ONLY: selected community/topic rules mostly use enabled
+  notify defaults for encrypted/normal room messages; one empty-actions room rule.
+  No personal rule contents, names, keywords or room IDs published.
+- VERIFIED CONFIG/SOURCE: mute_only_on_create=true; native remote-mute changes do
+  not continuously update existing Matrix rooms. Element supports per-room all,
+  mentions/keywords and mute presets through its room context menu.
+- NON ESEGUITO: changing a notification preference or a real notification test.
+  Owner has not selected a policy; no push-rule/provider-setting changes made.
+
 ## Literal message placeholder, 2026-11-15
 
 - PASS READ-ONLY METADATA: selected archived placeholder already has blank text/
