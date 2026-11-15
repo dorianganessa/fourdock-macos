@@ -1,6 +1,39 @@
 # Plan and handoff
 
-Updated: 2026-11-14. **Prototype; daily-use recovery checks in progress.**
+Updated: 2026-11-15. **Prototype; daily-use recovery checks in progress.**
+
+## Telegram idle presence and service-space icons, 2026-11-15
+
+Both bridges currently report1 CONNECTED owner login/one space and healthy runtime.
+The previous zero Telegram counts were invalid: /logins returns login_ids, not
+logins. Private homeserver PR154 fixes verification and uses whoami for exact space
+discovery. No new provider authentication is requested.
+
+Source audit of installed Telegramv26.10 release finds no online-status RPC calls
+or background presence loop in connector/vendored runtime. An audited-image guard
+requires review before changing that digest. Normal send/read/typing activity can
+briefly show online. Owner cannot externally verify idle status now; keep that
+acceptance unconfirmed, without inventing a quiet config or restarting the bridge.
+
+PR154 atbdc7204 (feature412476b) adds local brand assets and opt-in Matrix avatar state changes for
+the two provisioned personal spaces only. Preserve membership, names, other rooms,
+manual later avatar changes and all sessions. Private backups and asset caching
+are tested. All19 Matrix tests plus16 existing/manifest-ref tests pass locally.
+CI43710642480 passes all5 jobs atbdc7204; merged7253d570. Deploy43711194995
+passes attempt2 and updates2 icons. First deploy stopped before icons on a stale
+legacy WA upstream; verified DNS mismatch, reloaded the same gateway config and
+retried CI. Live avatar state and downloaded PNG bytes/hash match local assets;
+backup600 and all5 monitored container IDs/start times/images unchanged. Both
+logins CONNECTED. Actual Element rendering remains unobserved. Existing WhatsApp
+quiet mode and Hermes are preserved. See
+[evidence](evidence/telegram-presence-spaces.json).
+
+Owner also asks about Telegram communities/topics appearing as separate rooms.
+Current hierarchy already has7 nested spaces/12 child links across29 rooms,
+bridge_communities=true. Explain the existing Element subspace navigation and
+the root list's inclusion of descendants. The native Telegram forum view is not
+provided by the Matrix rooms mapping; no room/history merging or provider-side
+community changes are authorized by this layout question or needed for icons.
 
 ## Authorized quiet presence fix, 2026-11-14
 

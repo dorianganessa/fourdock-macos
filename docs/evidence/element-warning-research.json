@@ -27,11 +27,12 @@
   "telegram": {
     "container": "healthy",
     "restarts": 0,
-    "linked_logins": 0,
+    "linked_logins": null,
     "api_credentials_already_saved": true,
     "owner_action": "login_qr_in_bridge_dm_then_scan_with_telegram_phone",
     "history_per_chat": 1000,
-    "initial_dialogs": 15
+    "initial_dialogs": 15,
+    "login_count_measurement": "invalid_wrong_provisioning_field_corrected_2026-11-15"
   },
   "sources": [
     "https://web-docs.element.dev/config.html",

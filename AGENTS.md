@@ -1,5 +1,43 @@
 # Fourdock
 
+2026-11-15 TELEGRAM PRESENCE AND SPACE ICONS: owner authorizes idle-presence checks
+and Telegram/WhatsApp logos for Element service spaces. Current provisioning
+whoami confirms1 CONNECTED login and one space for each bridge; both healthy.
+CORRECTION: earlier zero-login readings used /logins.logins, but that endpoint
+returns login_ids. Those zero counts are invalid; do not ask owner to pair again.
+Private homeserver PR154 atbdc7204 (feature412476b) fixes backend verification to read login_ids.
+Installed Telegramv26.10 digest is pinned; matching source tagv0.2610.0 commit
+6991248e6a573489d2d38d603b5dbed1627113bc has no connector/runtime call to
+AccountUpdateStatus and no background online loop. Generated RPC declaration alone
+is not a call. Sends, private reads and typing can briefly show activity by design.
+Owner cannot check contact-side idle state now: mark NON ESEGUITO, not a manual pass.
+No Telegram fork, speculative config, login or diagnostic restart is needed.
+PR154 adds bundled brand PNGs and opt-in normal Matrix space-avatar updates through
+homeserver CI; target by authenticated whoami.space_room plus bot/protocol/type/
+power checks, never room names. Backups600, uploads cached, later manual avatars
+preserved. All19 Matrix tests pass locally; CI43710642480 passes all5 jobs at
+bdc7204, merged7253d570. Deploy43711194995 PASS attempt2;2 icons updated. Live
+avatar URLs and downloaded PNG bytes/hash match local assets, private backup600;
+both logins remain CONNECTED. All5 monitored containers preserve ID/start/image.
+Actual Element rendering remains owner observation. Runtime
+baseline for five containers saved privately. Existing WhatsApp quiet mode and
+Hermes must remain unchanged; no real sends, session copies or Element binary edits.
+Owner additionally asks to group Telegram communities/topics like native Telegram.
+Read-only hierarchy: bridge_communities=true,29 hierarchy rooms,7 nested spaces,
+12 child links, no pagination. Grouping already exists; Element's root room list
+includes descendants. Explain expanding/selecting community subspaces; native
+forum-in-one-chat UI is not provided by this bridge/client mapping. Do not merge
+histories/portals or change Telegram community structure. No grouping write made.
+CI prerequisite: Docker manifest inspect failed for Postgres tag@digest even though
+direct registry bytes matched the pin; digest-only inspection passes. PR154
+normalizes only inspection refs, preserving digest/registry ports and all runtime
+pins. Red/green regression plus all16 existing tests pass. New headbdc7204 CI
+43710642480 passes all5 jobs. First deploy stopped before icons on an existing
+legacy WA proxy502: Nginx cached an old upstream, current DNS/direct readiness
+worked. Existing config checked/reloaded, then normal CI retry succeeded. No
+provider container restart or image/config pin change. Evidence:
+docs/evidence/telegram-presence-spaces.json.
+
 2026-11-14 QUIET PRESENCE FIX AUTHORIZED: owner explicitly requests the fix.
 Private homeserver PR152 at70913fb changes only candidate CLI sync's default from
 normal to quiet; explicit normal remains possible. Existing process-manager

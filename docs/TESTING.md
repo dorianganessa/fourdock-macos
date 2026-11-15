@@ -1,6 +1,6 @@
 # Testing ledger
 
-Updated: 2026-11-13. Automated baseline: 2026-11-06. Target: managed macOS 27.0.1 arm64. Synthetic UI runtime:
+Updated: 2026-11-15. Automated baseline: 2026-11-06. Target: managed macOS 27.0.1 arm64. Synthetic UI runtime:
 Chrome for Testing 157.0.8103.38, Playwright 1.56.1, Node 26.4.0. Profiles are
 temporary. External DNS is blocked only in the synthetic browser; attached page
 navigations are fulfilled from fixtures. Automated checks use no real credentials
@@ -11,6 +11,35 @@ Allowed states: PASS AUTOMATICO, PASS MANUALE CONFERMATO, FAIL, BLOCCATO, NON ES
 Only the explicitly confirmed manual subtests are passed. Fixture subtests do not
 pass real-account requirements.
 Sanitized automated results: [evidence/ui-results.json](evidence/ui-results.json).
+
+## Telegram idle presence and service-space avatars, 2026-11-15
+
+- PASS AUTOMATICO READ-ONLY: whoami confirms1 CONNECTED login/one space for both
+  Telegram and Fourdock; both bridge containers healthy. Previous /logins.logins
+  zero counts are invalid because the correct field is login_ids.
+- VERIFIED SOURCE: installed Telegramv26.10 and matching v0.2610.0 source have no
+  background online-status calls; only generated RPC definitions exist. A digest
+  upgrade guard requires re-audit. Actual send/read/typing can briefly show online.
+- NON ESEGUITO: contact-side idle presence; owner explicitly cannot check now.
+- PASS AUTOMATICO LOCAL: all19 Matrix tests, including exact-space/permission
+  rejection before writes, idempotent uploads/state changes, private backups,
+  preservation of later custom avatars and audited-image digest review guard.
+- PASS AUTOMATICO CI: PR154 atbdc7204 (feature412476b), all5 jobs on43710642480;
+  merge7253d570. Manifest-reference regression red/green plus all16 existing tests
+  pass; runtime image pins unchanged.
+- PASS AUTOMATICO TARGET: deploy43711194995 attempt2 updates2 service icons.
+  Avatar state and downloaded PNG bytes/hash match bundled local assets; backup600.
+  Both logins CONNECTED; all5 monitored container IDs/start times/images unchanged.
+  First deploy failed before icons on legacy WA502; stale Nginx upstream matched
+  an old address while current DNS/direct readiness passed. Same config checked/
+  reloaded, then normal CI retry passed; no provider restart.
+- NON ESEGUITO: actual Element icon rendering; no client GUI/account screenshot.
+  Evidence: [presence/spaces](evidence/telegram-presence-spaces.json).
+- PASS AUTOMATICO READ-ONLY: Telegram hierarchy has29 rooms,7 nested spaces and12
+  child links, no further page; bridge_communities=true. No private room names or
+  IDs recorded. Element1.12.35 source includes descendant rooms in root filtering
+  and supports expandable/selectable subspaces. Native Telegram forum parity is
+  not established; no history/portal or community membership changes were made.
 
 ## WhatsApp presence metadata, 2026-11-14
 

@@ -1,0 +1,123 @@
+{
+  "date": "2026-11-15",
+  "source": {
+    "repository": "private homeserver",
+    "pull_request": 154,
+    "reviewed_head": "bdc7204714739d9ded01453e8ffc5159c1284260",
+    "merge": "7253d570fa8c8f33cf2317c62d278ee06d2a638f",
+    "feature_head": "412476ba07fa41a4063687fd0c397bdd3cb03cc1"
+  },
+  "telegram_presence": {
+    "image_version": "v26.10",
+    "audited_source_tag": "v0.2610.0",
+    "audited_source_commit": "6991248e6a573489d2d38d603b5dbed1627113bc",
+    "background_online_status_calls_found": false,
+    "scope": "connector_and_vendored_runtime_source_audit",
+    "image_upgrade_requires_reaudit": true,
+    "real_send_read_typing_can_show_brief_online_activity": true,
+    "contact_side_idle_observation": "not_run_owner_cannot_check_now",
+    "configuration_or_binary_changed": false
+  },
+  "provisioning_correction": {
+    "logins_endpoint_field": "login_ids",
+    "previous_wrong_field": "logins",
+    "previous_zero_login_counts": "invalid",
+    "current_whoami_telegram_connected_logins": 1,
+    "current_whoami_fourdock_connected_logins": 1
+  },
+  "community_layout": {
+    "bridge_communities": true,
+    "hierarchy_rooms": 29,
+    "nested_spaces": 7,
+    "nested_child_links": 12,
+    "additional_pages": false,
+    "grouping_already_present": true,
+    "element_root_filter_includes_descendants": true,
+    "native_telegram_forum_screen_parity": false,
+    "history_portal_or_membership_changes": false
+  },
+  "local_validation": {
+    "matrix_tests": 19,
+    "result": "pass",
+    "target_and_permission_rejection_before_writes": "pass",
+    "cached_uploads_and_state_idempotence": "pass",
+    "private_backup": "pass",
+    "later_manual_avatar_preservation": "pass"
+  },
+  "ci": {
+    "run": 43710642480,
+    "status": "pass_all_five_jobs",
+    "previous_run": 43709401283,
+    "previous_attempts": 2,
+    "previous_failure": "initial_registry_500_then_tag_digest_cli_verification_error",
+    "direct_registry_payload_matches_pin": true,
+    "digest_only_inspection_passes": true,
+    "inspection_reference_normalized_runtime_pins_unchanged": true,
+    "existing_tests_with_manifest_regression": 16
+  },
+  "deployment": {
+    "run": 43711194995,
+    "status": "pass_attempt_2",
+    "first_failure": "legacy_whatsapp_proxy_502_stale_upstream_before_icon_changes",
+    "existing_gateway_config_reload_after_dns_verification": true,
+    "provider_restarts_for_repair": false
+  },
+  "runtime": {
+    "whatsapp": {
+      "connected_logins": 1,
+      "spaces": 1,
+      "avatars_match_local_logo": true,
+      "media_matches_bundled_png": true,
+      "cached_sha_matches": true
+    },
+    "telegram": {
+      "connected_logins": 1,
+      "spaces": 1,
+      "avatars_match_local_logo": true,
+      "media_matches_bundled_png": true,
+      "cached_sha_matches": true
+    },
+    "runtime_unchanged": {
+      "matrix-telegram": {
+        "same_id": true,
+        "same_start": true,
+        "same_image": true
+      },
+      "matrix-fourdock": {
+        "same_id": true,
+        "same_start": true,
+        "same_image": true
+      },
+      "fourdock-whatsapp-candidate": {
+        "same_id": true,
+        "same_start": true,
+        "same_image": true
+      },
+      "whatsapp-api": {
+        "same_id": true,
+        "same_start": true,
+        "same_image": true
+      },
+      "whatsapp-sync": {
+        "same_id": true,
+        "same_start": true,
+        "same_image": true
+      }
+    },
+    "private_backup_mode_ok": true
+  },
+  "element_icon_rendering": "not_observed",
+  "real_messages_sent_by_agent": 0,
+  "provider_pairings_or_session_copies": 0,
+  "client_binary_or_security_policy_changes": false,
+  "sources": [
+    "https://core.telegram.org/method/account.updateStatus",
+    "https://telegram.org/faq#q-who-can-see-me-39online-39",
+    "https://docs.mau.fi/configs/mautrix-telegram/v26.10.html"
+  ],
+  "icon_state_updates": {
+    "updated": 2,
+    "unchanged": 0,
+    "custom_avatar_preserved": 0
+  }
+}
