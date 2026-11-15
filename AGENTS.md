@@ -1,5 +1,22 @@
 # Fourdock
 
+2026-11-15 PLACEHOLDER MESSAGE INVESTIGATION: owner reports literal `(message)` in
+a specified WhatsApp group/sender. Preserve those private names/IDs/content out of
+evidence. Read-only archive metadata confirms blank text/media and literal
+display_text fallback before Matrix; converter forwards display_text as body.
+No poll/vote/location/call metadata identifies the inspected placeholder, and no
+matched unhandled-payload type was recovered from retained logs inspected. Source
+wacli buildDisplayText inserts `(message)` for empty extracted content, including
+technical notices and unsupported payloads. Owner confirms original phone-side
+messages are NORMAL TEXT and a new message arrived normally. Latest inspected
+archive rows contain text; matched placeholder is historical (~70days older), not
+purged/deleted/edited. Exact encoded payload/loss stage remains unknown. Owner
+now asked whether the affected events were historical or today, to avoid matching
+the wrong records. Do not diagnose this as a technical notice or a proven crypto/
+format/import bug without confirming the affected events.
+No state changes, reimport, redactions, restarts, real sends or session access/copy.
+Do not hide/delete entries or claim they were technical notices without evidence.
+
 2026-11-15 TELEGRAM PRESENCE AND SPACE ICONS: owner authorizes idle-presence checks
 and Telegram/WhatsApp logos for Element service spaces. Current provisioning
 whoami confirms1 CONNECTED login and one space for each bridge; both healthy.

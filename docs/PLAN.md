@@ -2,6 +2,17 @@
 
 Updated: 2026-11-15. **Prototype; daily-use recovery checks in progress.**
 
+## Literal message placeholder investigation, 2026-11-15
+
+Owner identifies a private group/sender whose entries show `(message)`. Read-only
+archive metadata confirms the fallback precedes Matrix: text/media empty and
+display_text literal placeholder. No typed poll/vote/location/call record or
+matched retained warning identifies the original encoded payload. Owner confirms
+normal text on the phone and a new message arriving normally. Latest inspected
+rows have text; the matched placeholder is historical, not purged/deleted/edited.
+Ask whether the affected events are historical or today to confirm the match.
+Exact loss stage remains unknown; no runtime/data/history changes made.
+
 ## Telegram idle presence and service-space icons, 2026-11-15
 
 Both bridges currently report1 CONNECTED owner login/one space and healthy runtime.

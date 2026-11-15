@@ -12,6 +12,20 @@ Only the explicitly confirmed manual subtests are passed. Fixture subtests do no
 pass real-account requirements.
 Sanitized automated results: [evidence/ui-results.json](evidence/ui-results.json).
 
+## Literal message placeholder, 2026-11-15
+
+- PASS READ-ONLY METADATA: selected archived placeholder already has blank text/
+  media before Matrix. No typed poll/vote/location/call metadata identifies it.
+- VERIFIED SOURCE: wacli creates `(message)` for empty extracted content; the
+  Matrix converter forwards DisplayText. Technical notices and unhandled user
+  payloads share this fallback. No matched type warning recovered from checked logs.
+- PASS MANUALE CONFERMATO: owner says affected originals are normal text; a new
+  message arrives normally. Latest inspected archive rows have text; the matched
+  historical placeholder is not purged/deleted/edited.
+- NON ESEGUITO: definitive match to the affected events (date category requested)
+  and exact encoded-payload/loss diagnosis. No private names, IDs or bodies in
+  evidence; no writes, restarts, sends or history repair.
+
 ## Telegram idle presence and service-space avatars, 2026-11-15
 
 - PASS AUTOMATICO READ-ONLY: whoami confirms1 CONNECTED login/one space for both
