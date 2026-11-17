@@ -1,5 +1,32 @@
 # Fourdock
 
+2026-11-17 LATE WHATSAPP CONTENT: owner reports a current forwarded photo as
+`(message)` in Element, then a second event in the same private group. Exact
+owner-provided group/time correlation confirms the archive/API has the photo,
+and a second row has normal text, while both mapped Matrix events really contain
+m.text `(message)`. Do not confuse these with historical archive placeholders.
+Diagnostics classified events in memory on server using existing Matrix crypto,
+read-only stores and temporary owner tokens logged out; no bodies/names/IDs/keys
+exported. The initial reason for incomplete delivery is not proven by retained
+logs. Confirmed recovery gaps: all conversions saved media_version1, recovery
+skipped version1 and recognized notice placeholders only, and ran once at startup.
+Private homeserver PR164 adds exact mapped placeholder reconciliation for source
+photo/nonempty text, one globally bounded archive page every30s, version2 resolved
+metadata, retry without replacement notices on media failure, and identity/owner/
+attachment guards. No new portal, provider send/read receipt or session change.
+Local adapter race/vet,22 Matrix/67 root Python,5 Node tests and Compose config
+pass. Earlier encrypted fixture received correct photo+text edits; its final check
+incorrectly used SDK edit_count, which incoming edits do not update. Fixed to count
+actual Matrix replacement events. Final headd01f0e6 CI cannot start: owner exhausted
+Actions minutes. Owner explicitly authorizes manual checks, merge and canonical
+homeserver deployment while this persists. PR164 mergeddfb067d1; manual
+scripts/deploy.sh exit0. Live exact-target checks confirm both photo/text restored
+by one encrypted replacement each, correct payload classification/text hash and
+same original event IDs, metadata2 persisted. Only adapter recreated/healthy;
+other4 IDs/start and all mounts unchanged, both bridges1 CONNECTED login, candidate
+authenticated/connected. Real Element rendering remains owner check. Evidence:
+docs/evidence/late-whatsapp-content.json.
+
 2026-11-17 BIDIRECTIONAL UNREAD COUNTERS: owner clarifies unread counter/dot,
 not sender ticks; Telegram affected also in PRIVATE chats. Private homeserver
 PR162 (tested head976fbbd, merged969a94ca) adds bounded WhatsApp app-state reads, durable own-device
@@ -27,7 +54,10 @@ in both directions. Evidence: docs/evidence/unread-sync.json. Docker local becam
 build, owner restarted it; compiler concurrency/memory bounded and runtime smoke
 checks added. Private before metadata saved for5 containers/account/mounts. No real
 message/send/read-status writes used by the agent for tests.
-OWNER WORKFLOW PREFERENCE: once relevant tests and current-head CI pass, merge the
+OWNER WORKFLOW PREFERENCE: GitHub Actions free minutes exhausted2026-11-17. Owner
+explicitly authorizes manual verification, merge and deployment through the
+homeserver repo until CI can run again; do not change billing/spending limits.
+When CI is available, once relevant tests and current-head CI pass, merge the
 verified PR automatically instead of leaving it open. Coordinate overlapping
 sessions; never overwrite another session's changes. Deploy through homeserver CI.
 

@@ -12,6 +12,28 @@ Only the explicitly confirmed manual subtests are passed. Fixture subtests do no
 pass real-account requirements.
 Sanitized automated results: [evidence/ui-results.json](evidence/ui-results.json).
 
+## Late WhatsApp photo/text enrichment, 2026-11-17
+
+- PASS READ-ONLY DIAGNOSIS: two exact current-day archived/API records have usable
+  photo/text; their mapped encrypted Matrix events classify as m.text `(message)`.
+  No real bodies, names, IDs, media URLs or keys emitted or copied from server.
+- PASS AUTOMATICO LOCAL: adapter race tests and vet; placeholder/real-text/image
+  guards, completed metadata and failed-download recovery behavior.
+- PASS AUTOMATICO LOCAL:22 Matrix/67 root Python,5 Node tests, Compose config.
+- PARTIAL SYNTHETIC: encrypted fixture received correct image+text edits; then
+  failed its incorrect SDK edit_count assertion. Incoming edits leave that field
+  unchanged; corrected test counts actual Matrix replacement events.
+- BLOCCATO CI: final head d01f0e6,44104645637/44104633380 rejected before any
+  step due exhausted Actions minutes. Complete corrected fixture not executed.
+- Owner authorizes manual checks/merge/deploy: PR164 mergeddfb067d1; canonical
+  scripts/deploy.sh exit0.
+- PASS AUTOMATICO TARGET: both original events preserved; one encrypted replacement
+  each restores image attachment and exact text (in-memory hash comparison),
+  metadata2 persisted. Only adapter recreated/healthy; other4 IDs/start/all mounts
+  preserved; both bridge logins CONNECTED, candidate authenticated/connected.
+  [Sanitized evidence](evidence/late-whatsapp-content.json).
+- NON ESEGUITO: owner observation of repaired photo/text in Element.
+
 ## Phone/Element unread counters, 2026-11-17
 
 - Owner clarifies counters/dots, including Telegram private chats; this is distinct

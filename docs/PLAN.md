@@ -2,6 +2,26 @@
 
 Updated: 2026-11-17. **Prototype; daily-use recovery checks in progress.**
 
+## Late WhatsApp photo/text placeholders, 2026-11-17
+
+Two exact current-day events have correct archived content (one forwarded image,
+one normal text) but the original mapped Matrix messages contain `(message)`.
+PR164 fixes the confirmed recovery gap: reconcile known placeholders only when
+that source ID now has media/nonempty text, preserving the original event via a
+Matrix edit. One global recent page every30s; persisted version2 skips resolved
+messages; failed media recovery leaves the event untouched for retry. No WhatsApp
+send/read receipt, new portal or account/session change. Adapter-only deployment.
+Local race/vet,22 Matrix/67 root Python,5 Node tests and Compose validation pass.
+Earlier encrypted fixture received both repaired contents; replace its incorrect
+SDK edit-count assertion with actual Matrix relation counts. Final CI cannot
+start because Actions minutes are exhausted. Owner authorizes manual checks,
+merge and canonical deploy until restored. PR164 mergeddfb067d1 (head d01f0e6);
+scripts/deploy.sh exit0. Both exact targets repaired by one encrypted Matrix edit
+each (photo attachment and matching text), original event IDs preserved and
+metadata2 saved. Only adapter recreated/healthy; candidate/TG/Hermes IDs/start
+and mounts preserved, both logins CONNECTED. Owner Element UI check remains
+unconfirmed. Evidence: docs/evidence/late-whatsapp-content.json.
+
 ## Phone/Element unread synchronization, 2026-11-17
 
 Owner reports unread counters in both directions for WhatsApp and Telegram,

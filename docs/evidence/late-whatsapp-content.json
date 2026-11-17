@@ -1,0 +1,95 @@
+{
+  "date": "2026-11-17",
+  "source": {
+    "repository": "private homeserver",
+    "pull_request": 164,
+    "reviewed_head": "d01f0e683cf8582cb2528aa03d9953cc3a92a2ac",
+    "merge": "dfb067d18d88fe871d50c1352c4a4d6dbc8e6fa6"
+  },
+  "diagnosis": {
+    "exact_owner_identified_targets": 2,
+    "source_content_types": [
+      "forwarded_image",
+      "normal_text"
+    ],
+    "archived_source_correct": true,
+    "original_matrix_events_literal_message_placeholder": true,
+    "old_metadata_version": 1,
+    "initial_incomplete_delivery_reason_proven": false,
+    "private_bodies_names_ids_keys_or_urls_exported": false
+  },
+  "implementation": {
+    "reconcile_interval_seconds": 30,
+    "global_recent_page_limit": "configured history limit, currently1000",
+    "repair_only_exact_mapped_known_placeholders_with_usable_source": true,
+    "preserve_original_event_ids": true,
+    "resolved_metadata_version": 2,
+    "queued_duplicate_guard": true,
+    "failed_recovery_suppresses_sdk_error_notices": true,
+    "new_portals_created_by_recovery": false,
+    "provider_sends_or_read_receipts_by_recovery": false,
+    "candidate_telegram_hermes_runtime_changed": false
+  },
+  "validation": {
+    "local_adapter_race": "pass",
+    "local_adapter_vet": "pass",
+    "matrix_python_tests": 22,
+    "root_python_tests": 67,
+    "node_tests": 5,
+    "compose_config": "pass",
+    "fixture_python_compilation": "pass",
+    "earlier_encrypted_fixture": "photo_and_text_edits_received; final assertion incorrectly used SDK edit_count",
+    "final_encrypted_fixture": "corrected to count actual Matrix relations; not executed due Actions quota"
+  },
+  "ci": {
+    "final_head_runs": [
+      44104645637,
+      44104633380
+    ],
+    "state": "blocked_before_start",
+    "reason": "owner confirms GitHub Actions free minutes exhausted"
+  },
+  "deployment": {
+    "method": "manual canonical scripts/deploy.sh",
+    "owner_authorized_manual_verification_merge_deploy_while_ci_unavailable": true,
+    "exit_code": 0
+  },
+  "live_verification": {
+    "all_five_running": true,
+    "only_adapter_recreated": true,
+    "candidate_telegram_hermes_unchanged": true,
+    "all_mounts_preserved": true,
+    "adapter_image": "fourdock-matrix:dfb067d18d88fe871d50c1352c4a4d6dbc8e6fa6",
+    "adapter_healthy": true,
+    "targets": [
+      {
+        "source_kind": "image",
+        "original_event_preserved": true,
+        "resolved_metadata": true,
+        "replacement_found": true,
+        "correct_replacement": true,
+        "actual_replacement_count": 1
+      },
+      {
+        "source_kind": "text",
+        "original_event_preserved": true,
+        "resolved_metadata": true,
+        "replacement_found": true,
+        "correct_replacement": true,
+        "actual_replacement_count": 1
+      }
+    ],
+    "bridges": {
+      "telegram": {
+        "login_count": 1,
+        "all_connected": true
+      },
+      "fourdock": {
+        "login_count": 1,
+        "all_connected": true
+      }
+    },
+    "candidate_connected_authenticated": true
+  },
+  "owner_element_visual_acceptance": "NON ESEGUITO"
+}
