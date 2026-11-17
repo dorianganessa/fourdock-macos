@@ -1,6 +1,6 @@
 # Testing ledger
 
-Updated: 2026-11-15. Automated baseline: 2026-11-06. Target: managed macOS 27.0.1 arm64. Synthetic UI runtime:
+Updated: 2026-11-17. Automated baseline: 2026-11-06. Target: managed macOS 27.0.1 arm64. Synthetic UI runtime:
 Chrome for Testing 157.0.8103.38, Playwright 1.56.1, Node 26.4.0. Profiles are
 temporary. External DNS is blocked only in the synthetic browser; attached page
 navigations are fulfilled from fixtures. Automated checks use no real credentials
@@ -11,6 +11,45 @@ Allowed states: PASS AUTOMATICO, PASS MANUALE CONFERMATO, FAIL, BLOCCATO, NON ES
 Only the explicitly confirmed manual subtests are passed. Fixture subtests do not
 pass real-account requirements.
 Sanitized automated results: [evidence/ui-results.json](evidence/ui-results.json).
+
+## Phone/Element unread counters, 2026-11-17
+
+- Owner clarifies counters/dots, including Telegram private chats; this is distinct
+  from sender grey/blue ticks.
+- PASS AUTOMATICO: adapter race/vet;22 Matrix/66 root Python;4 local API tests;
+  WA exact boundary, newer/same-second unread preservation, own phone read cursor
+  persistence/read-only recovery, group/privacy tests. Linux candidate build passes.
+- PASS AUTOMATICO: Telegram connector/store tests with no network or provider
+  account, including deferred lookup after backfill and real SQL state writes to
+  the correct synthetic user while another remains untouched.
+- PASS AUTOMATICO CI: head976fbbd, both44055064278/44055054372 all6 jobs PASS,
+  including encrypted owner marker/echo/newer unread scenario and offline Telegram
+  executable. PR162 merged969a94ca; deploy44056739004 attempt2 PASS. Initial
+  attempt stopped on transient listener port-in-use, recovered before retry.
+- PASS AUTOMATICO TARGET: all3 expected images, all5 containers running, both
+  bridges1 CONNECTED login; same account/mounts/TG login+registration, Hermes
+  IDs/start unchanged; quiet default and read-only cursor API verified.3 persisted
+  WA boundaries observed/applied,0 recent read warnings. Evidence:
+  [unread-sync.json](evidence/unread-sync.json).
+- NON ESEGUITO: real phone/Element unread badge observations in four directions;
+  fresh messages and owner UI actions required. No agent real sends/read writes.
+- Preserve account, volumes, existing Telegram login, quiet mode and Hermes.
+
+## Element WhatsApp delivery/read receipts, 2026-11-16
+
+- VERIFIED SOURCE: adapter had no Matrix read handler; quiet whatsmeow sends
+  inactive delivery receipts. Force-active delivery supports ticks without online.
+- PASS AUTOMATICO: adapter race tests/vet;19 Matrix and25 root Python tests;
+  3 API/installer tests; candidate Docker build with exact-ID CLI/delegate,
+  no-daemon/old-daemon rejection, group/privacy/failure/selection and upstream
+  read-receipt/quiet-presence regressions. No real messages/accounts in tests.
+- PASS AUTOMATICO CI/DEPLOY: PR157 merged964fac7; deploy43846931840 passed;
+  installed candidate/adapter images verified2026-11-17.
+- NON ESEGUITO: real sender-side delivery/read ticks and idle online observation.
+  A new incoming message and deliberate Element read are needed for acceptance.
+- Scope: public explicit reads only, exact portal/cursor/IDs; no implicit/history
+  auto-read, private/thread reads or whole-chat fallback. WhatsApp privacy applies.
+  Candidate and adapter updates only; preserve session/volume/Hermes/Telegram.
 
 ## Telegram notification preferences, 2026-11-15
 

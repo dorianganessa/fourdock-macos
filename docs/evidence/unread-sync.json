@@ -1,0 +1,85 @@
+{
+  "date": "2026-11-17",
+  "source": {
+    "repository": "private homeserver",
+    "pull_request": 162,
+    "reviewed_head": "976fbbd452cb646cdba27a5c6226cd44eb758c3a",
+    "merge": "969a94caad40d12bab93f4472aeded4b3c3bd93b"
+  },
+  "scope": {
+    "whatsapp": "bounded app-state reads and durable own-device cursors to owner Matrix markers",
+    "telegram": "topic reads, deferred own-read lookup, bounded missing-target fallback and update-state SQL backport",
+    "existing_sessions_preserved": true,
+    "hermes_changed": false,
+    "new_service_required": false,
+    "phone_to_element_poll_seconds": 5
+  },
+  "local_validation": {
+    "adapter_race_and_vet": "pass",
+    "matrix_python_tests": 22,
+    "root_python_tests": 66,
+    "api_tests": 4,
+    "candidate_read_boundary_group_privacy_cursor_tests": "pass_synthetic",
+    "telegram_connector_store_tests": "pass_synthetic",
+    "telegram_offline_runtime": "pass"
+  },
+  "ci": {
+    "pull_request_run": 44055064278,
+    "push_run": 44055054372,
+    "status": "pass_all_six_jobs_both_runs",
+    "encrypted_marker_echo_newer_unread_fixture": "pass_synthetic"
+  },
+  "deployment": {
+    "run": 44056739004,
+    "status": "pass_attempt_2",
+    "first_attempt": "failed_on_transient_adapter_listener_port_in_use; recovered healthy before retry"
+  },
+  "live_verification": {
+    "head": "969a94caad40d12bab93f4472aeded4b3c3bd93b",
+    "all_five_running": true,
+    "hermes_unchanged": true,
+    "updated_component_count": 3,
+    "component_images": {
+      "fourdock-whatsapp-candidate": "fourdock-candidate-gif:969a94caad40d12bab93f4472aeded4b3c3bd93b",
+      "matrix-fourdock": "fourdock-matrix:969a94caad40d12bab93f4472aeded4b3c3bd93b",
+      "matrix-telegram": "fourdock-telegram:969a94caad40d12bab93f4472aeded4b3c3bd93b"
+    },
+    "mounts_preserved": true,
+    "candidate": {
+      "authenticated": true,
+      "connected": true,
+      "writable": true,
+      "process_running": true
+    },
+    "account_preserved": true,
+    "read_cursor_api": true,
+    "read_cursor_count": 3,
+    "quiet_default": true,
+    "bridges": {
+      "telegram": {
+        "login_count": 1,
+        "states": [
+          "CONNECTED"
+        ]
+      },
+      "fourdock": {
+        "login_count": 1,
+        "states": [
+          "CONNECTED"
+        ]
+      }
+    },
+    "telegram_login_preserved": true,
+    "telegram_registration_preserved": true,
+    "persisted_whatsapp_read_boundaries_applied": 3,
+    "recent_read_sync_warnings": 0
+  },
+  "real_account_acceptance": {
+    "whatsapp_phone_to_element": "NON ESEGUITO",
+    "whatsapp_element_to_phone": "NON ESEGUITO",
+    "telegram_phone_to_element_private_and_topics": "NON ESEGUITO",
+    "telegram_element_to_phone_private_and_topics": "NON ESEGUITO",
+    "contact_side_idle_presence": "NON ESEGUITO"
+  },
+  "agent_real_message_send_or_read_status_test": false
+}

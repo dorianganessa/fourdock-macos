@@ -1,5 +1,54 @@
 # Fourdock
 
+2026-11-17 BIDIRECTIONAL UNREAD COUNTERS: owner clarifies unread counter/dot,
+not sender ticks; Telegram affected also in PRIVATE chats. Private homeserver
+PR162 (tested head976fbbd, merged969a94ca) adds bounded WhatsApp app-state reads, durable own-device
+archive cursors/read-only API and owner Matrix read/fully-read reconciliation every
+5s, with persisted echo/restart guards. Newer and same-second later messages stay
+unread. Read state is distinct from PR157's sender receipts. Existing account,
+quiet presence and Hermes are preserved. Telegram layer keeps audited v26.10
+source/runtime; fixes topic read RPC/discussion updates, missing targets resolved
+within the portal queue after backfill, and reconnect dialog reads. Backports
+upstream v26.11's five update-state SQL placeholder fixes; actual DB regression
+verifies correct user and all fields, including another account untouched.
+No online-status API call or new credentials/login/session copy. Compiled binary
+uses the same libolm3.2.16 implementation; the required shared object is included
+(the official executable linked it statically). New container name is unchanged,
+image tagged by component revision. Local helper/store tests, adapter race/vet,
+22 Matrix/66 root Python and4 API tests pass. Both current-head CI runs
+44055064278/44055054372 pass all6 jobs, including encrypted marker/echo/newer
+unread checks and offline Telegram runtime. Merge969a94ca deployed via44056739004 attempt2 PASS. Initial attempt stopped
+on transient adapter listener port-in-use, then recovered healthy before retry.
+Live:3 components updated, all5 running, both1 CONNECTED login, same candidate
+account/all mounts/TG login+registration; Hermes IDs/start preserved; quiet default
+and read-only cursor API verified.3 observed/applied WA boundaries, no recent
+read warnings. Do not pass real UI badge checks until owner tests fresh messages
+in both directions. Evidence: docs/evidence/unread-sync.json. Docker local became unavailable during an earlier
+build, owner restarted it; compiler concurrency/memory bounded and runtime smoke
+checks added. Private before metadata saved for5 containers/account/mounts. No real
+message/send/read-status writes used by the agent for tests.
+OWNER WORKFLOW PREFERENCE: once relevant tests and current-head CI pass, merge the
+verified PR automatically instead of leaving it open. Coordinate overlapping
+sessions; never overwrite another session's changes. Deploy through homeserver CI.
+
+2026-11-16 ELEMENT READ/DELIVERY RECEIPTS: owner reports missing sender-side ticks.
+Source confirms missing Matrix->WhatsApp ReadReceiptHandlingNetworkAPI and quiet
+whatsmeow inactive delivery receipts (not displayed by official clients). Private
+homeserver PR157 at29efbd6 adds exact owner/cursor/message-ID selection and a
+candidate-only local route/delegate kind. No whole-chat fallback or separate
+connection/restart when the sync daemon is unavailable. Skip implicit/import,
+private/thread-only/unknown reads; preserve newer unread counters, WA privacy,
+group participant addressing and current sessions. Candidate enables
+SetForceActiveDeliveryReceipts(true) independently of PresenceAvailable; quiet
+presence default remains. Hermes binary/config untouched. Local adapter race/vet,
+19 Matrix/25 root Python,3 route/installer tests and candidate Docker build pass,
+including synthetic CLI delegation, group/privacy/error and quiet-presence tests.
+PR157 merged964fac7; normal deploy and installed candidate/adapter image verified
+2026-11-17. Real sender-side ticks remain owner acceptance. Private
+before-metadata saved for5 containers/account/volume. No real message/send/read
+receipt used as an agent test. Real sender-side grey/blue ticks and idle online
+state remain NON ESEGUITO until owner observation. Do not claim manual success.
+
 2026-11-15 TELEGRAM NOTIFICATION PREFERENCES: owner asks why an identified
 community's topics notify and whether they can choose. Read-only push-rule
 inspection finds most matching topic rooms have no scoped rule and inherit

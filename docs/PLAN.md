@@ -1,6 +1,35 @@
 # Plan and handoff
 
-Updated: 2026-11-15. **Prototype; daily-use recovery checks in progress.**
+Updated: 2026-11-17. **Prototype; daily-use recovery checks in progress.**
+
+## Phone/Element unread synchronization, 2026-11-17
+
+Owner reports unread counters in both directions for WhatsApp and Telegram,
+including Telegram private chats. PR162 implements bounded WA app-state read
+markers plus persisted own-device cursors and owner Matrix read/fully-read
+updates every5s; keeps newer unread messages and prevents read echoes/restart
+replay. Telegram fixes topic RPC routing, own discussion updates, queued mapped
+lookups for missing targets/reconnects, and backports the upstream state-update
+SQL binding fix. Same v26.10 source/runtime and libolm implementation; include
+its required shared library. No provider login/session copy, presence loop or
+Hermes change. Local tests and all6 jobs in both current-head CI runs pass
+(44055064278/44055054372, head976fbbd). PR162 merged969a94ca; normal deploy
+44056739004 attempt2 PASS. First attempt stopped on a transient occupied listener
+port; adapter recovered healthy before retry. All3 updated images verified, both
+bridges CONNECTED, same account/mounts/TG login+registration, Hermes untouched
+and quiet default retained.3 phone-read boundaries applied without recent read
+warnings. Real phone badge checks remain unconfirmed. Owner requests automatic merge after green
+current-head checks; follow the normal homeserver Compose deployment.
+
+## Element WhatsApp receipt fix, 2026-11-16
+
+Private homeserver PR157 adds explicit owner read cursors -> exact WhatsApp
+message-ID receipts and active delivery ticks while preserving quiet presence.
+The legacy mark-read API could acknowledge a whole chat; the new candidate route
+requires the existing daemon and has no unbounded/exclusive fallback. Current
+account/session and Hermes are preserved. Local synthetic tests/build pass;
+PR157 was merged964fac7 and deployed; installed images verified2026-11-17. Real sender tick display and idle
+presence require owner observation; no real receipt was sent as an agent test.
 
 ## Telegram notification choice, 2026-11-15
 
