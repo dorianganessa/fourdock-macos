@@ -1,6 +1,19 @@
 # Plan and handoff
 
-Updated: 2026-11-17. **Prototype; daily-use recovery checks in progress.**
+Updated: 2026-11-23. **Prototype; daily-use recovery checks in progress.**
+
+## Element account notification preferences, 2026-11-23
+
+Applied the owner's notification profile to currently joined bridged chats:
+all WhatsApp, all Telegram DMs and one exact exception community with its topics;
+mentions only for the other TG groups/channels.114 rooms classified,111 scoped
+room rules changed and all read back. Preserve global mention rules, keywords
+and unrelated room rules. Generic two-member defaults do not identify TG DMs,
+which include the bot as a third member. Private original-rule backup and journal
+are600;24 synthetic priority checks pass. Account settings only: no code deploy,
+provider sends, read receipts or restarts. New rooms retain existing defaults and
+need their own preferences; no recurring enforcement. Real banner observation
+remains owner acceptance. Evidence: docs/evidence/element-notification-preferences.json.
 
 ## Late WhatsApp photo/text placeholders, 2026-11-17
 

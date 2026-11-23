@@ -1,0 +1,37 @@
+{
+  "date": "2026-11-23",
+  "operation": "owner-authorized account notification preferences",
+  "scope": "currently joined bridged chat/topic rooms",
+  "policy": {
+    "whatsapp": "all_messages",
+    "telegram_direct": "all_messages",
+    "telegram_exception_community_and_topics": "all_messages",
+    "other_telegram_groups_channels": "mentions_only"
+  },
+  "classification": {
+    "whatsapp": 33,
+    "telegram_direct": 11,
+    "telegram_exception_topics": 10,
+    "other_telegram_groups_channels": 60,
+    "exception_selected_by_exact_unique_community_and_descendants": true,
+    "telegram_dm_sample_member_count": 3
+  },
+  "verification": {
+    "room_rules_updated": 111,
+    "target_rules_readback_verified": 114,
+    "synthetic_priority_cases_passed": 24,
+    "global_and_out_of_scope_rules_preserved": true,
+    "private_original_rules_backup_mode": "0600",
+    "provider_message_or_read_receipt_test_sent": false,
+    "client_or_provider_restart": false,
+    "code_deployment_required": false,
+    "real_desktop_banner_or_owner_visual_test": "NON ESEGUITO"
+  },
+  "future_rooms": "retain existing account defaults; configure each new room/topic as needed",
+  "sources": [
+    "https://docs.element.io/latest/element-support/element-webdesktop-client-settings/notification-settings/",
+    "https://spec.matrix.org/latest/client-server-api/#push-rules",
+    "https://github.com/mautrix/telegram/blob/6991248e6a573489d2d38d603b5dbed1627113bc/pkg/connector/telegramfmt/convert.go",
+    "https://github.com/mautrix/telegram/blob/6991248e6a573489d2d38d603b5dbed1627113bc/pkg/connector/client.go"
+  ]
+}

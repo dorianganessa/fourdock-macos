@@ -1,6 +1,6 @@
 # Testing ledger
 
-Updated: 2026-11-17. Automated baseline: 2026-11-06. Target: managed macOS 27.0.1 arm64. Synthetic UI runtime:
+Updated: 2026-11-23. Automated baseline: 2026-11-06. Target: managed macOS 27.0.1 arm64. Synthetic UI runtime:
 Chrome for Testing 157.0.8103.38, Playwright 1.56.1, Node 26.4.0. Profiles are
 temporary. External DNS is blocked only in the synthetic browser; attached page
 navigations are fulfilled from fixtures. Automated checks use no real credentials
@@ -11,6 +11,21 @@ Allowed states: PASS AUTOMATICO, PASS MANUALE CONFERMATO, FAIL, BLOCCATO, NON ES
 Only the explicitly confirmed manual subtests are passed. Fixture subtests do not
 pass real-account requirements.
 Sanitized automated results: [evidence/ui-results.json](evidence/ui-results.json).
+
+## Element notification profile, 2026-11-23
+
+- PASS READ-ONLY CLASSIFICATION: joined room IDs matched to WA/TG portal types;
+  one exact exception community plus topic descendants, other substring matches
+  excluded. TG direct-chat sample has3 members, so two-member defaults are unsafe.
+- PASS AUTOMATICO TARGET:111 room rules updated,114 desired room rules read back;
+  global mention/default/keyword and all out-of-scope room rules unchanged.
+- PASS SYNTHETIC:24 priority checks on actual read-back rules cover normal and
+  encrypted events, absent/owner/another user's mentions across all4 categories.
+- PASS PRIVATE BACKUP: original account rules and mutation journal stored600;
+  no account content or identifiers in public evidence, no real sends/read writes.
+- NON ESEGUITO: actual macOS banner/owner UI observation. Scope is existing joined
+  chats/topics; new rooms retain current defaults and need their own preferences.
+- [Sanitized evidence](evidence/element-notification-preferences.json).
 
 ## Late WhatsApp photo/text enrichment, 2026-11-17
 

@@ -1,5 +1,25 @@
 # Fourdock
 
+2026-11-23 ELEMENT NOTIFICATION PREFERENCES APPLIED: owner requests all WhatsApp,
+all Telegram DMs, mentions only in other TG groups/channels, plus all messages in
+one owner-specified TG community including its topics. Existing portal DBs and
+owner membership classify114 joined chats:33 WA,11 TG DM,10 exception topics,
+60 other TG groups/channels. Exact unique community-space match plus descendants;
+exclude unrelated substring name matches. Do not publish private community names.
+TG DMs have3 Matrix members (bridge bot), so generic two-member defaults do not
+identify them. Applied standard per-room push rules: notify/highlightfalse for
+allowed chats; empty actions for mentions-only, leaving higher-priority enabled
+user/room mention rules intact.111 room rules updated; every target read back.
+Global rules, personal keywords and out-of-scope room rules unchanged.24 synthetic
+priority checks pass for normal/encrypted events, own vs another user's mention.
+Pinned TG formatter supports username/user-ID mentions and maps own ID to owner
+Matrix ID. Original rules and mutation journal retained privately600 on server;
+no real message/read/status writes, restart, native/client modification or deploy.
+Scope is CURRENTLY JOINED CHAT/TOPIC ROOMS. Newly created rooms keep existing
+defaults and need their own room preferences; no recurring enforcement added.
+Native desktop banner/owner UI observation remains NON ESEGUITO. Evidence:
+docs/evidence/element-notification-preferences.json.
+
 2026-11-17 LATE WHATSAPP CONTENT: owner reports a current forwarded photo as
 `(message)` in Element, then a second event in the same private group. Exact
 owner-provided group/time correlation confirms the archive/API has the photo,
