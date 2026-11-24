@@ -1,6 +1,6 @@
 # Testing ledger
 
-Updated: 2026-11-23. Automated baseline: 2026-11-06. Target: managed macOS 27.0.1 arm64. Synthetic UI runtime:
+Updated: 2026-11-24. Automated baseline: 2026-11-06. Target: managed macOS 27.0.1 arm64. Synthetic UI runtime:
 Chrome for Testing 157.0.8103.38, Playwright 1.56.1, Node 26.4.0. Profiles are
 temporary. External DNS is blocked only in the synthetic browser; attached page
 navigations are fulfilled from fixtures. Automated checks use no real credentials
@@ -11,6 +11,21 @@ Allowed states: PASS AUTOMATICO, PASS MANUALE CONFERMATO, FAIL, BLOCCATO, NON ES
 Only the explicitly confirmed manual subtests are passed. Fixture subtests do not
 pass real-account requirements.
 Sanitized automated results: [evidence/ui-results.json](evidence/ui-results.json).
+
+## Intermittent native unread state, 2026-11-24
+
+- Owner reports both WhatsApp/Telegram, then says the symptom is not occurring now.
+  This is not an individually verified permanent read-state acceptance pass.
+- PASS READ-ONLY DIAGNOSTICS: bridges healthy, candidate connected/authenticated/
+  writable; public owner receipts present and no private receipts observed.
+- VERIFIED WA FAILURE: one handler503;5 relation-only receipt anchors have mapped
+  original targets but no direct message mapping (4 reactions,1 edit).
+- UNRESOLVED TG CAUSE:6 relation-only anchors, but handler uses another fallback;
+  no receipt-handler errors found. Do not infer remote inbox state from the cached
+  portal field or attribute all failures to the shared anchor shape.
+- NON ESEGUITO: exact stuck-phone room/time correlation, user-controlled repro,
+  any real message/read-status test, code fix or replay. No runtime changes.
+- [Sanitized diagnostic record](evidence/intermittent-read-state.json).
 
 ## Element notification profile, 2026-11-23
 

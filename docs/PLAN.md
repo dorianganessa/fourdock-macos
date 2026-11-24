@@ -1,6 +1,19 @@
 # Plan and handoff
 
-Updated: 2026-11-23. **Prototype; daily-use recovery checks in progress.**
+Updated: 2026-11-24. **Prototype; daily-use recovery checks in progress.**
+
+## Intermittent Element-to-phone unread report, 2026-11-24
+
+Owner reports both protocols, then cannot reproduce it now. Read-only diagnostics
+find public owner read markers, healthy bridges and a writable connected WA API.
+WA has one HTTP503 receipt failure and5 unmapped reaction/edit anchors, whose
+relation targets are mapped; the strict WA handler skips unmapped anchors.
+TG also has6 such anchors, but its different fallback and lack of receipt errors
+do not establish the same cause. Initial private-receipt hypothesis is unsupported
+by observed state. No code/state fixes or retries against real messages applied.
+A precise room/time when the phone remains unread is needed for causal diagnosis;
+current non-reproduction does not prove a permanent fix. Preserve the applied
+notification profile, sessions and Hermes. Do not clear unseen messages to mask it.
 
 ## Element account notification preferences, 2026-11-23
 

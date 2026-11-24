@@ -1,5 +1,26 @@
 # Fourdock
 
+2026-11-24 INTERMITTENT ELEMENT -> PHONE READ STATE: owner reports unread state
+not clearing on BOTH WhatsApp and Telegram, then says it is not happening now;
+no exact affected room/time provided. Current behavior is NOT a confirmed
+permanent fix or a fresh pass of every acceptance check. Read-only inspection:
+both bridges healthy/connected, candidate authenticated/connected/writable.
+Owner receipts are public m.read (no private receipts); owner source echoes and
+Element receipts cannot all be distinguished from retained Synapse metadata.
+Last24h snapshot has19 WA/37 TG public receipt rows. WA has one handler503 at
+2026-11-24T10:55Z; original upstream CLI cause not retained in available logs.
+5 WA receipt targets are unmapped reaction/edit events (4 reactions,1 edit),
+with mapped relation targets; WA exact-message guard skips these.6 TG receipt
+targets are also reaction/edit events (4 reactions,2 edits), but stock TG handler
+has a separate latest-message fallback, so do NOT claim the same proven failure
+for Telegram. No TG receipt-handler error found. Telegram portal read_up_to is
+not sufficient evidence of the current remote inbox cursor; no causal claim.
+No code/config/notification/provider read writes, replay, restart, pairing or
+session changes. Need owner-identified room/time if the phone counter gets stuck
+again to distinguish delayed, failed, relation-anchored and genuinely newer unread
+messages. Do not force all chats read or infer phone state solely from Matrix.
+Evidence: docs/evidence/intermittent-read-state.json.
+
 2026-11-23 ELEMENT NOTIFICATION PREFERENCES APPLIED: owner requests all WhatsApp,
 all Telegram DMs, mentions only in other TG groups/channels, plus all messages in
 one owner-specified TG community including its topics. Existing portal DBs and

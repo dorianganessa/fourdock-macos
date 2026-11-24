@@ -1,0 +1,48 @@
+{
+  "date": "2026-11-24",
+  "owner_report": {
+    "affected_protocols": [
+      "whatsapp",
+      "telegram"
+    ],
+    "latest_observation": "not currently reproducing",
+    "exact_room_time_available": false
+  },
+  "diagnostics_read_only": {
+    "bridges_healthy": true,
+    "candidate_connected_authenticated_writable": true,
+    "private_owner_receipts_observed": 0,
+    "owner_receipt_origins_not_all_distinguishable": true,
+    "last_24h_public_owner_receipt_rows": {
+      "whatsapp": 19,
+      "telegram": 37
+    },
+    "whatsapp": {
+      "handler_http_503_count": 1,
+      "upstream_command_cause_confirmed": false,
+      "unmapped_relation_receipt_anchors": 5,
+      "reaction_anchors": 4,
+      "edit_anchors": 1,
+      "relation_targets_mapped": true,
+      "strict_exact_message_handler_skips_unmapped_anchors": true
+    },
+    "telegram": {
+      "unmapped_relation_receipt_anchors": 6,
+      "reaction_anchors": 4,
+      "edit_anchors": 2,
+      "relation_targets_mapped": true,
+      "handler_has_different_fallback": true,
+      "receipt_handler_errors_found": 0,
+      "causal_diagnosis_established": false
+    }
+  },
+  "changes": {
+    "code_or_config": false,
+    "notification_preferences": false,
+    "real_read_status_or_message_writes": false,
+    "read_replay": false,
+    "provider_or_bridge_restart": false,
+    "sessions_or_hermes": false
+  },
+  "resolution": "intermittent symptom; no permanent fix claimed; exact stuck-phone example needed"
+}
